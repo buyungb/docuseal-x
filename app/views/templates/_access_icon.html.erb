@@ -1,0 +1,5 @@
+<% if template.template_accesses.loaded? ? template.template_accesses.any? : template.template_accesses.exists? %>
+  <div class="tooltip ml-2" data-tip="<%= t('shared_with') %> <%= template.template_accesses.size %> <%= t('users').downcase %>">
+    <%= svg_icon('users', class: 'w-5 h-5 inline text-base-content/70') %>
+  </div>
+<% end %>

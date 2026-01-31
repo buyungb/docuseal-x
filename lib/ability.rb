@@ -29,6 +29,7 @@ class Ability
     end
 
     can :destroy, Template, account_id: user.account_id
+    can :manage, TemplateAccess, template: { account_id: user.account_id }
     can :manage, TemplateFolder, account_id: user.account_id
     can :manage, TemplateSharing, template: { account_id: user.account_id }
     can :manage, Submission, account_id: user.account_id
@@ -41,46 +42,52 @@ class Ability
   end
 
   def editor_abilities(user)
-    # Read all templates in account, but only manage own templates (author_id)
-    can :read, Template, Abilities::TemplateConditions.collection(user) do |template|
-      Abilities::TemplateConditions.entity(template, user:, ability: 'read')
+    # Editors can only see their OWN templates OR templates shared with them via TemplateAccess
+    can :read, Template, Abilities::TemplateConditions.editor_collection(user) do |template|
+      Abilities::TemplateConditions.editor_entity(template, user:)
     end
     can %i[create update destroy], Template, author_id: user.id
+
+    # Can manage sharing (TemplateAccess) for own templates
+    can :manage, TemplateAccess, template: { author_id: user.id }
 
     # Own template folders only
     can :read, TemplateFolder, account_id: user.account_id
     can %i[create update destroy], TemplateFolder, author_id: user.id
 
-    # Can share own templates
+    # Can share own templates (TemplateSharing for external accounts)
     can :manage, TemplateSharing, template: { author_id: user.id }
 
-    # Read all submissions, but only manage submissions for own templates
-    can :read, Submission, account_id: user.account_id
+    # Can only see submissions for own templates OR templates shared with them
+    can :read, Submission, Abilities::SubmissionConditions.editor_collection(user)
     can %i[create update destroy], Submission, template: { author_id: user.id }
 
-    # Read all submitters, but only manage submitters for own templates
-    can :read, Submitter, account_id: user.account_id
+    # Can only see submitters for own templates OR templates shared with them
+    can :read, Submitter, Abilities::SubmitterConditions.editor_collection(user)
     can %i[create update destroy], Submitter, submission: { template: { author_id: user.id } }
 
     # Can only read and update own user profile
     can :read, User, id: user.id
     can :update, User, id: user.id
+
+    # Can read other users in the account (for sharing UI)
+    can :read, User, account_id: user.account_id
   end
 
   def viewer_abilities(user)
-    # Read-only access to templates
-    can :read, Template, Abilities::TemplateConditions.collection(user) do |template|
-      Abilities::TemplateConditions.entity(template, user:, ability: 'read')
+    # Viewers can only see templates explicitly shared with them via TemplateAccess
+    can :read, Template, Abilities::TemplateConditions.viewer_collection(user) do |template|
+      Abilities::TemplateConditions.viewer_entity(template, user:)
     end
 
     # Read-only access to template folders
     can :read, TemplateFolder, account_id: user.account_id
 
-    # Read-only access to submissions
-    can :read, Submission, account_id: user.account_id
+    # Can only see submissions for templates shared with them
+    can :read, Submission, Abilities::SubmissionConditions.viewer_collection(user)
 
-    # Read-only access to submitters
-    can :read, Submitter, account_id: user.account_id
+    # Can only see submitters for templates shared with them
+    can :read, Submitter, Abilities::SubmitterConditions.viewer_collection(user)
 
     # Can only read own user profile
     can :read, User, id: user.id

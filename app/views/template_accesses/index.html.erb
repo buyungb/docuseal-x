@@ -1,0 +1,31 @@
+<%= render 'shared/turbo_modal', title: t('share_template') do %>
+  <div class="mt-2">
+    <div class="mb-4">
+      <p class="text-sm text-base-content/70 mb-4">
+        <%= t('share_this_template_with_other_users_in_your_account') %>
+      </p>
+
+      <% if @available_users.any? %>
+        <%= form_tag template_accesses_path(@template), method: :post, id: 'share_form', data: { turbo_frame: 'template_accesses_list' } do %>
+          <div class="flex gap-2">
+            <%= select_tag :user_ids,
+                          options_from_collection_for_select(@available_users, :id, :full_name),
+                          multiple: true,
+                          class: 'select select-bordered w-full',
+                          prompt: t('select_users_to_share_with') %>
+            <%= submit_tag t('share'), class: 'btn btn-primary' %>
+          </div>
+        <% end %>
+      <% else %>
+        <div class="alert alert-info">
+          <%= svg_icon('info_circle', class: 'stroke-current shrink-0 h-6 w-6') %>
+          <span><%= t('no_users_available_to_share_with') %></span>
+        </div>
+      <% end %>
+    </div>
+
+    <turbo-frame id="template_accesses_list">
+      <%= render 'list' %>
+    </turbo-frame>
+  </div>
+<% end %>

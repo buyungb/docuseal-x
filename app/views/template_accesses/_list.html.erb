@@ -1,0 +1,40 @@
+<% if @template_accesses.any? %>
+  <div class="border-t border-base-300 pt-4 mt-4">
+    <h3 class="font-medium mb-3"><%= t('shared_with') %></h3>
+    <div class="space-y-2">
+      <% @template_accesses.each do |access| %>
+        <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+          <div class="flex items-center gap-3">
+            <div class="avatar placeholder">
+              <div class="bg-neutral text-neutral-content rounded-full w-8">
+                <span class="text-xs"><%= access.user&.first_name&.first || 'U' %><%= access.user&.last_name&.first %></span>
+              </div>
+            </div>
+            <div>
+              <div class="font-medium"><%= access.user&.full_name || t('unknown_user') %></div>
+              <div class="text-sm text-base-content/70"><%= access.user&.email %></div>
+              <% if access.user&.role %>
+                <span class="badge badge-xs badge-outline"><%= t(access.user.role) %></span>
+              <% end %>
+            </div>
+          </div>
+          <% if can?(:destroy, access) %>
+            <%= button_to template_access_path(@template, access),
+                          method: :delete,
+                          class: 'btn btn-ghost btn-sm btn-circle text-error',
+                          data: { turbo_frame: 'template_accesses_list', turbo_confirm: t('are_you_sure_') } do %>
+              <%= svg_icon('trash', class: 'w-5 h-5') %>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% else %>
+  <div class="border-t border-base-300 pt-4 mt-4">
+    <div class="text-center text-base-content/70 py-4">
+      <%= svg_icon('users', class: 'w-12 h-12 mx-auto mb-2 opacity-50') %>
+      <p><%= t('this_template_is_not_shared_with_anyone') %></p>
+    </div>
+  </div>
+<% end %>

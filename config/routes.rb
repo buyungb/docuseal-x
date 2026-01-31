@@ -110,6 +110,7 @@ Rails.application.routes.draw do
     resources :recipients, only: %i[create], controller: 'templates_recipients'
     resources :prefillable_fields, only: %i[create], controller: 'templates_prefillable_fields'
     resources :submissions_export, only: %i[index new]
+    resources :accesses, only: %i[index create destroy], controller: 'template_accesses'
   end
   resources :preview_document_page, only: %i[show], path: '/preview/:signed_uuid'
   resource :blobs_proxy, only: %i[show], path: '/file/:signed_uuid/*filename',

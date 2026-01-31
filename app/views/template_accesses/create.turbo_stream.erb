@@ -1,0 +1,16 @@
+<%= turbo_stream.replace 'template_accesses_list' do %>
+  <%= render 'list' %>
+<% end %>
+
+<%= turbo_stream.replace 'share_form' do %>
+  <%= form_tag template_accesses_path(@template), method: :post, id: 'share_form', data: { turbo_frame: 'template_accesses_list' } do %>
+    <div class="flex gap-2">
+      <%= select_tag :user_ids,
+                    options_from_collection_for_select(@available_users, :id, :full_name),
+                    multiple: true,
+                    class: 'select select-bordered w-full',
+                    prompt: t('select_users_to_share_with') %>
+      <%= submit_tag t('share'), class: 'btn btn-primary' %>
+    </div>
+  <% end %>
+<% end %>

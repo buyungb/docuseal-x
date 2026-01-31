@@ -788,6 +788,17 @@ en: &en
   share_link: Share link
   enable_shared_link: Enable shared link
   share_link_is_currently_disabled: Share link is currently disabled
+  share_template: Share Template
+  share_this_template_with_other_users_in_your_account: Share this template with other users in your account.
+  select_users_to_share_with: Select users to share with...
+  share: Share
+  shared_with: Shared with
+  this_template_is_not_shared_with_anyone: This template is not shared with anyone.
+  no_users_available_to_share_with: No users available to share with.
+  template_shared_successfully: Template shared successfully.
+  access_removed_successfully: Access removed successfully.
+  unknown_user: Unknown user
+  share_with_users: Share with users
   select_data_residency: Select data residency
   account_name_has_invited_you_to_fill_and_sign_documents_online_effortlessly_with_a_secure_fast_and_user_friendly_digital_document_signing_solution: '%{account_name} has invited you to fill and sign documents online effortlessly with a secure, fast, and user-friendly digital document signing solution.'
   review_or_download_completed_documents_fill_and_sign_documents_online_effortlessly_with_a_secure_fast_and_user_friendly_digital_document_signing_solution: Review or download completed documents. Fill and sign documents online effortlessly with a secure, fast, and user-friendly digital document signing solution.
