@@ -49,6 +49,7 @@ class SubmissionEvent < ApplicationRecord
     send_sms: 'send_sms',
     send_2fa_sms: 'send_2fa_sms',
     send_2fa_email: 'send_2fa_email',
+    send_2fa_phone: 'send_2fa_phone',
     open_email: 'open_email',
     click_email: 'click_email',
     click_sms: 'click_sms',

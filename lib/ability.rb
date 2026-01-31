@@ -31,6 +31,7 @@ class Ability
     can :destroy, Template, account_id: user.account_id
     can :manage, TemplateAccess, template: { account_id: user.account_id }
     can :manage, TemplateFolder, account_id: user.account_id
+    can :manage, FolderAccess, template_folder: { account_id: user.account_id }
     can :manage, TemplateSharing, template: { account_id: user.account_id }
     can :manage, Submission, account_id: user.account_id
     can :manage, Submitter, account_id: user.account_id
@@ -51,9 +52,14 @@ class Ability
     # Can manage sharing (TemplateAccess) for own templates
     can :manage, TemplateAccess, template: { author_id: user.id }
 
-    # Own template folders only
-    can :read, TemplateFolder, account_id: user.account_id
+    # Own template folders + shared folders
+    can :read, TemplateFolder, Abilities::FolderConditions.editor_collection(user) do |folder|
+      Abilities::FolderConditions.editor_entity(folder, user:)
+    end
     can %i[create update destroy], TemplateFolder, author_id: user.id
+
+    # Can manage sharing (FolderAccess) for own folders
+    can :manage, FolderAccess, template_folder: { author_id: user.id }
 
     # Can share own templates (TemplateSharing for external accounts)
     can :manage, TemplateSharing, template: { author_id: user.id }
@@ -80,8 +86,10 @@ class Ability
       Abilities::TemplateConditions.viewer_entity(template, user:)
     end
 
-    # Read-only access to template folders
-    can :read, TemplateFolder, account_id: user.account_id
+    # Only see folders shared with them
+    can :read, TemplateFolder, Abilities::FolderConditions.viewer_collection(user) do |folder|
+      Abilities::FolderConditions.viewer_entity(folder, user:)
+    end
 
     # Can only see submissions for templates shared with them
     can :read, Submission, Abilities::SubmissionConditions.viewer_collection(user)

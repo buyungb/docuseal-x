@@ -62,6 +62,18 @@ module TextUtils
     "#{masked_local}@#{masked_domain}"
   end
 
+  def mask_phone(phone, visible_digits = 4)
+    return phone if phone.blank?
+
+    digits_only = phone.gsub(/\D/, '')
+    return phone if digits_only.length <= visible_digits
+
+    masked_part = '*' * (digits_only.length - visible_digits)
+    visible_part = digits_only.last(visible_digits)
+
+    "#{masked_part}#{visible_part}"
+  end
+
   def maybe_rtl_reverse(text)
     if text.match?(RTL_REGEXP)
       TwitterCldr::Shared::Bidi

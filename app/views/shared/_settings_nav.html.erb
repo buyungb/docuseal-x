@@ -30,6 +30,16 @@
             <%= link_to 'SMS', settings_sms_path, class: 'text-base hover:bg-base-300' %>
           </li>
         <% end %>
+        <% if can?(:read, EncryptedConfig.new(key: EncryptedConfig::PHONE_OTP_WEBHOOK_KEY, account: current_account)) && true_user == current_user %>
+          <li>
+            <%= link_to t('phone_otp'), settings_phone_otp_index_path, class: 'text-base hover:bg-base-300' %>
+          </li>
+        <% end %>
+        <% if can?(:read, AccountConfig) && true_user == current_user %>
+          <li>
+            <%= link_to t('consent_document'), settings_consent_index_path, class: 'text-base hover:bg-base-300' %>
+          </li>
+        <% end %>
       <% end %>
       <% if can?(:read, AccountConfig) %>
         <li>

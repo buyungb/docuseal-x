@@ -1,0 +1,16 @@
+<%= turbo_stream.replace 'folder_accesses_list' do %>
+  <%= render 'list' %>
+<% end %>
+
+<%= turbo_stream.replace 'folder_share_form' do %>
+  <%= form_tag folder_accesses_path(@folder), method: :post, id: 'folder_share_form', data: { turbo_frame: 'folder_accesses_list' } do %>
+    <div class="flex gap-2">
+      <%= select_tag :user_ids,
+                    options_from_collection_for_select(@available_users, :id, :full_name),
+                    multiple: true,
+                    class: 'select select-bordered w-full',
+                    prompt: t('select_users_to_share_with') %>
+      <%= submit_tag t('share'), class: 'btn btn-primary' %>
+    </div>
+  <% end %>
+<% end %>

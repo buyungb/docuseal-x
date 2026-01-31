@@ -30,14 +30,18 @@ module Abilities
       end
     end
 
-    # For editors - can see own templates OR templates shared with them
+    # For editors - can see own templates OR templates shared with them OR templates in shared folders
     def editor_collection(user)
       own_templates = Template.where(author_id: user.id, account_id: user.account_id)
       shared_template_ids = TemplateAccess.where(user_id: user.id).select(:template_id)
+      shared_folder_ids = FolderAccess.where(user_id: user.id).select(:template_folder_id)
+      templates_in_shared_folders = Template.where(folder_id: shared_folder_ids, account_id: user.account_id)
 
       Template.where(
         Template.arel_table[:id].in(
-          own_templates.select(:id).arel.union(:all, shared_template_ids.arel)
+          own_templates.select(:id).arel
+            .union(:all, shared_template_ids.arel)
+            .union(:all, templates_in_shared_folders.select(:id).arel)
         )
       ).where(account_id: user.account_id)
     end
@@ -46,20 +50,28 @@ module Abilities
       return true if template.account_id.blank?
       return true if template.author_id == user.id && template.account_id == user.account_id
       return true if template.template_accesses.exists?(user_id: user.id)
+      return true if template.folder && FolderAccess.exists?(template_folder_id: template.folder_id, user_id: user.id)
 
       false
     end
 
-    # For viewers - can only see templates explicitly shared with them
+    # For viewers - can only see templates explicitly shared with them OR templates in shared folders
     def viewer_collection(user)
       shared_template_ids = TemplateAccess.where(user_id: user.id).select(:template_id)
+      shared_folder_ids = FolderAccess.where(user_id: user.id).select(:template_folder_id)
+      templates_in_shared_folders = Template.where(folder_id: shared_folder_ids, account_id: user.account_id)
 
-      Template.where(id: shared_template_ids, account_id: user.account_id)
+      Template.where(
+        Template.arel_table[:id].in(
+          shared_template_ids.arel.union(:all, templates_in_shared_folders.select(:id).arel)
+        )
+      ).where(account_id: user.account_id)
     end
 
     def viewer_entity(template, user:)
       return true if template.account_id.blank?
       return true if template.template_accesses.exists?(user_id: user.id)
+      return true if template.folder && FolderAccess.exists?(template_folder_id: template.folder_id, user_id: user.id)
 
       false
     end

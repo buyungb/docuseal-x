@@ -88,7 +88,9 @@ Rails.application.routes.draw do
     resource :templates_upload, only: %i[show], path: 'new'
   end
   resources :templates_archived, only: %i[index], path: 'templates/archived'
-  resources :folders, only: %i[show edit update destroy], controller: 'template_folders'
+  resources :folders, only: %i[show edit update destroy], controller: 'template_folders' do
+    resources :accesses, only: %i[index create destroy], controller: 'folder_accesses'
+  end
   resources :template_sharings_testing, only: %i[create]
   resources :templates, only: %i[index], controller: 'templates_dashboard'
   resources :submissions_filters, only: %i[show], param: 'name'
@@ -136,6 +138,7 @@ Rails.application.routes.draw do
 
   resource :resubmit_form, controller: 'start_form', only: :update
   resource :submit_form_email_2fa, only: %i[create update]
+  resource :submit_form_phone_2fa, only: %i[create update]
   resources :start_form_email_2fa_send, only: :create
 
   resources :submit_form, only: %i[], path: '' do
@@ -169,6 +172,8 @@ Rails.application.routes.draw do
       resources :storage, only: %i[index create], controller: 'storage_settings'
       resources :search_entries_reindex, only: %i[create]
       resources :sms, only: %i[index], controller: 'sms_settings'
+      resources :phone_otp, only: %i[index create], controller: 'phone_otp_settings'
+      resources :consent, only: %i[index create], controller: 'consent_settings'
     end
     if Docuseal.demo? || !Docuseal.multitenant?
       resources :api, only: %i[index create], controller: 'api_settings'

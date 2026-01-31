@@ -18,6 +18,7 @@ class SubmitFormController < ApplicationController
 
     return redirect_to submit_form_completed_path(@submitter.slug) if @submitter.completed_at?
     return render :email_2fa if require_email_2fa?(@submitter)
+    return render :phone_2fa if require_phone_2fa?(@submitter)
 
     @form_configs = Submitters::FormConfigs.call(@submitter, CONFIG_KEYS)
 
@@ -48,7 +49,7 @@ class SubmitFormController < ApplicationController
   end
 
   def update
-    if require_email_2fa?(@submitter)
+    if require_email_2fa?(@submitter) || require_phone_2fa?(@submitter)
       return render json: { error: I18n.t('verification_required_refresh_the_page_and_pass_2fa') },
                     status: :unprocessable_content
     end
@@ -124,5 +125,19 @@ class SubmitFormController < ApplicationController
     return false if cookies.encrypted[:email_2fa_slug] == submitter.slug
 
     true
+  end
+
+  def require_phone_2fa?(submitter)
+    return false if submitter.phone.blank?
+    return false if submitter.submission.template&.preferences&.dig('require_phone_2fa') != true &&
+                    submitter.preferences['require_phone_2fa'] != true
+    return false if cookies.encrypted[:phone_2fa_slug] == submitter.slug
+    return false unless phone_otp_webhook_enabled?(submitter.account)
+
+    true
+  end
+
+  def phone_otp_webhook_enabled?(account)
+    EncryptedConfig.exists?(account:, key: EncryptedConfig::PHONE_OTP_WEBHOOK_KEY)
   end
 end

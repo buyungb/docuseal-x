@@ -1,0 +1,66 @@
+<% account_consent_url = AccountConfigs.find_or_initialize_for_key(current_account, AccountConfig::CONSENT_DOCUMENT_URL_KEY).value %>
+<% account_consent_text = AccountConfigs.find_or_initialize_for_key(current_account, AccountConfig::CONSENT_DOCUMENT_TEXT_KEY).value %>
+
+<div class="border-t border-base-300 mt-4 pt-4">
+  <h3 class="font-semibold mb-3"><%= t('consent_document') %></h3>
+  
+  <%= form_for template, url: template_preferences_path(template), method: :post, html: { autocomplete: 'off' }, data: { close_on_submit: false } do |f| %>
+    <toggle-on-submit data-element-id="consent_saved_alert"></toggle-on-submit>
+    <%= f.fields_for :preferences, Struct.new(:consent_enabled, :consent_document_url, :consent_document_text).new(
+      template.preferences['consent_enabled'],
+      template.preferences['consent_document_url'],
+      template.preferences['consent_document_text']
+    ) do |ff| %>
+      <div class="flex items-center justify-between py-2 px-1 mb-2">
+        <span>
+          <%= t('require_consent_before_signing') %>
+        </span>
+        <submit-form data-on="change" class="flex">
+          <%= ff.check_box :consent_enabled, { checked: ff.object.consent_enabled == true, class: 'toggle' }, 'true', 'false' %>
+        </submit-form>
+      </div>
+      
+      <div class="form-control mb-2">
+        <%= ff.label :consent_document_url, t('consent_document_url'), class: 'label' %>
+        <%= ff.url_field :consent_document_url, 
+            required: false, 
+            class: 'base-input', 
+            dir: 'auto',
+            placeholder: account_consent_url.presence || 'https://example.com/terms.pdf' %>
+        <% if account_consent_url.present? %>
+          <label class="label">
+            <span class="label-text-alt text-base-content/70">
+              <%= t('leave_empty_to_use_account_default') %>: <%= truncate(account_consent_url, length: 50) %>
+            </span>
+          </label>
+        <% end %>
+      </div>
+      
+      <div class="form-control mb-2">
+        <%= ff.label :consent_document_text, t('consent_text'), class: 'label' %>
+        <autoresize-textarea>
+          <%= ff.text_area :consent_document_text, 
+              required: false, 
+              class: 'base-input w-full py-2', 
+              dir: 'auto',
+              rows: 2,
+              placeholder: account_consent_text.presence || t('i_have_read_and_agree_to_the_terms_and_conditions') %>
+        </autoresize-textarea>
+        <% if account_consent_text.present? %>
+          <label class="label">
+            <span class="label-text-alt text-base-content/70">
+              <%= t('leave_empty_to_use_account_default') %>
+            </span>
+          </label>
+        <% end %>
+      </div>
+    <% end %>
+    
+    <div class="form-control pt-2">
+      <%= f.button button_title(title: t('save'), disabled_with: t('saving')), class: 'base-button' %>
+      <div class="flex justify-center">
+        <span id="consent_saved_alert" class="text-sm invisible font-normal mt-0.5"><%= t('changes_have_been_saved') %></span>
+      </div>
+    </div>
+  <% end %>
+</div>

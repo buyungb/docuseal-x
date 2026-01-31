@@ -1,12 +1,30 @@
 <% is_long = folder.name.size > 32 %>
-<a href="<%= folder_path(folder) %>" class="flex h-full flex-col justify-between rounded-2xl py-5 px-6 w-full bg-base-200 before:border-2 before:border-base-300 before:border-dashed before:absolute before:left-0 before:right-0 before:top-0 before:bottom-0 before:hidden before:rounded-2xl relative" data-targets="dashboard-dropzone.folderCards" data-full-name="<%= folder.full_name %>">
-  <% if !is_long %>
-    <%= svg_icon('folder', class: 'w-6 h-6') %>
+<div class="h-full relative group">
+  <a href="<%= folder_path(folder) %>" class="flex h-full flex-col justify-between rounded-2xl py-5 px-6 w-full bg-base-200 before:border-2 before:border-base-300 before:border-dashed before:absolute before:left-0 before:right-0 before:top-0 before:bottom-0 before:hidden before:rounded-2xl relative" data-targets="dashboard-dropzone.folderCards" data-full-name="<%= folder.full_name %>">
+    <div class="flex items-center justify-between">
+      <% if !is_long %>
+        <%= svg_icon('folder', class: 'w-6 h-6') %>
+      <% end %>
+      <% if folder.folder_accesses.loaded? ? folder.folder_accesses.any? : (defined?(folder.folder_accesses) && folder.folder_accesses.exists?) rescue false %>
+        <span class="tooltip tooltip-bottom" data-tip="<%= t('shared_with') %> <%= folder.folder_accesses.size %> <%= t('users').downcase %>">
+          <%= svg_icon('users', class: 'w-4 h-4 text-primary') %>
+        </span>
+      <% end %>
+    </div>
+    <div class="text-lg font-semibold mt-1" style="overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: <%= is_long ? 2 : 1 %>;">
+      <% if is_long %>
+        <%= svg_icon('folder', class: 'w-6 h-6 inline') %>
+      <% end %>
+      <%= folder.name %>
+    </div>
+  </a>
+  <% if can?(:manage, FolderAccess.new(template_folder: folder)) && !folder.default? %>
+    <div class="absolute top-2 right-2 hidden md:group-hover:block">
+      <span class="tooltip tooltip-left" data-tip="<%= t('share_with_users') %>">
+        <a href="<%= folder_accesses_path(folder) %>" data-turbo-frame="modal" class="btn btn-xs hover:btn-outline bg-base-200 btn-circle">
+          <%= svg_icon('users', class: 'w-4 h-4') %>
+        </a>
+      </span>
+    </div>
   <% end %>
-  <div class="text-lg font-semibold mt-1" style="overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: <%= is_long ? 2 : 1 %>;">
-    <% if is_long %>
-      <%= svg_icon('folder', class: 'w-6 h-6 inline') %>
-    <% end %>
-    <%= folder.name %>
-  </div>
-</a>
+</div>

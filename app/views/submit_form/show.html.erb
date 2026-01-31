@@ -110,4 +110,7 @@
     <%= render 'submit_form/decline_form', submitter: @submitter %>
   <% end %>
 <% end %>
+<% if @form_configs[:consent_enabled] && @form_configs[:consent_document_url].present? %>
+  <%= render 'submit_form/consent_modal', consent_url: @form_configs[:consent_document_url], consent_text: @form_configs[:consent_document_text] %>
+<% end %>
 <%= render 'scripts/autosize_field' %>

@@ -799,6 +799,37 @@ en: &en
   access_removed_successfully: Access removed successfully.
   unknown_user: Unknown user
   share_with_users: Share with users
+  share_folder: Share Folder
+  share_this_folder_with_other_users_in_your_account: Share this folder with other users in your account.
+  this_folder_is_not_shared_with_anyone: This folder is not shared with anyone.
+  folder_shared_successfully: Folder shared successfully.
+  users: Users
+  phone_otp: Phone OTP
+  phone_otp_webhook: Phone OTP Webhook
+  configure_webhook_to_receive_phone_otp_codes_for_user_verification: Configure a webhook to receive phone OTP codes for user verification before signing.
+  webhook_url: Webhook URL
+  the_otp_will_be_sent_to_this_url_via_post_request: The OTP will be sent to this URL via POST request.
+  bearer_token: Bearer Token
+  your_api_key_or_bearer_token: Your API key or bearer token
+  optional_bearer_token_for_authorization_header: Optional. Bearer token for Authorization header.
+  webhook_payload_format: Webhook Payload Format
+  headers_include_content_type_application_json_and_authorization_bearer_your_token: 'Headers include: Content-Type: application/json and Authorization: Bearer <your-token>'
+  consent_document: Consent Document
+  configure_a_consent_document_that_signers_must_acknowledge_before_signing: Configure a consent document that signers must acknowledge before signing.
+  document_url: Document URL
+  url_to_the_document_signers_must_view_before_signing: URL to the document signers must view before signing.
+  consent_text: Consent Text
+  text_displayed_next_to_the_consent_checkbox: Text displayed next to the consent checkbox.
+  i_have_read_and_agree_to_the_terms_and_conditions: I have read and agree to the terms and conditions
+  when_configured_signers_will_see_a_checkbox_with_a_link_to_the_document_they_must_check_before_signing: When configured, signers will see a checkbox with a link to the document they must check before signing.
+  consent_required: Consent Required
+  before_proceeding_please_review_and_accept_the_terms: Before proceeding, please review and accept the terms.
+  view_document: View Document
+  require_consent_before_signing: Require consent before signing
+  consent_document_url: Consent Document URL
+  leave_empty_to_use_account_default: Leave empty to use account default
+  the_sender_has_requested_phone_verification_via_otp_sent_to_your_phone_html: The sender has requested phone verification. An OTP code will be sent to your phone number ending in <strong>%{phone}</strong>.
+  resend_code: Resend Code
   select_data_residency: Select data residency
   account_name_has_invited_you_to_fill_and_sign_documents_online_effortlessly_with_a_secure_fast_and_user_friendly_digital_document_signing_solution: '%{account_name} has invited you to fill and sign documents online effortlessly with a secure, fast, and user-friendly digital document signing solution.'
   review_or_download_completed_documents_fill_and_sign_documents_online_effortlessly_with_a_secure_fast_and_user_friendly_digital_document_signing_solution: Review or download completed documents. Fill and sign documents online effortlessly with a secure, fast, and user-friendly digital document signing solution.

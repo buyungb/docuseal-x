@@ -41,6 +41,9 @@ DocuSeal is an open source platform that provides secure and efficient digital d
 - Automatic PDF eSignature
 - PDF signature verification
 - Users management
+- Role-based access control (Admin, Editor, Viewer)
+- Phone OTP verification via webhook (integrate with your SMS gateway)
+- Consent document requirement before signing
 - Mobile-optimized
 - 7 UI languages with signing available in 14 languages
 - API and Webhooks for integrations
@@ -87,6 +90,64 @@ Run the app under a custom domain over https using docker compose (make sure you
 ```sh
 sudo HOST=your-domain-name.com docker compose up
 ```
+
+#### Updating Docker Deployment
+
+When updating to a new version, pull the latest image and run database migrations:
+
+```sh
+# Pull the latest image
+docker pull docuseal/docuseal
+
+# Restart the container (or use docker compose pull && docker compose up -d)
+docker compose up -d
+
+# Run database migrations
+docker exec -it <container_name> rails db:migrate
+```
+
+> **Why run migrations?** Database migrations apply schema changes required by new features (new tables, columns, indexes). Without running migrations after an update, new features may not work correctly or the application may encounter errors when accessing updated database structures.
+
+## Custom Features
+
+### Phone OTP Verification via Webhook
+
+Send OTP codes to your own SMS gateway for phone verification before signing. Configure in **Settings > Phone OTP**:
+
+- **Webhook URL**: Your SMS gateway endpoint
+- **Bearer Token**: Optional authentication token
+
+When phone 2FA is enabled for a template, the system sends a POST request with:
+```json
+{
+  "phone_number": "+1234567890",
+  "otp": "123456",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "submitter_id": 123,
+  "submitter_email": "user@example.com",
+  "submitter_name": "John Doe",
+  "submission_id": 456,
+  "template_name": "Contract Template"
+}
+```
+
+### Consent Document Requirement
+
+Require signers to acknowledge terms and conditions before signing. Configure at two levels:
+
+1. **Account Level** (Settings > Consent Document): Set default consent URL and text
+2. **Template Level** (Template > Preferences > Form Preferences): Enable/disable per template with optional overrides
+
+When enabled, signers must view the document and check the consent checkbox before accessing the signing form.
+
+### Role-Based Access Control
+
+Three user roles with different permissions:
+- **Admin**: Full access to all resources
+- **Editor**: Can manage their own templates and submissions
+- **Viewer**: Read-only access to shared resources
+
+Templates and folders can be shared between users for collaboration.
 
 ## For Businesses
 ### Integrate seamless document signing into your web or mobile apps with DocuSeal

@@ -1,0 +1,43 @@
+<div class="flex flex-wrap space-y-4 md:flex-nowrap md:space-y-0">
+  <%= render 'shared/settings_nav' %>
+  <div class="flex-grow max-w-xl mx-auto">
+    <h1 class="text-4xl font-bold mb-4"><%= t('consent_document') %></h1>
+    <p class="text-base-content/70 mb-6">
+      <%= t('configure_a_consent_document_that_signers_must_acknowledge_before_signing') %>
+    </p>
+
+    <%= form_tag settings_consent_index_path, method: :post, html: { autocomplete: 'off', class: 'space-y-4' } do %>
+      <div class="form-control">
+        <%= label_tag :consent_document_url, t('document_url'), class: 'label' %>
+        <%= text_field_tag :consent_document_url, @consent_url_config.value, class: 'base-input w-full', placeholder: 'https://example.com/terms-and-conditions.pdf' %>
+        <label class="label">
+          <span class="label-text-alt text-base-content/70">
+            <%= t('url_to_the_document_signers_must_view_before_signing') %>
+          </span>
+        </label>
+      </div>
+
+      <div class="form-control">
+        <%= label_tag :consent_document_text, t('consent_text'), class: 'label' %>
+        <%= text_area_tag :consent_document_text, @consent_text_config.value.presence || t('i_have_read_and_agree_to_the_terms_and_conditions'), class: 'base-input w-full', rows: 3, placeholder: t('i_have_read_and_agree_to_the_terms_and_conditions') %>
+        <label class="label">
+          <span class="label-text-alt text-base-content/70">
+            <%= t('text_displayed_next_to_the_consent_checkbox') %>
+          </span>
+        </label>
+      </div>
+
+      <div class="alert bg-base-200">
+        <%= svg_icon('info_circle', class: 'w-5 h-5') %>
+        <div class="text-sm">
+          <%= t('when_configured_signers_will_see_a_checkbox_with_a_link_to_the_document_they_must_check_before_signing') %>
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-4">
+        <%= submit_tag t('save'), class: 'base-button' %>
+      </div>
+    <% end %>
+  </div>
+  <div class="w-0 md:w-52"></div>
+</div>

@@ -1,0 +1,53 @@
+<% consent_accepted = cookies[:consent_accepted] == 'true' %>
+<% unless consent_accepted %>
+<div id="consent_overlay" class="fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center p-4">
+  <div class="bg-base-100 rounded-lg shadow-xl max-w-md w-full p-6">
+    <h2 class="text-xl font-bold mb-4"><%= t('consent_required') %></h2>
+    <p class="text-base-content/70 mb-4">
+      <%= t('before_proceeding_please_review_and_accept_the_terms') %>
+    </p>
+    
+    <div class="mb-4">
+      <a href="<%= consent_url %>" target="_blank" class="btn btn-outline btn-sm gap-2">
+        <%= svg_icon('external_link', class: 'w-4 h-4') %>
+        <%= t('view_document') %>
+      </a>
+    </div>
+    
+    <div class="form-control mb-4">
+      <label class="cursor-pointer flex items-start gap-3">
+        <input type="checkbox" id="consent_checkbox" class="checkbox checkbox-primary mt-1" />
+        <span class="label-text text-sm">
+          <%= consent_text.presence || t('i_have_read_and_agree_to_the_terms_and_conditions') %>
+        </span>
+      </label>
+    </div>
+    
+    <button id="consent_accept_btn" class="btn btn-primary w-full" disabled>
+      <%= t('continue') %>
+    </button>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const checkbox = document.getElementById('consent_checkbox');
+    const acceptBtn = document.getElementById('consent_accept_btn');
+    const overlay = document.getElementById('consent_overlay');
+    
+    if (checkbox && acceptBtn && overlay) {
+      checkbox.addEventListener('change', function() {
+        acceptBtn.disabled = !this.checked;
+      });
+      
+      acceptBtn.addEventListener('click', function() {
+        if (checkbox.checked) {
+          // Set cookie to remember consent
+          document.cookie = 'consent_accepted=true; path=/; max-age=86400'; // 24 hours
+          overlay.remove();
+        }
+      });
+    }
+  });
+</script>
+<% end %>

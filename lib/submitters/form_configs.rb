@@ -16,6 +16,8 @@ module Submitters
                     AccountConfig::ALLOW_TYPED_SIGNATURE,
                     AccountConfig::WITH_SUBMITTER_TIMEZONE_KEY,
                     AccountConfig::WITH_SIGNATURE_ID_REASON_KEY,
+                    AccountConfig::CONSENT_DOCUMENT_URL_KEY,
+                    AccountConfig::CONSENT_DOCUMENT_TEXT_KEY,
                     *(Docuseal.multitenant? ? [] : [AccountConfig::POLICY_LINKS_KEY])].freeze
 
     module_function
@@ -39,11 +41,24 @@ module Submitters
       with_field_labels = find_safe_value(configs, AccountConfig::WITH_FIELD_LABELS_KEY) != false
       policy_links = find_safe_value(configs, AccountConfig::POLICY_LINKS_KEY)
 
+      # Consent: Check template preferences first, fall back to account defaults
+      template_prefs = submitter.submission.template&.preferences || {}
+      consent_enabled = template_prefs['consent_enabled'] == true
+      consent_document_url = if consent_enabled
+                               template_prefs['consent_document_url'].presence ||
+                                 find_safe_value(configs, AccountConfig::CONSENT_DOCUMENT_URL_KEY)
+                             end
+      consent_document_text = if consent_enabled
+                                template_prefs['consent_document_text'].presence ||
+                                  find_safe_value(configs, AccountConfig::CONSENT_DOCUMENT_TEXT_KEY)
+                              end
+
       attrs = { completed_button:, with_typed_signature:, with_confetti:,
                 reuse_signature:, with_decline:, with_partial_download:,
                 policy_links:, enforce_signing_order:, completed_message:,
                 require_signing_reason:, prefill_signature:, with_submitter_timezone:,
-                with_signature_id_reason:, with_signature_id:, with_field_labels: }
+                with_signature_id_reason:, with_signature_id:, with_field_labels:,
+                consent_enabled:, consent_document_url:, consent_document_text: }
 
       keys.each do |key|
         attrs[key.to_sym] = configs.find { |e| e.key == key.to_s }&.value

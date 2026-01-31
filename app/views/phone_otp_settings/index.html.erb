@@ -1,0 +1,60 @@
+<div class="flex flex-wrap space-y-4 md:flex-nowrap md:space-y-0">
+  <%= render 'shared/settings_nav' %>
+  <div class="flex-grow max-w-xl mx-auto">
+    <h1 class="text-4xl font-bold mb-4"><%= t('phone_otp_webhook') %></h1>
+    <p class="text-base-content/70 mb-6">
+      <%= t('configure_webhook_to_receive_phone_otp_codes_for_user_verification') %>
+    </p>
+
+    <%= form_for @encrypted_config, url: settings_phone_otp_index_path, method: :post, html: { autocomplete: 'off', class: 'space-y-4' } do |f| %>
+      <div class="form-control">
+        <%= f.label :url, t('webhook_url'), class: 'label' %>
+        <%= f.text_field :url, value: @encrypted_config.value&.dig('url'), class: 'base-input w-full', placeholder: 'https://your-sms-gateway.com/api/send-otp' %>
+        <label class="label">
+          <span class="label-text-alt text-base-content/70">
+            <%= t('the_otp_will_be_sent_to_this_url_via_post_request') %>
+          </span>
+        </label>
+      </div>
+
+      <div class="form-control">
+        <%= f.label :bearer_token, t('bearer_token'), class: 'label' %>
+        <password-input class="block relative">
+          <%= f.text_field :bearer_token, value: @encrypted_config.value&.dig('bearer_token'), class: 'base-input w-full', placeholder: t('your_api_key_or_bearer_token'), autocomplete: 'off' %>
+        </password-input>
+        <label class="label">
+          <span class="label-text-alt text-base-content/70">
+            <%= t('optional_bearer_token_for_authorization_header') %>
+          </span>
+        </label>
+      </div>
+
+      <div class="collapse collapse-arrow bg-base-200 rounded-lg">
+        <input type="checkbox" class="min-h-0" />
+        <div class="collapse-title py-3 min-h-0 font-medium">
+          <%= t('webhook_payload_format') %>
+        </div>
+        <div class="collapse-content">
+          <pre class="text-xs bg-base-300 p-3 rounded overflow-x-auto"><code>{
+  "phone_number": "+1234567890",
+  "otp": "123456",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "submitter_id": 123,
+  "submitter_email": "user@example.com",
+  "submitter_name": "John Doe",
+  "submission_id": 456,
+  "template_name": "Contract Template"
+}</code></pre>
+          <p class="text-sm text-base-content/70 mt-2">
+            <%= t('headers_include_content_type_application_json_and_authorization_bearer_your_token') %>
+          </p>
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-4">
+        <%= f.submit t('save'), class: 'base-button' %>
+      </div>
+    <% end %>
+  </div>
+  <div class="w-0 md:w-52"></div>
+</div>
