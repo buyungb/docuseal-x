@@ -511,6 +511,9 @@ en: &en
   tenant_admin: Tenant Admin
   editor: Editor
   viewer: Viewer
+  full_access_to_all_resources: Full access to all resources
+  can_manage_own_templates_and_submissions: Can manage own templates and submissions
+  read_only_access: Read-only access
   member: Member
   agent: Agent
   superadmin: Superadmin
