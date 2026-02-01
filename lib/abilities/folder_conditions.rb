@@ -4,21 +4,15 @@ module Abilities
   module FolderConditions
     module_function
 
-    # For editors - can see own folders OR folders shared with them
+    # For editors - can see own folders OR folders shared with them OR default folder
     def editor_collection(user)
-      own_folders = TemplateFolder.where(author_id: user.id, account_id: user.account_id)
       shared_folder_ids = FolderAccess.where(user_id: user.id).select(:template_folder_id)
 
-      # Also include default folder
-      default_folder = TemplateFolder.where(account_id: user.account_id, name: TemplateFolder::DEFAULT_NAME)
-
-      TemplateFolder.where(
-        TemplateFolder.arel_table[:id].in(
-          own_folders.select(:id).arel
-            .union(:all, shared_folder_ids.arel)
-            .union(:all, default_folder.select(:id).arel)
-        )
-      ).where(account_id: user.account_id)
+      TemplateFolder.where(account_id: user.account_id).where(
+        TemplateFolder.arel_table[:author_id].eq(user.id)
+          .or(TemplateFolder.arel_table[:id].in(shared_folder_ids.arel))
+          .or(TemplateFolder.arel_table[:name].eq(TemplateFolder::DEFAULT_NAME))
+      )
     end
 
     def editor_entity(folder, user:)
@@ -30,18 +24,14 @@ module Abilities
       false
     end
 
-    # For viewers - can only see folders explicitly shared with them
+    # For viewers - can only see folders explicitly shared with them OR default folder
     def viewer_collection(user)
       shared_folder_ids = FolderAccess.where(user_id: user.id).select(:template_folder_id)
 
-      # Also include default folder
-      default_folder = TemplateFolder.where(account_id: user.account_id, name: TemplateFolder::DEFAULT_NAME)
-
-      TemplateFolder.where(
-        TemplateFolder.arel_table[:id].in(
-          shared_folder_ids.arel.union(:all, default_folder.select(:id).arel)
-        )
-      ).where(account_id: user.account_id)
+      TemplateFolder.where(account_id: user.account_id).where(
+        TemplateFolder.arel_table[:id].in(shared_folder_ids.arel)
+          .or(TemplateFolder.arel_table[:name].eq(TemplateFolder::DEFAULT_NAME))
+      )
     end
 
     def viewer_entity(folder, user:)

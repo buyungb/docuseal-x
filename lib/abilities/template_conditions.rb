@@ -32,18 +32,14 @@ module Abilities
 
     # For editors - can see own templates OR templates shared with them OR templates in shared folders
     def editor_collection(user)
-      own_templates = Template.where(author_id: user.id, account_id: user.account_id)
       shared_template_ids = TemplateAccess.where(user_id: user.id).select(:template_id)
       shared_folder_ids = FolderAccess.where(user_id: user.id).select(:template_folder_id)
-      templates_in_shared_folders = Template.where(folder_id: shared_folder_ids, account_id: user.account_id)
 
-      Template.where(
-        Template.arel_table[:id].in(
-          own_templates.select(:id).arel
-            .union(:all, shared_template_ids.arel)
-            .union(:all, templates_in_shared_folders.select(:id).arel)
-        )
-      ).where(account_id: user.account_id)
+      Template.where(account_id: user.account_id).where(
+        Template.arel_table[:author_id].eq(user.id)
+          .or(Template.arel_table[:id].in(shared_template_ids.arel))
+          .or(Template.arel_table[:folder_id].in(shared_folder_ids.arel))
+      )
     end
 
     def editor_entity(template, user:)
@@ -59,13 +55,11 @@ module Abilities
     def viewer_collection(user)
       shared_template_ids = TemplateAccess.where(user_id: user.id).select(:template_id)
       shared_folder_ids = FolderAccess.where(user_id: user.id).select(:template_folder_id)
-      templates_in_shared_folders = Template.where(folder_id: shared_folder_ids, account_id: user.account_id)
 
-      Template.where(
-        Template.arel_table[:id].in(
-          shared_template_ids.arel.union(:all, templates_in_shared_folders.select(:id).arel)
-        )
-      ).where(account_id: user.account_id)
+      Template.where(account_id: user.account_id).where(
+        Template.arel_table[:id].in(shared_template_ids.arel)
+          .or(Template.arel_table[:folder_id].in(shared_folder_ids.arel))
+      )
     end
 
     def viewer_entity(template, user:)

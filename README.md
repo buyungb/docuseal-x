@@ -102,8 +102,8 @@ docker pull docuseal/docuseal
 # Restart the container (or use docker compose pull && docker compose up -d)
 docker compose up -d
 
-# Run database migrations
-docker exec -it <container_name> rails db:migrate
+# Run database migrations (app is located in /app directory)
+docker exec -it -w /app <container_name> bundle exec rails db:migrate
 ```
 
 > **Why run migrations?** Database migrations apply schema changes required by new features (new tables, columns, indexes). Without running migrations after an update, new features may not work correctly or the application may encounter errors when accessing updated database structures.
