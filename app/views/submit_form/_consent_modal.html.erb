@@ -16,38 +16,38 @@
     
     <div class="form-control mb-4">
       <label class="cursor-pointer flex items-start gap-3">
-        <input type="checkbox" id="consent_checkbox" class="checkbox checkbox-primary mt-1" />
+        <input type="checkbox" id="consent_checkbox" class="checkbox checkbox-primary mt-1" onchange="window.handleConsentCheckbox(this)" />
         <span class="label-text text-sm">
           <%= consent_text.presence || t('i_have_read_and_agree_to_the_terms_and_conditions') %>
         </span>
       </label>
     </div>
     
-    <button id="consent_accept_btn" class="btn btn-primary w-full" disabled>
+    <button id="consent_accept_btn" class="btn btn-primary w-full" disabled onclick="window.handleConsentAccept()">
       <%= t('continue') %>
     </button>
   </div>
 </div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const checkbox = document.getElementById('consent_checkbox');
-    const acceptBtn = document.getElementById('consent_accept_btn');
-    const overlay = document.getElementById('consent_overlay');
+  (function() {
+    window.handleConsentCheckbox = function(checkbox) {
+      var acceptBtn = document.getElementById('consent_accept_btn');
+      if (acceptBtn) {
+        acceptBtn.disabled = !checkbox.checked;
+      }
+    };
     
-    if (checkbox && acceptBtn && overlay) {
-      checkbox.addEventListener('change', function() {
-        acceptBtn.disabled = !this.checked;
-      });
+    window.handleConsentAccept = function() {
+      var checkbox = document.getElementById('consent_checkbox');
+      var overlay = document.getElementById('consent_overlay');
       
-      acceptBtn.addEventListener('click', function() {
-        if (checkbox.checked) {
-          // Set cookie to remember consent
-          document.cookie = 'consent_accepted=true; path=/; max-age=86400'; // 24 hours
-          overlay.remove();
-        }
-      });
-    }
-  });
+      if (checkbox && checkbox.checked && overlay) {
+        document.cookie = 'consent_accepted=true; path=/; max-age=86400';
+        overlay.style.display = 'none';
+        overlay.remove();
+      }
+    };
+  })();
 </script>
 <% end %>

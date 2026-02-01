@@ -169,14 +169,24 @@ module Submitters
 
   def send_signature_requests(submitters, delay_seconds: nil)
     submitters.each_with_index do |submitter, index|
-      next if submitter.email.blank?
+      # Send email invitation
+      if submitter.email.present? && !submitter.declined_at? && submitter.preferences['send_email'] != false
+        if delay_seconds
+          SendSubmitterInvitationEmailJob.perform_in((delay_seconds + index).seconds, 'submitter_id' => submitter.id)
+        else
+          SendSubmitterInvitationEmailJob.perform_async('submitter_id' => submitter.id)
+        end
+      end
+
+      # Send phone webhook invitation (if phone is provided and webhook is configured)
+      next if submitter.phone.blank?
       next if submitter.declined_at?
-      next if submitter.preferences['send_email'] == false
+      next if submitter.preferences['send_sms'] == false
 
       if delay_seconds
-        SendSubmitterInvitationEmailJob.perform_in((delay_seconds + index).seconds, 'submitter_id' => submitter.id)
+        SendSubmitterInvitationWebhookJob.perform_in((delay_seconds + index).seconds, 'submitter_id' => submitter.id)
       else
-        SendSubmitterInvitationEmailJob.perform_async('submitter_id' => submitter.id)
+        SendSubmitterInvitationWebhookJob.perform_async('submitter_id' => submitter.id)
       end
     end
   end

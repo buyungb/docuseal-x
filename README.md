@@ -110,14 +110,33 @@ docker exec -it -w /app <container_name> bundle exec rails db:migrate
 
 ## Custom Features
 
-### Phone OTP Verification via Webhook
+### Phone Webhook Integration
 
-Send OTP codes to your own SMS gateway for phone verification before signing. Configure in **Settings > Phone OTP**:
+Send signing invitations and OTP codes to your own SMS gateway via webhook. Configure in **Settings > Phone OTP**:
 
 - **Webhook URL**: Your SMS gateway endpoint
 - **Bearer Token**: Optional authentication token
 
-When phone 2FA is enabled for a template, the system sends a POST request with:
+#### Invitation Webhook
+When a submitter has a phone number, the system sends an invitation webhook:
+```json
+{
+  "event_type": "invitation",
+  "phone_number": "+1234567890",
+  "sign_url": "https://your-domain.com/s/abc123",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "submitter_id": 123,
+  "submitter_email": "user@example.com",
+  "submitter_name": "John Doe",
+  "submission_id": 456,
+  "template_name": "Contract Template",
+  "template_id": 789,
+  "message": "You have been invited to sign: Contract Template. Click here to sign: https://..."
+}
+```
+
+#### OTP Verification Webhook
+When phone 2FA is enabled for a template:
 ```json
 {
   "phone_number": "+1234567890",

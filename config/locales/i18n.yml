@@ -830,6 +830,8 @@ en: &en
   leave_empty_to_use_account_default: Leave empty to use account default
   the_sender_has_requested_phone_verification_via_otp_sent_to_your_phone_html: The sender has requested phone verification. An OTP code will be sent to your phone number ending in <strong>%{phone}</strong>.
   resend_code: Resend Code
+  send_via_phone_webhook: Send via phone webhook
+  invitation_sent_via_phone_webhook: Invitation sent via phone webhook
   select_data_residency: Select data residency
   account_name_has_invited_you_to_fill_and_sign_documents_online_effortlessly_with_a_secure_fast_and_user_friendly_digital_document_signing_solution: '%{account_name} has invited you to fill and sign documents online effortlessly with a secure, fast, and user-friendly digital document signing solution.'
   review_or_download_completed_documents_fill_and_sign_documents_online_effortlessly_with_a_secure_fast_and_user_friendly_digital_document_signing_solution: Review or download completed documents. Fill and sign documents online effortlessly with a secure, fast, and user-friendly digital document signing solution.
