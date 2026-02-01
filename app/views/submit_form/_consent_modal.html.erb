@@ -16,38 +16,42 @@
     
     <div class="form-control mb-4">
       <label class="cursor-pointer flex items-start gap-3">
-        <input type="checkbox" id="consent_checkbox" class="checkbox checkbox-primary mt-1" onchange="window.handleConsentCheckbox(this)" />
+        <input type="checkbox" id="consent_checkbox" class="checkbox checkbox-primary mt-1" />
         <span class="label-text text-sm">
           <%= consent_text.presence || t('i_have_read_and_agree_to_the_terms_and_conditions') %>
         </span>
       </label>
     </div>
     
-    <button id="consent_accept_btn" class="btn btn-primary w-full" disabled onclick="window.handleConsentAccept()">
+    <button id="consent_accept_btn" class="btn btn-primary w-full btn-disabled" type="button">
       <%= t('continue') %>
     </button>
   </div>
 </div>
 
-<script>
-  (function() {
-    window.handleConsentCheckbox = function(checkbox) {
-      var acceptBtn = document.getElementById('consent_accept_btn');
-      if (acceptBtn) {
-        acceptBtn.disabled = !checkbox.checked;
+<script type="text/javascript">
+  var consentCheckbox = document.getElementById('consent_checkbox');
+  var consentAcceptBtn = document.getElementById('consent_accept_btn');
+  var consentOverlay = document.getElementById('consent_overlay');
+  
+  if (consentCheckbox && consentAcceptBtn) {
+    consentCheckbox.addEventListener('click', function(e) {
+      if (this.checked) {
+        consentAcceptBtn.classList.remove('btn-disabled');
+        consentAcceptBtn.removeAttribute('disabled');
+      } else {
+        consentAcceptBtn.classList.add('btn-disabled');
+        consentAcceptBtn.setAttribute('disabled', 'disabled');
       }
-    };
+    });
     
-    window.handleConsentAccept = function() {
-      var checkbox = document.getElementById('consent_checkbox');
-      var overlay = document.getElementById('consent_overlay');
-      
-      if (checkbox && checkbox.checked && overlay) {
-        document.cookie = 'consent_accepted=true; path=/; max-age=86400';
-        overlay.style.display = 'none';
-        overlay.remove();
+    consentAcceptBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (consentCheckbox.checked && consentOverlay) {
+        document.cookie = 'consent_accepted=true; path=/; max-age=86400; SameSite=Lax';
+        consentOverlay.parentNode.removeChild(consentOverlay);
       }
-    };
-  })();
+    });
+  }
 </script>
 <% end %>

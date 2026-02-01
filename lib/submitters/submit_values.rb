@@ -384,7 +384,31 @@ module Submitters
       end
     end
 
-    def validate_value!(_value, _field, _params, _submitter, _request)
+    def validate_value!(value, field, params, submitter, _request)
+      return true if field.blank?
+      return true unless field['type'] == 'phone'
+      return true if value.blank?
+
+      # Verify phone OTP code
+      one_time_code = params[:one_time_code].to_s.gsub(/\D/, '')
+      return true if one_time_code.blank?
+
+      phone = value.to_s.gsub(/[^\d+]/, '')
+      otp_value = [phone, submitter.slug].join(':')
+
+      unless PhoneVerificationCodes.verify(one_time_code, otp_value)
+        raise ValidationError, I18n.t(:invalid_code)
+      end
+
+      # Record phone verification event
+      unless submitter.submission_events.exists?(event_type: 'phone_verified')
+        SubmissionEvent.create!(
+          submitter:,
+          event_type: 'phone_verified',
+          data: { phone: }
+        )
+      end
+
       true
     end
   end
