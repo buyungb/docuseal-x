@@ -35,7 +35,7 @@
   var consentOverlay = document.getElementById('consent_overlay');
   
   if (consentCheckbox && consentAcceptBtn) {
-    consentCheckbox.addEventListener('click', function(e) {
+    consentCheckbox.addEventListener('change', function(e) {
       if (this.checked) {
         consentAcceptBtn.classList.remove('btn-disabled');
         consentAcceptBtn.removeAttribute('disabled');
