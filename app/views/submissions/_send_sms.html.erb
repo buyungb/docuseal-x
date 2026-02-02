@@ -1,6 +1,6 @@
 <div class="form-control">
   <div class="flex items-center justify-between py-2">
     <span><%= t('send_sms_invitation') %></span>
-    <%= f.check_box 'submitters[][preferences][send_sms]', { checked: local_assigns[:checked] == true, class: 'toggle' }, 'true', 'false' %>
+    <%= check_box_tag 'submission[1][submitters][][preferences][send_sms]', 'true', local_assigns[:checked] == true, class: 'toggle' %>
   </div>
 </div>
