@@ -102,7 +102,7 @@ docker pull docuseal/docuseal
 
 # Restart the container (or use docker compose pull && docker compose up -d)
 docker compose up -d
-
+git 
 # Run database migrations (app is located in /app directory)
 docker exec -it -w /app <container_name> bundle exec rails db:migrate
 ```
@@ -201,6 +201,101 @@ Three user roles with different permissions:
 - **Viewer**: Read-only access to shared resources
 
 Templates and folders can be shared between users for collaboration.
+
+### DOCX Dynamic Content Variables API
+
+Create personalized documents from DOCX templates with dynamic content variables. Send a DOCX file with variables to auto-generate submissions.
+
+**API Endpoint:** `POST /api/submissions/docx`
+
+**Variable Syntax:**
+- Simple variables: `[[variable_name]]`
+- Conditionals: `[[if:is_vip]]VIP content[[else]]Regular content[[end]]`
+- Loops: `[[for:items]][[item.name]] - [[item.price]][[end]]`
+
+**Example Request:**
+```javascript
+const response = await fetch('/api/submissions/docx', {
+  method: 'POST',
+  headers: {
+    'X-Auth-Token': 'YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    name: 'Sales Contract',
+    variables: {
+      customer_name: 'John Doe',
+      is_vip: true,
+      items: [
+        { name: 'Product A', quantity: 2, price: '100.00' },
+        { name: 'Product B', quantity: 1, price: '50.00' }
+      ]
+    },
+    documents: [{
+      name: 'contract.docx',
+      file: '<base64-encoded-docx>'
+    }],
+    submitters: [{
+      role: 'Customer',
+      email: 'john@example.com'
+    }]
+  })
+});
+```
+
+### PDF Embedded Text Tags API
+
+Create fillable forms from PDFs containing embedded text tags. Tags are automatically converted to interactive form fields.
+
+**API Endpoint:** `POST /api/submissions/pdf`
+
+**Tag Syntax:** `{{FieldName;type=signature;role=Signer;required=true}}`
+
+**Supported Field Types:**
+- `text`, `signature`, `initials`, `date`, `datenow`
+- `image`, `file`, `checkbox`, `select`, `radio`, `multiple`
+- `phone`, `number`, `stamp`, `verification`, `kba`
+
+**Tag Attributes:**
+- `type`: Field type (default: text)
+- `role`: Signer role name
+- `required`: true/false (default: true)
+- `readonly`: true/false (default: false)
+- `default`: Default value
+- `options`: Comma-separated options for select/radio
+- `format`: Date format (e.g., DD/MM/YYYY) or signature format
+- `width`, `height`: Field dimensions in pixels
+
+**Example Tags in PDF:**
+```
+Customer Name: {{Customer Name;type=text;required=true}}
+Signature: {{Sign;type=signature;role=Customer}}
+Date: {{Date;type=datenow;readonly=true}}
+Agreement: {{Agree;type=checkbox}}
+Plan: {{Plan;type=select;options=Basic,Pro,Enterprise}}
+```
+
+**Example Request:**
+```javascript
+const response = await fetch('/api/submissions/pdf', {
+  method: 'POST',
+  headers: {
+    'X-Auth-Token': 'YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    name: 'Agreement',
+    documents: [{
+      name: 'agreement.pdf',
+      file: '<base64-encoded-pdf>'
+    }],
+    submitters: [{
+      role: 'Customer',
+      email: 'customer@example.com'
+    }]
+  })
+});
+```
 
 ## For Businesses
 ### Integrate seamless document signing into your web or mobile apps with DocuSeal

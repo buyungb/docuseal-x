@@ -13,6 +13,7 @@ gem 'cancancan'
 gem 'csv', require: false
 gem 'csv-safe', require: false
 gem 'devise'
+gem 'docx', require: false
 gem 'devise-two-factor'
 gem 'dotenv', require: false
 gem 'email_typo'
