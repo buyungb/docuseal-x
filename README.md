@@ -102,7 +102,7 @@ docker pull docuseal/docuseal
 
 # Restart the container (or use docker compose pull && docker compose up -d)
 docker compose up -d
-git 
+
 # Run database migrations (app is located in /app directory)
 docker exec -it -w /app <container_name> bundle exec rails db:migrate
 ```
@@ -206,6 +206,8 @@ Templates and folders can be shared between users for collaboration.
 
 Create personalized documents from DOCX templates with dynamic content variables. Send a DOCX file with variables to auto-generate submissions.
 
+> **📖 Full Guide:** See [docs/api/docx-variables-guide.md](docs/api/docx-variables-guide.md) for complete documentation with real-world examples.
+
 **API Endpoint:** `POST /api/submissions/docx`
 
 **Variable Syntax:**
@@ -246,6 +248,8 @@ const response = await fetch('/api/submissions/docx', {
 ### PDF Embedded Text Tags API
 
 Create fillable forms from PDFs containing embedded text tags. Tags are automatically converted to interactive form fields.
+
+> **📖 Full Guide:** See [docs/api/docx-variables-guide.md](docs/api/docx-variables-guide.md) for complete documentation including PDF text tags.
 
 **API Endpoint:** `POST /api/submissions/pdf`
 

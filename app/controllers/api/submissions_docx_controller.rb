@@ -131,14 +131,28 @@ module Api
       return nil if file_data.blank?
 
       if file_data.is_a?(String)
-        # Assume base64 encoded
-        Base64.decode64(file_data)
+        # Try strict base64 decode first, fall back to lenient decode
+        begin
+          decoded = Base64.strict_decode64(file_data)
+        rescue ArgumentError
+          # Try lenient decode if strict fails (handles newlines in base64)
+          decoded = Base64.decode64(file_data)
+        end
+
+        # Validate DOCX magic bytes (PK header for ZIP)
+        unless decoded[0..3] == "PK\x03\x04"
+          Rails.logger.error("Invalid DOCX file: missing PK header. First 4 bytes: #{decoded[0..3].bytes.inspect}")
+          return nil
+        end
+
+        decoded
       elsif file_data.respond_to?(:read)
         file_data.read
       else
         file_data.to_s
       end
-    rescue StandardError
+    rescue StandardError => e
+      Rails.logger.error("decode_file error: #{e.message}")
       nil
     end
 

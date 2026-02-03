@@ -1,0 +1,72 @@
+CONTRACT AGREEMENT
+
+Contract Number: [[contract_number]]
+Date: [[contract_date]]
+
+---
+
+PARTIES
+
+Seller: [[company_name]]
+Address: [[company_address]]
+
+Buyer: [[customer_name]]
+Company: [[customer_company]]
+Address: [[customer_address]]
+Email: [[customer_email]]
+
+---
+
+ORDER DETAILS
+
+[[for:items]]
+Product: [[item.name]]
+Description: [[item.description]]
+Quantity: [[item.quantity]]
+Unit Price: $[[item.unit_price]]
+Subtotal: $[[item.subtotal]]
+
+[[end]]
+
+---
+
+PRICING
+
+Subtotal: $[[subtotal]]
+[[if:has_discount]]
+Discount ([[discount_percent]]%): -$[[discount_amount]]
+[[end]]
+Tax ([[tax_rate]]%): $[[tax_amount]]
+TOTAL: $[[total]]
+
+---
+
+TERMS
+
+Payment Due: Net [[payment_days]] days
+Delivery: [[delivery_days]] business days
+Warranty: [[warranty_months]] months
+
+[[if:special_terms]]
+Special Terms: [[special_terms]]
+[[end]]
+
+---
+
+SIGNATURES
+
+I agree to the terms and conditions stated in this contract.
+
+
+Buyer Signature: {{BuyerSign;type=signature;role=Buyer;required=true}}
+
+Buyer Name: {{BuyerName;type=text;role=Buyer}}
+
+Date: {{BuyerDate;type=datenow;role=Buyer}}
+
+
+Seller Signature: {{SellerSign;type=signature;role=Seller;required=true}}
+
+Seller Name: {{SellerName;type=text;role=Seller}}
+
+Date: {{SellerDate;type=datenow;role=Seller}}

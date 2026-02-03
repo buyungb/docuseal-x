@@ -30,10 +30,12 @@ module Templates
       tempfile = Tempfile.new(['docx_input', '.docx'])
       tempfile.binmode
       tempfile.write(docx_data)
-      tempfile.rewind
+      tempfile.flush  # Ensure data is written to disk
+      tempfile.close  # Close the file so docx gem can open it
 
       output_tempfile = Tempfile.new(['docx_output', '.docx'])
       output_tempfile.binmode
+      output_tempfile.close
 
       begin
         doc = Docx::Document.open(tempfile.path)
@@ -45,13 +47,10 @@ module Templates
         process_tables(doc, variables)
 
         doc.save(output_tempfile.path)
-        output_tempfile.rewind
-        output_tempfile.read
+        File.binread(output_tempfile.path)
       ensure
-        tempfile.close
-        tempfile.unlink
-        output_tempfile.close
-        output_tempfile.unlink
+        tempfile.unlink if tempfile
+        output_tempfile.unlink if output_tempfile
       end
     end
 

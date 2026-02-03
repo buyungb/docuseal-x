@@ -1,0 +1,61 @@
+# =============================================================================
+# DOCX Submission - Single curl command
+# =============================================================================
+# 
+# STEP 1: Create simple_contract.docx
+#   - Copy content from simple_contract_template.txt
+#   - Paste into Google Docs or Word
+#   - Save/Download as simple_contract.docx
+#
+# STEP 2: Run this command (edit API_URL and API_TOKEN first)
+# =============================================================================
+
+# Set your values
+API_URL="https://app-docuseal-efewx1-8bf21e-20-198-225-77.traefik.me"
+API_TOKEN="YOUR_API_TOKEN"
+
+# Single command - copy and paste:
+curl -X POST "${API_URL}/api/submissions/docx" \
+  -H "X-Auth-Token: ${API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Test Contract",
+    "variables": {
+      "contract_number": "TEST-001",
+      "contract_date": "February 3, 2026",
+      "company_name": "My Company",
+      "company_address": "123 Main St",
+      "customer_name": "John Doe",
+      "customer_company": "Client Inc",
+      "customer_address": "456 Oak Ave",
+      "customer_email": "john@example.com",
+      "items": [
+        {"name": "Product A", "description": "Item 1", "quantity": "2", "unit_price": "100.00", "subtotal": "200.00"},
+        {"name": "Service B", "description": "Item 2", "quantity": "5", "unit_price": "50.00", "subtotal": "250.00"}
+      ],
+      "subtotal": "450.00",
+      "has_discount": false,
+      "tax_rate": "10",
+      "tax_amount": "45.00",
+      "total": "495.00",
+      "payment_days": "30",
+      "delivery_days": "7",
+      "warranty_months": "12"
+    },
+    "documents": [{
+      "name": "contract.docx",
+      "file": "'"$(base64 -i simple_contract.docx | tr -d '\n')"'"
+    }],
+    "submitters": [
+      {"role": "Buyer", "email": "buyer@example.com", "name": "John Doe"},
+      {"role": "Seller", "email": "seller@example.com", "name": "Jane Smith"}
+    ],
+    "send_email": false
+  }'
+
+
+# =============================================================================
+# ONE-LINER VERSION (run from the samples folder)
+# =============================================================================
+
+API_URL="https://your-docuseal.com" API_TOKEN="YOUR_TOKEN" && curl -X POST "${API_URL}/api/submissions/docx" -H "X-Auth-Token: ${API_TOKEN}" -H "Content-Type: application/json" -d '{"name":"Test","variables":{"contract_number":"T-001","contract_date":"2026-02-03","company_name":"Company","customer_name":"Customer","items":[{"name":"Item","quantity":"1","unit_price":"100","subtotal":"100"}],"total":"100","payment_days":"30","delivery_days":"7","warranty_months":"12"},"documents":[{"name":"contract.docx","file":"'"$(base64 -i simple_contract.docx | tr -d '\n')"'"}],"submitters":[{"role":"Buyer","email":"test@example.com"}],"send_email":false}'
