@@ -108,19 +108,21 @@ def main():
             "jurisdiction": "California"
         },
         "documents": [{
-            "name": "contract.docx",
+            "name": "simple_contract.docx",
             "file": docx_base64
         }],
         "submitters": [
             {
                 "role": "Buyer",
-                "email": "buyer@example.com",
-                "name": "John Doe"
+                "email": "buyung@aplindo.tech",
+                "name": "John Doe",
+                "phone": "+62811192575"
             },
             {
                 "role": "Seller",
-                "email": "seller@example.com",
-                "name": "Jane Smith"
+                "email": "anggit@aplindo.tech",
+                "name": "Jane Smith",
+                "phone": "+6281770938580"
             }
         ],
         "send_email": False,

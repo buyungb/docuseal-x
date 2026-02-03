@@ -84,10 +84,15 @@ module Api
           doc[:content_type] = 'application/pdf'
         end
 
-        tempfile = Tempfile.new([doc[:name], File.extname(doc[:name]).presence || '.pdf'])
+        Rails.logger.info("DOCX Submission: Creating attachment for #{doc[:name]}, size: #{doc[:data].bytesize}, content_type: #{doc[:content_type]}")
+        
+        tempfile = Tempfile.new([File.basename(doc[:name], '.*'), File.extname(doc[:name]).presence || '.pdf'])
         tempfile.binmode
         tempfile.write(doc[:data])
+        tempfile.flush
         tempfile.rewind
+
+        Rails.logger.info("DOCX Submission: Tempfile created at #{tempfile.path}, size: #{tempfile.size}")
 
         uploaded_file = ActionDispatch::Http::UploadedFile.new(
           filename: doc[:name],
@@ -95,11 +100,17 @@ module Api
           tempfile: tempfile
         )
 
-        Templates::CreateAttachments.call(template, { files: [uploaded_file] }, extract_fields: true)
+        Rails.logger.info("DOCX Submission: Calling CreateAttachments...")
+        result = Templates::CreateAttachments.call(template, { files: [uploaded_file] }, extract_fields: true)
+        Rails.logger.info("DOCX Submission: CreateAttachments result: #{result.inspect}")
 
         tempfile.close
         tempfile.unlink
       end
+
+      # Reload template to get updated documents
+      template.reload
+      Rails.logger.info("DOCX Submission: Template has #{template.documents.count} documents")
 
       # Set up submitters from params
       raw_submitters = params[:submitters] || [{ role: 'First Party', email: params[:email] }]
@@ -123,7 +134,7 @@ module Api
 
       Rails.logger.info("DOCX Submission: Template saved with ID #{template.id}, submitters: #{template.submitters.inspect}")
 
-      # Create submissions - must include 'role' or 'uuid' for matching
+      # Create submissions - use symbol keys as expected by create_from_submitters
       submissions_attrs = [{
         submitters: submitters_params.map.with_index do |s, i|
           role_name = (s['role'] || s[:role] || s['name'] || s[:name] || "Party #{i + 1}").to_s
@@ -131,15 +142,18 @@ module Api
           phone_val = (s['phone'] || s[:phone]).to_s
           name_val = (s['name'] || s[:name]).to_s
           
+          # Use symbol keys - this is what create_from_submitters expects
           submitter_data = {
-            'uuid' => template.submitters[i]['uuid'],
-            'role' => role_name  # Must match template submitter name
+            uuid: template.submitters[i]['uuid'],
+            role: role_name
           }
-          submitter_data['email'] = email_val if email_val.present?
-          submitter_data['phone'] = phone_val if phone_val.present?
-          submitter_data['name'] = name_val if name_val.present?
-          submitter_data['external_id'] = (s['external_id'] || s[:external_id]).to_s if (s['external_id'] || s[:external_id]).present?
-          submitter_data['metadata'] = (s['metadata'] || s[:metadata] || {})
+          submitter_data[:email] = email_val if email_val.present?
+          submitter_data[:phone] = phone_val if phone_val.present?
+          submitter_data[:name] = name_val if name_val.present?
+          submitter_data[:external_id] = (s['external_id'] || s[:external_id]).to_s if (s['external_id'] || s[:external_id]).present?
+          submitter_data[:metadata] = (s['metadata'] || s[:metadata] || {})
+          
+          Rails.logger.info("DOCX Submission: Submitter #{i}: #{submitter_data.inspect}")
           
           submitter_data
         end
@@ -158,19 +172,13 @@ module Api
 
       Rails.logger.info("DOCX Submission: Created #{submissions.size} submission(s)")
       submissions.each do |sub|
-        Rails.logger.info("DOCX Submission: Submission ID=#{sub.id}, submitters=#{sub.submitters.map { |s| { id: s.id, email: s.email, slug: s.slug } }}")
+        Rails.logger.info("DOCX Submission: Submission ID=#{sub.id}, submitters=#{sub.submitters.map { |s| { id: s.id, email: s.email, phone: s.phone, slug: s.slug } }}")
       end
 
-      # Send signature requests if configured
-      send_email = params[:send_email]
-      send_email = true if send_email.nil?
-      
-      if send_email.to_s != 'false' && send_email != false
-        Rails.logger.info("DOCX Submission: Sending signature requests...")
-        Submissions.send_signature_requests(submissions)
-      else
-        Rails.logger.info("DOCX Submission: Skipping email (send_email=#{send_email})")
-      end
+      # Always call send_signature_requests - it handles email AND phone webhooks
+      # The send_email preference is already set at submitter level
+      Rails.logger.info("DOCX Submission: Sending signature requests (email + phone webhook)...")
+      Submissions.send_signature_requests(submissions)
 
       response_data = build_response(submissions)
       Rails.logger.info("DOCX Submission: Response = #{response_data.to_json}")

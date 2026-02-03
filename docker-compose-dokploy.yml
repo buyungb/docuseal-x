@@ -17,11 +17,15 @@ services:
       # Gotenberg for DOCX to PDF conversion
       GOTENBERG_URL: http://gotenberg:3000
 
+      # IMPORTANT: Set a persistent SECRET_KEY_BASE to avoid re-setup after deploy
+      # Generate with: openssl rand -hex 64
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:-your_secret_key_here_replace_with_64_hex_chars}
+
       # OPTIONAL: kalau Docuseal butuh base URL / force https, kamu bisa tambahkan ini
       # APP_URL: https://${HOST}
       # FORCE_SSL: "true"
     volumes:
-      - ./docuseal:/data/docuseal
+      - docuseal_data:/data/docuseal
 
     # ❗JANGAN expose ports di Dokploy (Traefik yang handle routing)
     # ports:
@@ -58,7 +62,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: docuseal
     volumes:
-      - ./pg_data:/var/lib/postgresql/data
+      - pg_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d docuseal"]
       interval: 5s
@@ -86,3 +90,10 @@ networks:
   # Network internal antar service (tidak diexpose)
   internal:
     driver: bridge
+
+# Named volumes for persistent data across deployments
+volumes:
+  docuseal_data:
+    driver: local
+  pg_data:
+    driver: local
