@@ -3,6 +3,7 @@ version: "3.8"
 services:
   docuseal:
     image: buyungbahari/docuseal-x:latest
+    pull_policy: always
     restart: unless-stopped
     depends_on:
       postgres:
