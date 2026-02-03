@@ -238,10 +238,14 @@ module Templates
 
     # Check if DOCX contains any variables that need processing
     def contains_variables?(docx_data)
+      return false if docx_data.blank?
+      return false unless docx_data[0..3] == "PK\x03\x04" # Validate ZIP header
+
       tempfile = Tempfile.new(['docx_check', '.docx'])
       tempfile.binmode
       tempfile.write(docx_data)
-      tempfile.rewind
+      tempfile.flush
+      tempfile.close
 
       begin
         doc = Docx::Document.open(tempfile.path)
@@ -265,9 +269,11 @@ module Templates
         end
 
         false
+      rescue StandardError => e
+        Rails.logger.warn("ProcessDocxVariables.contains_variables? error: #{e.message}")
+        false # Return false if we can't open the file, so we skip processing
       ensure
-        tempfile.close
-        tempfile.unlink
+        tempfile.unlink if tempfile
       end
     end
   end

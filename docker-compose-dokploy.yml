@@ -8,9 +8,14 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      gotenberg:
+        condition: service_started
     environment:
       # Koneksi DB internal docker network
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/docuseal
+      
+      # Gotenberg for DOCX to PDF conversion
+      GOTENBERG_URL: http://gotenberg:3000
 
       # OPTIONAL: kalau Docuseal butuh base URL / force https, kamu bisa tambahkan ini
       # APP_URL: https://${HOST}
@@ -59,6 +64,17 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - internal
+
+  # Gotenberg: DOCX/DOC to PDF conversion service
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    restart: unless-stopped
+    command:
+      - "gotenberg"
+      - "--api-timeout=60s"
+      - "--libreoffice-restart-after=10"
     networks:
       - internal
 
