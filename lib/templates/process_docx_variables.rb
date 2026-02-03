@@ -171,19 +171,56 @@ module Templates
     end
 
     def process_text_content(paragraph, variables)
-      text = paragraph.text
-      return if text.blank?
+      original_text = paragraph.text
+      return if original_text.blank?
 
       # Process conditionals first
-      text = process_conditionals(text, variables)
+      new_text = process_conditionals(original_text, variables)
 
       # Process simple variables
-      text = substitute_simple_variables(text, variables)
+      new_text = substitute_simple_variables(new_text, variables)
 
       # Update paragraph if text changed
-      paragraph.substitute(paragraph.text, text) if paragraph.text != text
+      if original_text != new_text
+        # The docx gem doesn't have a direct substitute method
+        # We need to work with the underlying XML
+        begin
+          # Try using gsub on each text run
+          paragraph.each_text_run do |run|
+            run_text = run.text
+            next if run_text.blank?
+            
+            # Process the run text
+            processed = process_conditionals(run_text, variables)
+            processed = substitute_simple_variables(processed, variables)
+            
+            if run_text != processed
+              run.text = processed
+            end
+          end
+        rescue NoMethodError
+          # Fallback: try to replace via node manipulation
+          replace_paragraph_text(paragraph, new_text)
+        end
+      end
     rescue StandardError => e
       Rails.logger.warn("Error processing paragraph: #{e.message}")
+    end
+
+    def replace_paragraph_text(paragraph, new_text)
+      # Access the underlying XML node
+      node = paragraph.node rescue paragraph
+      
+      # Find all text nodes and replace
+      text_nodes = node.xpath('.//w:t', 'w' => 'http://schemas.openxmlformats.org/wordprocessingml/2006/main')
+      
+      if text_nodes.any?
+        # Put all text in the first node, clear the rest
+        text_nodes.first.content = new_text
+        text_nodes[1..-1].each { |n| n.content = '' }
+      end
+    rescue StandardError => e
+      Rails.logger.warn("replace_paragraph_text error: #{e.message}")
     end
 
     def process_conditionals(text, variables)

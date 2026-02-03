@@ -102,31 +102,50 @@ module Api
       end
 
       # Set up submitters from params
-      submitters_params = params[:submitters] || [{ role: 'First Party', email: params[:email] }]
+      raw_submitters = params[:submitters] || [{ role: 'First Party', email: params[:email] }]
+      submitters_params = Array.wrap(raw_submitters).map do |s|
+        s = s.to_unsafe_h if s.is_a?(ActionController::Parameters)
+        s = s.with_indifferent_access if s.is_a?(Hash)
+        s
+      end
+
+      Rails.logger.info("DOCX Submission: Creating with #{submitters_params.size} submitters")
 
       # Build template submitters structure
       template.submitters = submitters_params.map.with_index do |s, i|
         {
           'uuid' => SecureRandom.uuid,
-          'name' => s[:role] || s[:name] || "Party #{i + 1}"
+          'name' => (s['role'] || s[:role] || s['name'] || s[:name] || "Party #{i + 1}").to_s
         }
       end
 
       template.save!
 
-      # Create submissions
+      Rails.logger.info("DOCX Submission: Template saved with ID #{template.id}, submitters: #{template.submitters.inspect}")
+
+      # Create submissions - must include 'role' or 'uuid' for matching
       submissions_attrs = [{
         submitters: submitters_params.map.with_index do |s, i|
-          {
-            uuid: template.submitters[i]['uuid'],
-            email: s[:email],
-            phone: s[:phone],
-            name: s[:name],
-            external_id: s[:external_id],
-            metadata: s[:metadata] || {}
-          }.compact
+          role_name = (s['role'] || s[:role] || s['name'] || s[:name] || "Party #{i + 1}").to_s
+          email_val = (s['email'] || s[:email]).to_s
+          phone_val = (s['phone'] || s[:phone]).to_s
+          name_val = (s['name'] || s[:name]).to_s
+          
+          submitter_data = {
+            'uuid' => template.submitters[i]['uuid'],
+            'role' => role_name  # Must match template submitter name
+          }
+          submitter_data['email'] = email_val if email_val.present?
+          submitter_data['phone'] = phone_val if phone_val.present?
+          submitter_data['name'] = name_val if name_val.present?
+          submitter_data['external_id'] = (s['external_id'] || s[:external_id]).to_s if (s['external_id'] || s[:external_id]).present?
+          submitter_data['metadata'] = (s['metadata'] || s[:metadata] || {})
+          
+          submitter_data
         end
       }]
+
+      Rails.logger.info("DOCX Submission: submissions_attrs = #{submissions_attrs.inspect}")
 
       submissions = Submissions.create_from_submitters(
         template: template,
@@ -137,11 +156,26 @@ module Api
         params: params
       )
 
-      # Send signature requests if configured
-      params[:send_email] = true unless params.key?(:send_email)
-      Submissions.send_signature_requests(submissions) unless params[:send_email].in?(['false', false])
+      Rails.logger.info("DOCX Submission: Created #{submissions.size} submission(s)")
+      submissions.each do |sub|
+        Rails.logger.info("DOCX Submission: Submission ID=#{sub.id}, submitters=#{sub.submitters.map { |s| { id: s.id, email: s.email, slug: s.slug } }}")
+      end
 
-      render json: build_response(submissions)
+      # Send signature requests if configured
+      send_email = params[:send_email]
+      send_email = true if send_email.nil?
+      
+      if send_email.to_s != 'false' && send_email != false
+        Rails.logger.info("DOCX Submission: Sending signature requests...")
+        Submissions.send_signature_requests(submissions)
+      else
+        Rails.logger.info("DOCX Submission: Skipping email (send_email=#{send_email})")
+      end
+
+      response_data = build_response(submissions)
+      Rails.logger.info("DOCX Submission: Response = #{response_data.to_json}")
+      
+      render json: response_data
     rescue StandardError => e
       Rails.logger.error("SubmissionsDocxController error: #{e.message}")
       Rails.logger.error(e.backtrace.first(10).join("\n"))
