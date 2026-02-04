@@ -70,7 +70,7 @@ For accurate `{{...}}` tag position detection, DocuSeal uses a PyMuPDF-based mic
 
 ## Template Syntax
 
-### Dynamic Variables (filled by API before signing)
+### 1. Dynamic Content Variables `[[...]]` (Replaced by API data)
 ```
 [[variable_name]]           - Simple variable
 [[if:condition]]...[[end]]  - Conditional block
@@ -78,15 +78,31 @@ For accurate `{{...}}` tag position detection, DocuSeal uses a PyMuPDF-based mic
 [[item.property]]           - Item accessor in loops
 ```
 
-### Form Field Tags (filled by signer during signing)
+### 2. Content Tags `{{name}}` WITHOUT type (Replaced by API data)
 ```
-{{FieldName;type=text}}                    - Text input
-{{Sign;type=signature;role=Buyer}}         - Signature
-{{Init;type=initials;role=Buyer}}          - Initials
-{{Date;type=datenow}}                      - Auto date
+{{prepared_by}}             - Replaced with variables["prepared_by"]
+{{company_rep}}             - Replaced with variables["company_rep"]
+```
+These tags are replaced with content from the `variables` object before PDF generation.
+
+### 3. Form Field Tags `{{name;type=X}}` WITH type (Interactive fields)
+```
+{{FieldName;type=text}}                    - Text input field
+{{Sign;type=signature;role=Buyer}}         - Signature field
+{{Init;type=initials;role=Buyer}}          - Initials field
+{{Date;type=datenow}}                      - Auto-filled date
 {{Agree;type=checkbox}}                    - Checkbox
 {{Choice;type=select;options=A,B,C}}       - Dropdown
 ```
+These tags become interactive form fields that signers fill out.
+
+### Key Difference
+
+| Tag | Has `type=` | Behavior |
+|-----|-------------|----------|
+| `[[name]]` | N/A | Replaced with API data |
+| `{{name}}` | NO | Replaced with API data |
+| `{{name;type=X}}` | YES | Interactive form field |
 
 ## API Usage Example
 
@@ -119,7 +135,9 @@ curl -X POST "https://your-docuseal.com/api/submissions/docx" \
       "total": "1100",
       "payment_days": "30",
       "delivery_days": "7",
-      "warranty_months": "12"
+      "warranty_months": "12",
+      "prepared_by": "Sales Team",
+      "prepared_date": "February 4, 2026"
     },
     "documents": [{"name": "contract.docx", "file": "'"$DOCX_BASE64"'"}],
     "submitters": [
@@ -128,6 +146,8 @@ curl -X POST "https://your-docuseal.com/api/submissions/docx" \
     ]
   }'
 ```
+
+Note: Both `[[variable]]` and `{{variable}}` (without type) are replaced by data from the `variables` object.
 
 ## Testing Variables Only
 

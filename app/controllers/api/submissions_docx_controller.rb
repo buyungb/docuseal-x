@@ -122,49 +122,70 @@ module Api
       template.reload
       Rails.logger.info("DOCX Submission: Template has #{template.documents.count} documents")
 
-      # Extract tag positions from PDF using PyMuPDF service (most accurate)
+      # Field detection strategy:
+      # 1. PDF extractor service (PyMuPDF) finds {{name;type=X}} tags with exact positions
+      # 2. Tags are already parsed with all attributes (name, type, role, etc.)
+      # 3. Fallback: use DOCX-extracted metadata with calculated positions
+      #
+      # Note: Tags WITHOUT type ({{name}}) are replaced with content in DOCX processor
+      # Only tags WITH type ({{name;type=X}}) become interactive form fields
+      
       all_fields = []
       first_doc = template.documents.first
-      pdf_extracted_tags = []
       
       if first_doc
         begin
           document_data = first_doc.download
-          
-          # Try PDF extractor service first (PyMuPDF - most accurate)
           pdf_extractor_url = ENV.fetch('PDF_EXTRACTOR_URL', nil)
           
           if pdf_extractor_url.present?
-            Rails.logger.info("DOCX Submission: Using PDF Extractor service for accurate tag positions...")
-            pdf_extracted_tags = extract_tags_via_service(document_data, pdf_extractor_url)
+            Rails.logger.info("DOCX Submission: Using PDF Extractor for field positions...")
+            extracted_fields = extract_tags_via_service(document_data, pdf_extractor_url)
             
-            if pdf_extracted_tags.any?
-              Rails.logger.info("DOCX Submission: PDF Extractor found #{pdf_extracted_tags.size} tags with exact positions")
+            if extracted_fields.any?
+              Rails.logger.info("DOCX Submission: Found #{extracted_fields.size} form field tags")
+              
+              extracted_fields.each do |field|
+                all_fields << {
+                  uuid: SecureRandom.uuid,
+                  name: field[:name],
+                  type: field[:type] || 'text',
+                  role: field[:role],
+                  required: field[:required] != false,
+                  readonly: field[:readonly] || false,
+                  default_value: field[:default],
+                  options: field[:options],
+                  condition: field[:condition],
+                  format: field[:format],
+                  areas: [{
+                    page: field[:page] || 0,
+                    x: field[:x],
+                    y: field[:y],
+                    w: [field[:w], 0.15].max,
+                    h: [field[:h], 0.03].max,
+                    attachment_uuid: first_doc.uuid
+                  }]
+                }
+                Rails.logger.info("  - Field: #{field[:name]} (#{field[:type]}) role=#{field[:role]} pos=(#{field[:x]&.round(3)}, #{field[:y]&.round(3)})")
+              end
             end
           else
-            Rails.logger.info("DOCX Submission: PDF_EXTRACTOR_URL not set, using fallback detection")
+            Rails.logger.info("DOCX Submission: PDF_EXTRACTOR_URL not set, using DOCX metadata with fallback positions")
           end
           
-          # Fallback to DetectFields if PDF extractor not available or found nothing
-          if pdf_extracted_tags.blank?
-            Rails.logger.info("DOCX Submission: Using DetectFields as fallback...")
-            detected, _head_node = Templates::DetectFields.call(
-              StringIO.new(document_data),
-              attachment: first_doc,
-              regexp_type: true,
-              confidence: 0.1
-            )
+          # Fallback: Use DOCX-extracted metadata with calculated positions
+          if all_fields.empty? && docx_extracted_fields.any?
+            Rails.logger.info("DOCX Submission: Using #{docx_extracted_fields.size} fields from DOCX with calculated positions")
             
-            if detected.any?
-              Rails.logger.info("DOCX Submission: DetectFields found #{detected.size} fields")
-              # Convert to similar format as pdf_extracted_tags
-              pdf_extracted_tags = detected.map do |d|
-                {
-                  name: d[:name] || "Field",
-                  type: d[:type] || 'text',
-                  role: nil,
-                  areas: d[:areas]
-                }.with_indifferent_access
+            docx_by_role = docx_extracted_fields.group_by { |f| f[:role]&.downcase || 'default' }
+            
+            docx_by_role.each do |role, role_fields|
+              column = determine_column_for_role(role)
+              type_order = %w[signature initials image text number date datenow checkbox select]
+              sorted_fields = role_fields.sort_by { |f| type_order.index(f[:type]) || 99 }
+              
+              sorted_fields.each do |field|
+                add_fallback_field(all_fields, field, role, column, first_doc)
               end
             end
           end
@@ -174,92 +195,8 @@ module Api
         end
       end
       
-      # Strategy for field positioning:
-      # 1. If PDF extractor found tags with positions, use them (most accurate)
-      # 2. Match PDF-extracted tags with DOCX-extracted metadata by name/type
-      # 3. Fall back to calculated positions
-      
-      if pdf_extracted_tags.any?
-        Rails.logger.info("DOCX Submission: Using #{pdf_extracted_tags.size} tags from PDF with exact positions")
-        
-        # PDF extractor returns tags with their exact positions
-        # Match with DOCX-extracted metadata (which has role info)
-        pdf_extracted_tags.each do |pdf_tag|
-          # Find matching DOCX tag by name
-          docx_match = docx_extracted_fields.find do |d|
-            d[:name]&.downcase == pdf_tag[:name]&.downcase ||
-            d[:name]&.downcase == pdf_tag[:tag_content]&.split(';')&.first&.downcase
-          end
-          
-          if docx_match
-            # Merge DOCX metadata with PDF position
-            merged_field = {
-              uuid: SecureRandom.uuid,
-              name: docx_match[:name] || pdf_tag[:name],
-              type: docx_match[:type] || pdf_tag[:type] || 'text',
-              role: docx_match[:role] || pdf_tag[:role],
-              required: docx_match[:required] != false,
-              areas: pdf_tag[:areas] || [{
-                page: pdf_tag[:page] || 0,
-                x: pdf_tag[:x],
-                y: pdf_tag[:y],
-                w: [pdf_tag[:w], 0.15].max,  # Minimum width
-                h: [pdf_tag[:h], 0.03].max,  # Minimum height
-                attachment_uuid: first_doc&.uuid
-              }]
-            }
-            all_fields << merged_field
-            Rails.logger.info("  - Matched: #{merged_field[:name]} (#{merged_field[:type]}) role=#{merged_field[:role]} -> pos=(#{pdf_tag[:x]&.round(3)}, #{pdf_tag[:y]&.round(3)})")
-          else
-            # No DOCX match, use PDF tag directly
-            field = {
-              uuid: SecureRandom.uuid,
-              name: pdf_tag[:name] || "Field",
-              type: pdf_tag[:type] || 'text',
-              role: pdf_tag[:role],
-              required: pdf_tag[:required] != false,
-              areas: pdf_tag[:areas] || [{
-                page: pdf_tag[:page] || 0,
-                x: pdf_tag[:x],
-                y: pdf_tag[:y],
-                w: [pdf_tag[:w], 0.15].max,
-                h: [pdf_tag[:h], 0.03].max,
-                attachment_uuid: first_doc&.uuid
-              }]
-            }
-            all_fields << field
-            Rails.logger.info("  - From PDF: #{field[:name]} (#{field[:type]}) -> pos=(#{pdf_tag[:x]&.round(3)}, #{pdf_tag[:y]&.round(3)})")
-          end
-        end
-        
-        # Add any DOCX fields that weren't matched (with fallback positions)
-        docx_extracted_fields.each do |docx_field|
-          already_added = all_fields.any? { |f| f[:name]&.downcase == docx_field[:name]&.downcase }
-          unless already_added
-            role = docx_field[:role]&.downcase || 'default'
-            column = determine_column_for_role(role)
-            add_fallback_field(all_fields, docx_field, role, column, first_doc)
-            Rails.logger.info("  - Fallback: #{docx_field[:name]} (no PDF match)")
-          end
-        end
-      elsif docx_extracted_fields.any?
-        # No PDF extractor results - use DOCX metadata with calculated positions
-        Rails.logger.info("DOCX Submission: Using calculated layout for #{docx_extracted_fields.size} DOCX field tags")
-        
-        # Group by role and assign to columns
-        docx_by_role = docx_extracted_fields.group_by { |f| f[:role]&.downcase || 'default' }
-        
-        docx_by_role.each do |role, role_fields|
-          column = determine_column_for_role(role)
-          
-          type_order = %w[signature initials image text number date datenow checkbox select]
-          sorted_fields = role_fields.sort_by { |f| type_order.index(f[:type]) || 99 }
-          
-          sorted_fields.each do |field|
-            add_fallback_field(all_fields, field, role, column, first_doc)
-          end
-        end
-      else
+      # Final fallback: Create default signature fields if no fields found
+      if all_fields.empty?
         # No fields from DOCX tags, create default signature fields
         Rails.logger.info("DOCX Submission: No field tags in DOCX, creating default signature fields")
         raw_submitters = params[:submitters] || [{ role: 'First Party', email: params[:email] }]

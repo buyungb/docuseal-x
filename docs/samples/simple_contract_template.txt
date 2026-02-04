@@ -57,16 +57,19 @@ SIGNATURES
 
 I agree to the terms and conditions stated in this contract.
 
+Prepared By: {{prepared_by}}
+Prepared Date: {{prepared_date}}
+
 
 Buyer Signature: {{BuyerSign;type=signature;role=Buyer;required=true}}
 
-Buyer Name: {{BuyerName;type=text;role=Buyer}}
+Buyer Name: {{BuyerPrintName;type=text;role=Buyer}}
 
 Date: {{BuyerDate;type=datenow;role=Buyer}}
 
 
 Seller Signature: {{SellerSign;type=signature;role=Seller;required=true}}
 
-Seller Name: {{SellerName;type=text;role=Seller}}
+Seller Name: {{SellerPrintName;type=text;role=Seller}}
 
 Date: {{SellerDate;type=datenow;role=Seller}}

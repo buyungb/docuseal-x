@@ -308,13 +308,40 @@ module Templates
       # Process loops (simple text-based) - for non-table content
       result = process_loops(result, variables)
       
-      # Process simple variables
+      # Process simple variables [[var]]
       result = substitute_simple_variables(result, variables)
       
-      # Note: {{field tags}} are kept as-is so ParsePdfTextTags can find them
-      # and create form fields at those positions
+      # Process {{field}} tags:
+      # - Tags WITHOUT type: {{name}} → Replace with content from variables
+      # - Tags WITH type: {{name;type=X}} → Keep as-is for form field detection
+      result = process_field_tags(result, variables)
       
       result
+    end
+    
+    # Process {{field}} tags
+    # - {{name}} (no type) → replaced with content from variables
+    # - {{name;type=X}} → kept as-is for form field detection
+    def process_field_tags(text, variables)
+      return text if text.blank?
+      
+      text.gsub(/\{\{([^}]+)\}\}/) do |match|
+        tag_content = ::Regexp.last_match(1)
+        parts = tag_content.split(';').map(&:strip)
+        field_name = parts.first
+        
+        # Check if tag has a type attribute
+        has_type = parts.any? { |p| p.downcase.start_with?('type=') }
+        
+        if has_type
+          # Keep tags with type for form field detection
+          match
+        else
+          # Replace tags without type with variable content
+          value = variables[field_name] || variables[field_name.downcase] || variables[field_name.underscore]
+          value.present? ? value.to_s : match
+        end
+      end
     end
 
     def normalize_variables(variables)
@@ -451,14 +478,16 @@ module Templates
       end
     end
     
-    # Extract field tags from DOCX ({{field;type=signature;role=Buyer}})
-    # This is more reliable than extracting from PDF
+    # Extract FORM FIELD tags from DOCX - only tags WITH type attribute
+    # {{field;type=signature;role=Buyer}} → form field
+    # {{field}} (no type) → NOT extracted, replaced with content by process_field_tags
     def extract_field_tags(docx_data)
       return [] if docx_data.blank?
       return [] unless docx_data[0..3] == "PK\x03\x04"
 
       fields = []
-      field_tag_regex = /\{\{([^}]+)\}\}/
+      # Match {{...}} tags that contain "type="
+      field_tag_regex = /\{\{([^}]*type=[^}]+)\}\}/i
 
       tempfile = Tempfile.new(['docx_fields', '.docx'])
       tempfile.binmode
@@ -472,27 +501,27 @@ module Templates
 
           xml_content = entry.get_input_stream.read
           
-          # Extract all text content and normalize whitespace
           doc = Nokogiri::XML(xml_content)
           namespaces = { 'w' => 'http://schemas.openxmlformats.org/wordprocessingml/2006/main' }
           
           all_text = doc.xpath('//w:t', namespaces).map(&:content).join(' ')
           normalized_text = all_text.gsub(/\s+/, ' ')
           
-          Rails.logger.info("ProcessDocxVariables: Extracting field tags from DOCX, text length=#{normalized_text.length}")
+          Rails.logger.info("ProcessDocxVariables: Scanning for form field tags (with type=)")
           
-          # Find all field tags
+          # Find all form field tags (those with type attribute)
           normalized_text.scan(field_tag_regex) do |match|
             tag_content = match[0]
             field_def = parse_field_tag(tag_content)
             
             if field_def.present?
               fields << field_def
-              Rails.logger.info("ProcessDocxVariables: Found field tag '#{tag_content}' -> #{field_def[:name]} (#{field_def[:type]})")
+              Rails.logger.info("ProcessDocxVariables: Form field '#{tag_content}' -> #{field_def[:name]} (#{field_def[:type]}) role=#{field_def[:role]}")
             end
           end
         end
 
+        Rails.logger.info("ProcessDocxVariables: Found #{fields.size} form field tags")
         fields
       rescue StandardError => e
         Rails.logger.error("ProcessDocxVariables.extract_field_tags error: #{e.message}")

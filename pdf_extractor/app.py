@@ -23,7 +23,9 @@ app = FastAPI(
 )
 
 # Tag pattern: {{FieldName;type=TYPE;role=ROLE;...}}
-TAG_PATTERN = re.compile(r'\{\{([^}]+)\}\}')
+# Only matches tags that contain "type=" (form fields)
+# Tags without type are replaced with content in DOCX processor
+TAG_PATTERN = re.compile(r'\{\{([^}]*type=[^}]+)\}\}', re.IGNORECASE)
 
 
 class ExtractRequest(BaseModel):
