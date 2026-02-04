@@ -83,216 +83,117 @@ module Templates
       entry = zip_file.find_entry(entry_name)
       return unless entry
 
-      xml_content = entry.get_input_stream.read
-      doc = Nokogiri::XML(xml_content)
+      xml_content = entry.get_input_stream.read.force_encoding('UTF-8')
+      original_content = xml_content.dup
       
-      # Define namespace
-      namespaces = { 'w' => 'http://schemas.openxmlformats.org/wordprocessingml/2006/main' }
+      # Use simple string-based replacement to preserve DOCX XML structure
+      # This is safer than full XML parsing which can corrupt the document
       
       modified = false
       
-      # First pass: Find all item accessor patterns and collect loop variable names
+      # Find loop variables by scanning for item accessors
       loop_vars = {}
-      doc.xpath('//w:t', namespaces).each do |text_node|
-        text = text_node.content
-        # Find item accessors like [[item.name]] or [[items.name]]
-        text.scan(/\[\[(\w+)\.(\w+)\]\]/).each do |match|
-          var_base = match[0] # e.g., "item" or "items"
-          # Try both singular and plural forms
-          [var_base, var_base.pluralize, var_base.singularize].each do |potential_var|
-            if variables[potential_var].is_a?(Array)
-              loop_vars[var_base] = potential_var
-              break
-            end
+      xml_content.scan(/\[\[(\w+)\.(\w+)\]\]/).each do |match|
+        var_base = match[0]
+        [var_base, var_base.pluralize, var_base.singularize].each do |potential_var|
+          if variables[potential_var].is_a?(Array)
+            loop_vars[var_base] = potential_var
+            break
           end
         end
       end
       
-      Rails.logger.info("ProcessDocxVariables: Found loop variables: #{loop_vars.inspect}")
+      Rails.logger.info("ProcessDocxVariables: Found loop variables: #{loop_vars.inspect}") if loop_vars.any?
       
-      # Handle table rows with item accessors
-      doc.xpath('//w:tr', namespaces).each do |row|
-        row_text = row.xpath('.//w:t', namespaces).map(&:content).join
+      # Process table row loops using regex to find and duplicate <w:tr> elements
+      loop_vars.each do |accessor_name, var_name|
+        items = variables[var_name]
+        next unless items.is_a?(Array)
         
-        # Check if this row contains item accessors
-        loop_vars.each do |accessor_name, var_name|
-          pattern = /\[\[#{accessor_name}\.(\w+)\]\]/
-          next unless row_text.match?(pattern)
-          
-          items = variables[var_name]
-          next unless items.is_a?(Array)
-          
+        # Find table rows containing item accessors
+        row_pattern = /<w:tr[^>]*>.*?\[\[#{accessor_name}\.\w+\]\].*?<\/w:tr>/m
+        
+        xml_content.gsub!(row_pattern) do |row_xml|
           if items.any?
-            # Clone and process row for each item
-            items.each_with_index do |item, idx|
-              if idx == 0
-                # Update original row with first item data
-                row.xpath('.//w:t', namespaces).each do |text_node|
-                  text = text_node.content
-                  # Remove any loop markers
-                  text = text.gsub(/\[\[for:\w+\]\]/, '').gsub(/\[\[end(:\w+)?\]\]/, '')
-                  # Replace item accessors
-                  text = text.gsub(/\[\[#{accessor_name}\.(\w+)\]\]/) do |_|
-                    prop = ::Regexp.last_match(1)
-                    item.is_a?(Hash) ? (item[prop] || item[prop.to_sym]).to_s : ''
-                  end
-                  text_node.content = text
-                end
-              else
-                # Clone row for subsequent items
-                new_row = row.dup
-                new_row.xpath('.//w:t', namespaces).each do |text_node|
-                  text = text_node.content
-                  text = text.gsub(/\[\[for:\w+\]\]/, '').gsub(/\[\[end(:\w+)?\]\]/, '')
-                  text = text.gsub(/\[\[#{accessor_name}\.(\w+)\]\]/) do |_|
-                    prop = ::Regexp.last_match(1)
-                    item.is_a?(Hash) ? (item[prop] || item[prop.to_sym]).to_s : ''
-                  end
-                  text_node.content = text
-                end
-                row.add_next_sibling(new_row)
+            # Generate a row for each item
+            items.map do |item|
+              row_copy = row_xml.dup
+              # Remove loop markers
+              row_copy.gsub!(/\[\[for:\w+\]\]/, '')
+              row_copy.gsub!(/\[\[end(:\w+)?\]\]/, '')
+              # Replace item accessors
+              row_copy.gsub!(/\[\[#{accessor_name}\.(\w+)\]\]/) do
+                prop = ::Regexp.last_match(1)
+                item.is_a?(Hash) ? (item[prop] || item[prop.to_sym]).to_s : ''
               end
-            end
-            modified = true
-            Rails.logger.info("ProcessDocxVariables: Expanded table row for #{var_name} with #{items.size} items")
+              row_copy
+            end.join
           else
-            # No items - remove the row
-            row.remove
-            modified = true
-            Rails.logger.info("ProcessDocxVariables: Removed empty item row for #{var_name}")
+            '' # Remove row if no items
           end
-          
-          break # Only process one loop variable per row
+        end
+        modified = true if xml_content != original_content
+      end
+      
+      # Remove standalone loop markers
+      if xml_content.gsub!(/\[\[for:\w+\]\]/, '')
+        modified = true
+      end
+      if xml_content.gsub!(/\[\[end(:\w+)?\]\]/, '')
+        modified = true
+      end
+      
+      # Remove placeholder text
+      if xml_content.gsub!(/\(duplicate.*?item\)/i, '')
+        modified = true
+      end
+      
+      # Process simple variables [[var]]
+      xml_content.gsub!(SIMPLE_VAR_REGEX) do
+        var_name = ::Regexp.last_match(1)
+        value = variables[var_name]
+        modified = true
+        case value
+        when nil then ''
+        when Array then value.map { |v| v.is_a?(Hash) ? v.values.join(', ') : v.to_s }.join('; ')
+        when Hash then value.values.join(', ')
+        else value.to_s
         end
       end
       
-      # Remove standalone loop markers [[for:xxx]] and [[end]]
-      doc.xpath('//w:t', namespaces).each do |text_node|
-        text = text_node.content
-        if text.match?(/\[\[for:\w+\]\]/) || text.match?(/\[\[end(:\w+)?\]\]/)
-          text_node.content = text.gsub(/\[\[for:\w+\]\]/, '').gsub(/\[\[end(:\w+)?\]\]/, '')
+      # Process conditionals [[if:var]]...[[end]]
+      while xml_content.match?(/\[\[if:(\w+)\]\]/)
+        xml_content.gsub!(/\[\[if:(\w+)\]\](.*?)(?:\[\[else\]\](.*?))?\[\[end(?::\w+)?\]\]/m) do
+          var_name = ::Regexp.last_match(1)
+          true_content = ::Regexp.last_match(2) || ''
+          false_content = ::Regexp.last_match(3) || ''
+          var_value = variables[var_name]
+          is_truthy = var_value.present? && var_value != false && var_value != 'false'
           modified = true
+          is_truthy ? true_content : false_content
         end
+        # Safety break to prevent infinite loop
+        break unless xml_content.match?(/\[\[if:(\w+)\]\].*?\[\[end/)
       end
       
-      # Remove placeholder text like "(duplicate row for each item)"
-      doc.xpath('//w:t', namespaces).each do |text_node|
-        text = text_node.content
-        if text.match?(/\(duplicate.*item\)/i)
-          text_node.content = text.gsub(/\(duplicate.*item\)/i, '')
-          modified = true
-        end
+      # Remove orphan conditional markers
+      xml_content.gsub!(/\[\[if:\w+\]\]/, '')
+      xml_content.gsub!(/\[\[else\]\]/, '')
+      xml_content.gsub!(/\[\[end(:\w+)?\]\]/, '')
+      
+      # Process {{field}} tags without type - replace with content
+      xml_content.gsub!(/\{\{(\w+)\}\}/) do
+        field_name = ::Regexp.last_match(1)
+        # Only replace if no type= in the tag (simple content replacement)
+        value = variables[field_name] || variables[field_name.downcase] || variables[field_name.underscore]
+        modified = true if value.present?
+        value.present? ? value.to_s : "{{#{field_name}}}"
       end
       
-      # Final cleanup: Remove any remaining conditional markers
-      doc.xpath('//w:t', namespaces).each do |text_node|
-        text = text_node.content
-        next if text.blank?
-        
-        new_text = text
-        # Remove orphan [[if:xxx]] markers
-        new_text = new_text.gsub(/\[\[if:\w+\]\]/, '')
-        # Remove orphan [[else]] markers
-        new_text = new_text.gsub(/\[\[else\]\]/, '')
-        # Remove orphan [[end]] markers
-        new_text = new_text.gsub(/\[\[end(:\w+)?\]\]/, '')
-        
-        if text != new_text
-          text_node.content = new_text
-          modified = true
-        end
-      end
+      # Note: {{field;type=X}} tags are kept as-is for form field detection
       
-      # Consolidate {{field tags}} that might be split across multiple w:t nodes
-      # This ensures the PDF extractor can find complete tags
-      # Tags like {{BuyerSign;type=signature}} might be split across multiple w:t nodes
-      doc.xpath('//w:p', namespaces).each do |para|
-        text_nodes = para.xpath('.//w:t', namespaces)
-        next if text_nodes.empty?
-        
-        # Combine all text from paragraph
-        combined_text = text_nodes.map(&:content).join
-        next unless combined_text.include?('{{') && combined_text.include?('}}')
-        
-        # Check if tags are split (partial {{ in one node, partial }} in another)
-        has_split_tag = text_nodes.any? { |n| n.content.include?('{{') && !n.content.include?('}}') } ||
-                        text_nodes.any? { |n| n.content.include?('}}') && !n.content.include?('{{') }
-        
-        if has_split_tag
-          # Consolidate into first node so PDF extractor can find complete tags
-          text_nodes.first.content = combined_text
-          text_nodes[1..-1].each { |n| n.content = '' }
-          modified = true
-          Rails.logger.info("ProcessDocxVariables: Consolidated split field tags in paragraph")
-        end
-      end
-      
-      # Also consolidate tags in table cells (w:tc) which may contain split tags
-      doc.xpath('//w:tc', namespaces).each do |cell|
-        text_nodes = cell.xpath('.//w:t', namespaces)
-        next if text_nodes.empty?
-        
-        combined_text = text_nodes.map(&:content).join
-        next unless combined_text.include?('{{') && combined_text.include?('}}')
-        
-        # Check if tags are split
-        has_split_tag = text_nodes.any? { |n| n.content.include?('{{') && !n.content.include?('}}') } ||
-                        text_nodes.any? { |n| n.content.include?('}}') && !n.content.include?('{{') }
-        
-        if has_split_tag
-          text_nodes.first.content = combined_text
-          text_nodes[1..-1].each { |n| n.content = '' }
-          modified = true
-          Rails.logger.info("ProcessDocxVariables: Consolidated split field tags in table cell")
-        end
-      end
-      
-      # Second pass: Process all paragraphs (including table cells)
-      doc.xpath('//w:p', namespaces).each do |para|
-        text_nodes = para.xpath('.//w:t', namespaces)
-        next if text_nodes.empty?
-        
-        # Get combined text from all runs in paragraph
-        combined_text = text_nodes.map(&:content).join
-        next if combined_text.blank?
-        
-        # Check if needs processing
-        needs_processing = combined_text.match?(SIMPLE_VAR_REGEX) || 
-                          combined_text.match?(CONDITIONAL_START_REGEX) ||
-                          combined_text.match?(FIELD_TAG_REGEX)
-        next unless needs_processing
-        
-        # Process the combined text
-        new_text = process_text(combined_text, variables)
-        
-        if combined_text != new_text
-          # Put all text in the first node, clear the rest
-          text_nodes.first.content = new_text
-          text_nodes[1..-1].each { |n| n.content = '' }
-          modified = true
-          Rails.logger.info("ProcessDocxVariables: Replaced paragraph text")
-        end
-      end
-      
-      # Third pass: Process any remaining individual text nodes
-      doc.xpath('//w:t', namespaces).each do |text_node|
-        original_text = text_node.content
-        next if original_text.blank?
-        next unless original_text.match?(SIMPLE_VAR_REGEX) || 
-                   original_text.match?(CONDITIONAL_START_REGEX) ||
-                   original_text.match?(FIELD_TAG_REGEX)
-        
-        new_text = process_text(original_text, variables)
-        
-        if original_text != new_text
-          text_node.content = new_text
-          modified = true
-        end
-      end
-      
-      if modified
-        # Write back to zip
-        zip_file.get_output_stream(entry_name) { |os| os.write(doc.to_xml) }
+      if modified || xml_content != original_content
+        zip_file.get_output_stream(entry_name) { |os| os.write(xml_content) }
         Rails.logger.info("ProcessDocxVariables: Updated #{entry_name}")
       end
     end
