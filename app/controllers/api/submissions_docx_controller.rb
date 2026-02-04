@@ -27,6 +27,8 @@ module Api
 
       # Process each DOCX document
       processed_documents = []
+      docx_extracted_fields = [] # Fields extracted from DOCX {{...}} tags
+      
       documents_data.each do |doc_data|
         file_data = decode_file(doc_data[:file])
         
@@ -37,20 +39,28 @@ module Api
 
         Rails.logger.info("DOCX Submission: Processing file #{doc_data[:name]}, size: #{file_data.bytesize} bytes")
 
-        # Process DOCX variables if any and if the file contains variables
-        if variables.present? && docx_file?(file_data, doc_data[:name])
+        # Process DOCX - extract field tags BEFORE variable substitution
+        if docx_file?(file_data, doc_data[:name])
           begin
             require_relative '../../../lib/templates/process_docx_variables'
             
-            # Check if file actually contains variables before processing
-            if Templates::ProcessDocxVariables.contains_variables?(file_data)
+            # Extract {{...}} field tags from DOCX (before they might get modified)
+            fields = Templates::ProcessDocxVariables.extract_field_tags(file_data)
+            if fields.any?
+              Rails.logger.info("DOCX Submission: Extracted #{fields.size} field tags from DOCX")
+              docx_extracted_fields.concat(fields)
+            end
+            
+            # Process [[...]] variables if any
+            if variables.present? && Templates::ProcessDocxVariables.contains_variables?(file_data)
               Rails.logger.info("DOCX Submission: File contains variables, processing...")
               file_data = Templates::ProcessDocxVariables.call(file_data, variables)
             else
-              Rails.logger.info("DOCX Submission: File has no variables, skipping processing")
+              Rails.logger.info("DOCX Submission: File has no variables to process")
             end
           rescue StandardError => e
-            Rails.logger.error("DOCX Submission: Error processing variables: #{e.message}")
+            Rails.logger.error("DOCX Submission: Error processing DOCX: #{e.message}")
+            Rails.logger.error(e.backtrace.first(3).join("\n"))
             # Continue with original file if processing fails
           end
         end
@@ -112,6 +122,183 @@ module Api
       template.reload
       Rails.logger.info("DOCX Submission: Template has #{template.documents.count} documents")
 
+      # Extract tag positions from PDF using PyMuPDF service (most accurate)
+      all_fields = []
+      first_doc = template.documents.first
+      pdf_extracted_tags = []
+      
+      if first_doc
+        begin
+          document_data = first_doc.download
+          
+          # Try PDF extractor service first (PyMuPDF - most accurate)
+          pdf_extractor_url = ENV.fetch('PDF_EXTRACTOR_URL', nil)
+          
+          if pdf_extractor_url.present?
+            Rails.logger.info("DOCX Submission: Using PDF Extractor service for accurate tag positions...")
+            pdf_extracted_tags = extract_tags_via_service(document_data, pdf_extractor_url)
+            
+            if pdf_extracted_tags.any?
+              Rails.logger.info("DOCX Submission: PDF Extractor found #{pdf_extracted_tags.size} tags with exact positions")
+            end
+          else
+            Rails.logger.info("DOCX Submission: PDF_EXTRACTOR_URL not set, using fallback detection")
+          end
+          
+          # Fallback to DetectFields if PDF extractor not available or found nothing
+          if pdf_extracted_tags.blank?
+            Rails.logger.info("DOCX Submission: Using DetectFields as fallback...")
+            detected, _head_node = Templates::DetectFields.call(
+              StringIO.new(document_data),
+              attachment: first_doc,
+              regexp_type: true,
+              confidence: 0.1
+            )
+            
+            if detected.any?
+              Rails.logger.info("DOCX Submission: DetectFields found #{detected.size} fields")
+              # Convert to similar format as pdf_extracted_tags
+              pdf_extracted_tags = detected.map do |d|
+                {
+                  name: d[:name] || "Field",
+                  type: d[:type] || 'text',
+                  role: nil,
+                  areas: d[:areas]
+                }.with_indifferent_access
+              end
+            end
+          end
+        rescue StandardError => e
+          Rails.logger.warn("DOCX Submission: Field detection failed: #{e.message}")
+          Rails.logger.warn(e.backtrace.first(3).join("\n"))
+        end
+      end
+      
+      # Strategy for field positioning:
+      # 1. If PDF extractor found tags with positions, use them (most accurate)
+      # 2. Match PDF-extracted tags with DOCX-extracted metadata by name/type
+      # 3. Fall back to calculated positions
+      
+      if pdf_extracted_tags.any?
+        Rails.logger.info("DOCX Submission: Using #{pdf_extracted_tags.size} tags from PDF with exact positions")
+        
+        # PDF extractor returns tags with their exact positions
+        # Match with DOCX-extracted metadata (which has role info)
+        pdf_extracted_tags.each do |pdf_tag|
+          # Find matching DOCX tag by name
+          docx_match = docx_extracted_fields.find do |d|
+            d[:name]&.downcase == pdf_tag[:name]&.downcase ||
+            d[:name]&.downcase == pdf_tag[:tag_content]&.split(';')&.first&.downcase
+          end
+          
+          if docx_match
+            # Merge DOCX metadata with PDF position
+            merged_field = {
+              uuid: SecureRandom.uuid,
+              name: docx_match[:name] || pdf_tag[:name],
+              type: docx_match[:type] || pdf_tag[:type] || 'text',
+              role: docx_match[:role] || pdf_tag[:role],
+              required: docx_match[:required] != false,
+              areas: pdf_tag[:areas] || [{
+                page: pdf_tag[:page] || 0,
+                x: pdf_tag[:x],
+                y: pdf_tag[:y],
+                w: [pdf_tag[:w], 0.15].max,  # Minimum width
+                h: [pdf_tag[:h], 0.03].max,  # Minimum height
+                attachment_uuid: first_doc&.uuid
+              }]
+            }
+            all_fields << merged_field
+            Rails.logger.info("  - Matched: #{merged_field[:name]} (#{merged_field[:type]}) role=#{merged_field[:role]} -> pos=(#{pdf_tag[:x]&.round(3)}, #{pdf_tag[:y]&.round(3)})")
+          else
+            # No DOCX match, use PDF tag directly
+            field = {
+              uuid: SecureRandom.uuid,
+              name: pdf_tag[:name] || "Field",
+              type: pdf_tag[:type] || 'text',
+              role: pdf_tag[:role],
+              required: pdf_tag[:required] != false,
+              areas: pdf_tag[:areas] || [{
+                page: pdf_tag[:page] || 0,
+                x: pdf_tag[:x],
+                y: pdf_tag[:y],
+                w: [pdf_tag[:w], 0.15].max,
+                h: [pdf_tag[:h], 0.03].max,
+                attachment_uuid: first_doc&.uuid
+              }]
+            }
+            all_fields << field
+            Rails.logger.info("  - From PDF: #{field[:name]} (#{field[:type]}) -> pos=(#{pdf_tag[:x]&.round(3)}, #{pdf_tag[:y]&.round(3)})")
+          end
+        end
+        
+        # Add any DOCX fields that weren't matched (with fallback positions)
+        docx_extracted_fields.each do |docx_field|
+          already_added = all_fields.any? { |f| f[:name]&.downcase == docx_field[:name]&.downcase }
+          unless already_added
+            role = docx_field[:role]&.downcase || 'default'
+            column = determine_column_for_role(role)
+            add_fallback_field(all_fields, docx_field, role, column, first_doc)
+            Rails.logger.info("  - Fallback: #{docx_field[:name]} (no PDF match)")
+          end
+        end
+      elsif docx_extracted_fields.any?
+        # No DetectFields results - use calculated layout
+        Rails.logger.info("DOCX Submission: Using calculated layout for #{docx_extracted_fields.size} DOCX tags")
+        
+        # Group by role and assign to columns
+        docx_by_role = docx_extracted_fields.group_by { |f| f[:role]&.downcase || 'default' }
+        
+        docx_by_role.each do |role, role_fields|
+          column = determine_column_for_role(role)
+          
+          type_order = %w[signature initials image text number date datenow checkbox select]
+          sorted_fields = role_fields.sort_by { |f| type_order.index(f[:type]) || 99 }
+          
+          sorted_fields.each do |field|
+            add_fallback_field(all_fields, field, role, column, first_doc)
+          end
+        end
+      elsif detected_fields.any?
+        # Use only detected fields (no DOCX tags)
+        Rails.logger.info("DOCX Submission: Using #{detected_fields.size} fields from DetectFields")
+        all_fields = detected_fields
+      else
+        # No fields from DOCX tags, create default signature fields
+        Rails.logger.info("DOCX Submission: No field tags in DOCX, creating default signature fields")
+        raw_submitters = params[:submitters] || [{ role: 'First Party', email: params[:email] }]
+        submitters_list = Array.wrap(raw_submitters)
+        
+        if first_doc
+          submitters_list.each_with_index do |s, i|
+            s = s.to_unsafe_h if s.is_a?(ActionController::Parameters)
+            role_name = s.is_a?(Hash) ? (s['role'] || s[:role] || "Party #{i + 1}") : "Party #{i + 1}"
+            
+            # Position: left column for first submitter, right for second, etc.
+            base_x = i.even? ? 0.08 : 0.52
+            
+            all_fields << {
+              uuid: SecureRandom.uuid,
+              name: "#{role_name} Signature",
+              type: 'signature',
+              required: true,
+              role: role_name.to_s,
+              areas: [{
+                page: 0,
+                x: base_x,
+                y: 0.83,
+                w: 0.38,
+                h: 0.05,
+                attachment_uuid: first_doc.uuid
+              }]
+            }
+            Rails.logger.info("DOCX Submission: Created default signature field for #{role_name} at x=#{base_x}")
+          end
+        end
+      end
+
+      Rails.logger.info("DOCX Submission: Total fields to add: #{all_fields.size}")
+
       # Set up submitters from params
       raw_submitters = params[:submitters] || [{ role: 'First Party', email: params[:email] }]
       submitters_params = Array.wrap(raw_submitters).map do |s|
@@ -130,11 +317,69 @@ module Api
         }
       end
 
+      # Assign fields to submitters
+      assigned_fields = []
+      all_fields.each_with_index do |field, field_idx|
+        # Determine which submitter this field belongs to
+        submitter_idx = if field[:role].present?
+          # Find submitter by role name
+          template.submitters.find_index { |s| s['name'].to_s.downcase == field[:role].to_s.downcase } || 0
+        else
+          # Assign round-robin to submitters
+          field_idx % template.submitters.size
+        end
+        
+        submitter_uuid = template.submitters[submitter_idx]['uuid']
+        
+        # Ensure areas have string keys and correct attachment_uuid
+        field_areas = (field[:areas] || []).map do |area|
+          area_hash = area.is_a?(Hash) ? area.stringify_keys : {}
+          # Use first document if no attachment_uuid specified
+          area_hash['attachment_uuid'] ||= template.documents.first&.uuid
+          area_hash['page'] ||= 0
+          area_hash['x'] = area_hash['x'].to_f
+          area_hash['y'] = area_hash['y'].to_f
+          area_hash['w'] = area_hash['w'].to_f
+          area_hash['h'] = area_hash['h'].to_f
+          area_hash
+        end
+        
+        assigned_field = {
+          'uuid' => field[:uuid] || SecureRandom.uuid,
+          'submitter_uuid' => submitter_uuid,
+          'name' => field[:name] || "Field #{field_idx + 1}",
+          'type' => field[:type] || 'signature',
+          'required' => field[:required].nil? ? true : field[:required],
+          'areas' => field_areas
+        }
+        
+        # Add optional attributes
+        assigned_field['default_value'] = field[:default_value] if field[:default_value].present?
+        assigned_field['preferences'] = field[:preferences] if field[:preferences].present?
+        assigned_field['options'] = field[:options] if field[:options].present?
+        
+        Rails.logger.info("DOCX Submission: Field '#{assigned_field['name']}' (#{assigned_field['type']}) assigned to submitter #{submitter_idx} (#{template.submitters[submitter_idx]['name']})")
+        assigned_fields << assigned_field
+      end
+
+      # Build schema - just links to documents, NO fields here
+      template.schema = template.documents.map do |doc|
+        {
+          'attachment_uuid' => doc.uuid,
+          'name' => doc.filename.to_s
+        }
+      end
+      
+      # Fields go in the separate fields attribute
+      template.fields = assigned_fields
+
+      Rails.logger.info("DOCX Submission: Schema has #{template.schema.size} documents, #{template.fields.size} fields")
+
       template.save!
 
       Rails.logger.info("DOCX Submission: Template saved with ID #{template.id}, submitters: #{template.submitters.inspect}")
 
-      # Create submissions - use symbol keys as expected by create_from_submitters
+      # Create submissions - use HashWithIndifferentAccess for compatibility
       submissions_attrs = [{
         submitters: submitters_params.map.with_index do |s, i|
           role_name = (s['role'] || s[:role] || s['name'] || s[:name] || "Party #{i + 1}").to_s
@@ -142,16 +387,19 @@ module Api
           phone_val = (s['phone'] || s[:phone]).to_s
           name_val = (s['name'] || s[:name]).to_s
           
-          # Use symbol keys - this is what create_from_submitters expects
+          # Use string keys - create_from_submitters uses .slice('email', 'phone', 'name')
           submitter_data = {
-            uuid: template.submitters[i]['uuid'],
-            role: role_name
+            'uuid' => template.submitters[i]['uuid'],
+            'role' => role_name
           }
-          submitter_data[:email] = email_val if email_val.present?
-          submitter_data[:phone] = phone_val if phone_val.present?
-          submitter_data[:name] = name_val if name_val.present?
-          submitter_data[:external_id] = (s['external_id'] || s[:external_id]).to_s if (s['external_id'] || s[:external_id]).present?
-          submitter_data[:metadata] = (s['metadata'] || s[:metadata] || {})
+          submitter_data['email'] = email_val if email_val.present?
+          submitter_data['phone'] = phone_val if phone_val.present?
+          submitter_data['name'] = name_val if name_val.present?
+          submitter_data['external_id'] = (s['external_id'] || s[:external_id]).to_s if (s['external_id'] || s[:external_id]).present?
+          submitter_data['metadata'] = (s['metadata'] || s[:metadata] || {})
+          
+          # Convert to HashWithIndifferentAccess so both symbol and string keys work
+          submitter_data = submitter_data.with_indifferent_access
           
           Rails.logger.info("DOCX Submission: Submitter #{i}: #{submitter_data.inspect}")
           
@@ -192,6 +440,126 @@ module Api
     end
 
     private
+    
+    # Determine column (left/right) for a role name
+    def determine_column_for_role(role)
+      role_lower = role.to_s.downcase
+      
+      # Common role patterns for left column (first party)
+      left_patterns = %w[buyer first customer client tenant employee applicant borrower patient]
+      # Common role patterns for right column (second party)
+      right_patterns = %w[seller second vendor supplier landlord employer company lender doctor provider]
+      
+      return :left if left_patterns.any? { |p| role_lower.include?(p) }
+      return :right if right_patterns.any? { |p| role_lower.include?(p) }
+      
+      # Check for party numbering (Party 1, Party 2, etc.)
+      if role_lower.match?(/party.?(\d+)/)
+        num = role_lower.match(/party.?(\d+)/)[1].to_i
+        return num.odd? ? :left : :right
+      end
+      
+      :left # Default to left column
+    end
+    
+    # Add a field with fallback positioning based on role and column
+    def add_fallback_field(all_fields, docx_field, role, column, first_doc)
+      role_lower = role.to_s.downcase
+      field_type = docx_field[:type]
+      
+      # Count existing fields for this role to determine Y position
+      role_field_count = all_fields.count { |f| (f[:role] || '').to_s.downcase == role_lower }
+      
+      # Base positions - configurable starting Y based on document layout
+      # You can override these with API params in the future
+      base_x = column == :left ? 0.08 : 0.52
+      signature_start_y = 0.82  # Where signature section typically starts
+      
+      # Stack fields vertically
+      field_y = signature_start_y + (role_field_count * 0.035)
+      
+      # Size based on field type
+      is_signature = field_type.in?(%w[signature initials])
+      field_w = is_signature ? 0.38 : 0.35
+      field_h = is_signature ? 0.045 : 0.025
+      
+      fallback_field = docx_field.merge(
+        areas: [{
+          page: 0,
+          x: base_x,
+          y: [field_y, 0.95].min,  # Don't go past page bottom
+          w: field_w,
+          h: field_h,
+          attachment_uuid: first_doc&.uuid
+        }],
+        uuid: SecureRandom.uuid
+      )
+      
+      all_fields << fallback_field
+      Rails.logger.info("  - Fallback: #{docx_field[:name]} (#{field_type}) role=#{role} column=#{column} -> pos=(#{base_x}, #{field_y.round(3)})")
+    end
+    
+    # Extract tag positions from PDF using the PyMuPDF microservice
+    def extract_tags_via_service(pdf_data, service_url)
+      require 'net/http'
+      require 'uri'
+      require 'json'
+      
+      uri = URI.parse("#{service_url}/extract-tags")
+      
+      request = Net::HTTP::Post.new(uri.request_uri)
+      request['Content-Type'] = 'application/json'
+      request.body = {
+        pdf_base64: Base64.strict_encode64(pdf_data),
+        normalize_positions: true
+      }.to_json
+      
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      http.read_timeout = 30
+      http.open_timeout = 10
+      
+      response = http.request(request)
+      
+      if response.code == '200'
+        result = JSON.parse(response.body)
+        
+        if result['success'] && result['tags'].present?
+          # Convert to our internal format
+          result['tags'].map do |tag|
+            {
+              name: tag['name'],
+              type: tag['type'],
+              role: tag['role'],
+              required: tag['required'],
+              tag_content: tag['tag_content'],
+              page: tag['page'],
+              x: tag['x'],
+              y: tag['y'],
+              w: tag['w'],
+              h: tag['h'],
+              areas: [{
+                page: tag['page'] || 0,
+                x: tag['x'],
+                y: tag['y'],
+                w: tag['w'],
+                h: tag['h'],
+                attachment_uuid: nil  # Will be set later
+              }]
+            }.with_indifferent_access
+          end
+        else
+          Rails.logger.warn("PDF Extractor returned no tags: #{result['message']}")
+          []
+        end
+      else
+        Rails.logger.error("PDF Extractor error: #{response.code} - #{response.body}")
+        []
+      end
+    rescue StandardError => e
+      Rails.logger.error("PDF Extractor service error: #{e.class} - #{e.message}")
+      []
+    end
 
     def normalize_documents(documents)
       Array.wrap(documents).map do |doc|

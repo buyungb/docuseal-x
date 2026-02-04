@@ -20,6 +20,8 @@ module Templates
     # Returns array of field definitions with areas
     def call(pdf, attachment)
       fields = []
+      
+      # First approach: Try position-aware extraction
       text_positions = extract_text_with_positions(pdf)
 
       text_positions.each do |text_item|
@@ -43,6 +45,51 @@ module Templates
         end
       end
 
+      # Second approach: If no fields found, try extracting all text and finding tags
+      # This handles cases where tags are split across text runs
+      if fields.blank?
+        Rails.logger.info("ParsePdfTextTags: No fields from position extraction, trying full text extraction")
+        
+        pdf.pages.each_with_index do |page, page_index|
+          page_text = extract_page_text(page)
+          # Normalize whitespace to handle line breaks within tags
+          normalized = page_text.gsub(/\s+/, ' ')
+          
+          page_width = page.box(:media).width rescue 612
+          page_height = page.box(:media).height rescue 792
+          
+          # Find all tags
+          normalized.scan(TAG_REGEX) do |match|
+            tag_content = match[0]
+            field_def = parse_tag(tag_content)
+            
+            next if field_def.blank?
+            
+            # Create approximate area (center of page for signature fields)
+            field_def[:uuid] = SecureRandom.uuid
+            
+            # Position based on field type
+            y_position = case field_def[:type]
+            when 'signature', 'initials' then 0.75 # Lower on page
+            else 0.5 # Middle of page
+            end
+            
+            field_def[:areas] = [{
+              page: page_index,
+              x: 0.1,
+              y: y_position,
+              w: 0.35,
+              h: field_def[:type] == 'signature' ? 0.08 : 0.04,
+              attachment_uuid: attachment.uuid
+            }]
+            
+            fields << field_def
+            Rails.logger.info("ParsePdfTextTags: Found tag '#{tag_content}' -> field '#{field_def[:name]}' (#{field_def[:type]})")
+          end
+        end
+      end
+      
+      Rails.logger.info("ParsePdfTextTags: Extracted #{fields.size} fields total")
       fields
     end
 
@@ -222,11 +269,22 @@ module Templates
 
     # Check if PDF contains any text tags
     def contains_tags?(pdf)
-      pdf.pages.any? do |page|
+      all_text = ''
+      pdf.pages.each do |page|
         page_text = extract_page_text(page)
-        page_text.match?(TAG_REGEX)
+        all_text += page_text
       end
-    rescue StandardError
+      
+      # Remove whitespace and newlines before checking for tags
+      # This handles tags split across lines
+      normalized_text = all_text.gsub(/\s+/, ' ')
+      has_tags = normalized_text.match?(TAG_REGEX)
+      
+      Rails.logger.info("ParsePdfTextTags.contains_tags?: #{has_tags}, text sample: #{normalized_text[0..200]}...")
+      
+      has_tags
+    rescue StandardError => e
+      Rails.logger.warn("ParsePdfTextTags.contains_tags? error: #{e.message}")
       false
     end
 
@@ -285,6 +343,7 @@ module Templates
         @accumulated_text = ''
         @text_start_x = 0
         @text_start_y = 0
+        @in_tag = false # Track if we're inside an unclosed {{ tag
       end
 
       def process(*args)
@@ -296,19 +355,21 @@ module Templates
       end
 
       def move_text(x, y)
-        flush_text
+        # Don't flush if we're in the middle of a tag (unclosed {{)
+        flush_text unless @in_tag
         @current_x = x
         @current_y = y
-        @text_start_x = x
-        @text_start_y = y
+        @text_start_x = x unless @in_tag
+        @text_start_y = y unless @in_tag
       end
 
       def set_text_matrix(a, _b, _c, _d, e, f)
-        flush_text
+        # Don't flush if we're in the middle of a tag
+        flush_text unless @in_tag
         @current_x = e
         @current_y = f
-        @text_start_x = e
-        @text_start_y = f
+        @text_start_x = e unless @in_tag
+        @text_start_y = f unless @in_tag
       end
 
       def show_text(str)
@@ -319,8 +380,13 @@ module Templates
         @text_start_y = @current_y if @accumulated_text.blank?
         @accumulated_text += str
 
+        # Track if we're inside an unclosed tag
+        open_count = @accumulated_text.scan('{{').length
+        close_count = @accumulated_text.scan('}}').length
+        @in_tag = open_count > close_count
+
         # Check if this text contains a complete tag
-        flush_text if @accumulated_text.include?('}}')
+        flush_text if !@in_tag && @accumulated_text.include?('}}')
       end
 
       def show_text_with_positioning(array)
@@ -330,6 +396,7 @@ module Templates
       end
 
       def end_text
+        @in_tag = false # Force close any open tags at end of text block
         flush_text
       end
 
@@ -355,6 +422,7 @@ module Templates
         end
 
         @accumulated_text = ''
+        @in_tag = false
       end
 
       def method_missing(_method, *_args)

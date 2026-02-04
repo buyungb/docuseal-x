@@ -65,7 +65,7 @@ def main():
     contract_date = datetime.now().strftime("%B %d, %Y")
     
     payload = {
-        "name": "Sales Contract - Python Test",
+        "name": "Sales Contract - #4",
         "variables": {
             "contract_number": contract_num,
             "contract_date": contract_date,

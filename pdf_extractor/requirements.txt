@@ -1,0 +1,6 @@
+# PDF Tag Extractor Dependencies
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+PyMuPDF==1.23.8
+python-multipart==0.0.6

@@ -10,12 +10,17 @@ services:
         condition: service_healthy
       gotenberg:
         condition: service_started
+      pdf-extractor:
+        condition: service_started
     environment:
       # Koneksi DB internal docker network
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/docuseal
       
       # Gotenberg for DOCX to PDF conversion
       GOTENBERG_URL: http://gotenberg:3000
+      
+      # PDF Tag Extractor for accurate field positioning
+      PDF_EXTRACTOR_URL: http://pdf-extractor:8000
 
       # IMPORTANT: Set a persistent SECRET_KEY_BASE to avoid re-setup after deploy
       # Generate with: openssl rand -hex 64
@@ -79,6 +84,22 @@ services:
       - "gotenberg"
       - "--api-timeout=60s"
       - "--libreoffice-restart-after=10"
+    networks:
+      - internal
+
+  # PDF Tag Extractor: Accurate {{...}} tag position extraction using PyMuPDF
+  pdf-extractor:
+    build:
+      context: ./pdf_extractor
+      dockerfile: Dockerfile
+    image: docuseal-pdf-extractor:latest
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     networks:
       - internal
 

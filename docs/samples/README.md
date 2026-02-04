@@ -2,6 +2,40 @@
 
 This folder contains sample templates demonstrating DOCX variables and text tags.
 
+## PDF Tag Extractor Service (PyMuPDF)
+
+For accurate `{{...}}` tag position detection, DocuSeal uses a PyMuPDF-based microservice.
+
+### Architecture
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│  DOCX Template  │ --> │    Gotenberg    │ --> │  PDF with tags  │
+│  with {{tags}}  │     │  (DOCX to PDF)  │     │                 │
+└─────────────────┘     └─────────────────┘     └────────┬────────┘
+                                                         │
+                                                         v
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│  Form Fields    │ <-- │   DocuSeal      │ <-- │  PDF Extractor  │
+│  at exact pos   │     │   Controller    │     │  (PyMuPDF)      │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+```
+
+### Environment Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `GOTENBERG_URL` | Gotenberg service URL | `http://gotenberg:3000` |
+| `PDF_EXTRACTOR_URL` | PDF Extractor service URL | `http://pdf-extractor:8000` |
+
+### How It Works
+
+1. **DOCX Processing**: Variables (`[[...]]`) are replaced, `{{...}}` tags are preserved
+2. **PDF Conversion**: Gotenberg converts DOCX to PDF
+3. **Tag Extraction**: PDF Extractor finds `{{...}}` tags and their exact positions using PyMuPDF
+4. **Field Creation**: Form fields are placed at the exact tag positions
+5. **Signing**: User sees fields overlaying the tag text
+
 ## Files
 
 | File | Description |
