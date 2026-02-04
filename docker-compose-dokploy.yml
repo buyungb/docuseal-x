@@ -59,6 +59,19 @@ services:
       - dokploy-network
       - internal
 
+  # PDF Tag Extractor: Accurate {{...}} tag position extraction using PyMuPDF
+  pdf-extractor:
+    image: buyungbahari/docuseal-pdf-extractor:latest
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - internal
+
   postgres:
     image: postgres:16
     restart: unless-stopped
@@ -84,22 +97,6 @@ services:
       - "gotenberg"
       - "--api-timeout=60s"
       - "--libreoffice-restart-after=10"
-    networks:
-      - internal
-
-  # PDF Tag Extractor: Accurate {{...}} tag position extraction using PyMuPDF
-  pdf-extractor:
-    build:
-      context: ./pdf_extractor
-      dockerfile: Dockerfile
-    image: docuseal-pdf-extractor:latest
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
     networks:
       - internal
 
