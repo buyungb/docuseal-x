@@ -243,8 +243,8 @@ module Api
           end
         end
       elsif docx_extracted_fields.any?
-        # No DetectFields results - use calculated layout
-        Rails.logger.info("DOCX Submission: Using calculated layout for #{docx_extracted_fields.size} DOCX tags")
+        # No PDF extractor results - use DOCX metadata with calculated positions
+        Rails.logger.info("DOCX Submission: Using calculated layout for #{docx_extracted_fields.size} DOCX field tags")
         
         # Group by role and assign to columns
         docx_by_role = docx_extracted_fields.group_by { |f| f[:role]&.downcase || 'default' }
@@ -259,10 +259,6 @@ module Api
             add_fallback_field(all_fields, field, role, column, first_doc)
           end
         end
-      elsif detected_fields.any?
-        # Use only detected fields (no DOCX tags)
-        Rails.logger.info("DOCX Submission: Using #{detected_fields.size} fields from DetectFields")
-        all_fields = detected_fields
       else
         # No fields from DOCX tags, create default signature fields
         Rails.logger.info("DOCX Submission: No field tags in DOCX, creating default signature fields")
@@ -350,13 +346,17 @@ module Api
           'name' => field[:name] || "Field #{field_idx + 1}",
           'type' => field[:type] || 'signature',
           'required' => field[:required].nil? ? true : field[:required],
+          'readonly' => field[:readonly] || false,
           'areas' => field_areas
         }
         
-        # Add optional attributes
+        # Add optional attributes from official DocuSeal spec
         assigned_field['default_value'] = field[:default_value] if field[:default_value].present?
+        assigned_field['default'] = field[:default] if field[:default].present?
         assigned_field['preferences'] = field[:preferences] if field[:preferences].present?
         assigned_field['options'] = field[:options] if field[:options].present?
+        assigned_field['condition'] = field[:condition] if field[:condition].present?
+        assigned_field['format'] = field[:format] if field[:format].present?
         
         Rails.logger.info("DOCX Submission: Field '#{assigned_field['name']}' (#{assigned_field['type']}) assigned to submitter #{submitter_idx} (#{template.submitters[submitter_idx]['name']})")
         assigned_fields << assigned_field

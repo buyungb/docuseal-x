@@ -33,12 +33,17 @@ class ExtractRequest(BaseModel):
 
 
 class TagPosition(BaseModel):
-    """Position of a tag in the PDF"""
+    """Position of a tag in the PDF with all DocuSeal attributes"""
     tag_content: str
     name: str
     type: str
     role: Optional[str] = None
     required: bool = True
+    readonly: bool = False
+    default: Optional[str] = None
+    options: Optional[List[str]] = None
+    condition: Optional[str] = None
+    format: Optional[str] = None
     page: int
     x: float
     y: float
@@ -59,6 +64,23 @@ def parse_tag_attributes(tag_content: str) -> Dict[str, Any]:
     """
     Parse tag content like "BuyerSign;type=signature;role=Buyer;required=true"
     into a dictionary of attributes.
+    
+    Official DocuSeal attributes:
+    - name: Name of the field
+    - type: text, signature, initials, date, datenow, image, file, payment, stamp, 
+            select, checkbox, multiple, radio, phone, verification, kba
+    - role: Signer role name
+    - default: Default field value
+    - required: true/false (default: true)
+    - readonly: true/false (default: false)
+    - options: Comma-separated list for select/radio
+    - condition: FieldName:value for conditional display
+    - width: Absolute width in pixels
+    - height: Absolute height in pixels  
+    - format: Date format (DD/MM/YYYY) or signature format (drawn, typed, drawn_or_typed, upload)
+    - min/max: For number/date fields
+    - font, font_size, font_type, color, align, valign
+    - hidden, mask, method
     """
     parts = tag_content.split(';')
     name = parts[0].strip() if parts else "Field"
@@ -68,6 +90,13 @@ def parse_tag_attributes(tag_content: str) -> Dict[str, Any]:
         'type': 'text',  # default
         'role': None,
         'required': True,
+        'readonly': False,
+        'default': None,
+        'options': None,
+        'condition': None,
+        'format': None,
+        'width': None,
+        'height': None,
     }
     
     for part in parts[1:]:
@@ -82,8 +111,22 @@ def parse_tag_attributes(tag_content: str) -> Dict[str, Any]:
                 attrs['role'] = value
             elif key == 'required':
                 attrs['required'] = value.lower() in ('true', 'yes', '1')
+            elif key == 'readonly':
+                attrs['readonly'] = value.lower() in ('true', 'yes', '1')
             elif key == 'name':
                 attrs['name'] = value
+            elif key == 'default':
+                attrs['default'] = value
+            elif key == 'options':
+                attrs['options'] = value.split(',')
+            elif key == 'condition':
+                attrs['condition'] = value
+            elif key == 'format':
+                attrs['format'] = value
+            elif key == 'width':
+                attrs['width'] = int(value) if value.isdigit() else None
+            elif key == 'height':
+                attrs['height'] = int(value) if value.isdigit() else None
     
     # If name is empty or contains '=', generate a name from type
     if not attrs['name'] or '=' in attrs['name']:
@@ -93,7 +136,12 @@ def parse_tag_attributes(tag_content: str) -> Dict[str, Any]:
 
 
 def normalize_field_type(field_type: str) -> str:
-    """Normalize field type aliases"""
+    """
+    Normalize field type aliases to official DocuSeal types.
+    
+    Official types: text, signature, initials, date, datenow, image, file, 
+    payment, stamp, select, checkbox, multiple, radio, phone, verification, kba
+    """
     type_map = {
         'sig': 'signature',
         'sign': 'signature',
@@ -103,9 +151,22 @@ def normalize_field_type(field_type: str) -> str:
         'sel': 'select',
         'img': 'image',
         'num': 'number',
-        'datenow': 'date',  # Keep as date for positioning, metadata will have datenow
+        'string': 'text',
+        'str': 'text',
     }
-    return type_map.get(field_type.lower(), field_type.lower())
+    normalized = type_map.get(field_type.lower(), field_type.lower())
+    
+    # Validate against official types
+    official_types = [
+        'text', 'signature', 'initials', 'date', 'datenow', 'image', 'file',
+        'payment', 'stamp', 'select', 'checkbox', 'multiple', 'radio', 
+        'phone', 'verification', 'kba', 'number'
+    ]
+    
+    if normalized not in official_types:
+        return 'text'  # Default to text for unknown types
+    
+    return normalized
 
 
 def extract_tags_from_pdf(pdf_data: bytes, normalize: bool = True) -> Dict[str, Any]:
@@ -167,6 +228,11 @@ def extract_tags_from_pdf(pdf_data: bytes, normalize: bool = True) -> Dict[str, 
                                 type=attrs['type'],
                                 role=attrs['role'],
                                 required=attrs['required'],
+                                readonly=attrs.get('readonly', False),
+                                default=attrs.get('default'),
+                                options=attrs.get('options'),
+                                condition=attrs.get('condition'),
+                                format=attrs.get('format'),
                                 page=page_num,
                                 x=bbox[0] / page_width,
                                 y=bbox[1] / page_height,
@@ -181,6 +247,11 @@ def extract_tags_from_pdf(pdf_data: bytes, normalize: bool = True) -> Dict[str, 
                                 type=attrs['type'],
                                 role=attrs['role'],
                                 required=attrs['required'],
+                                readonly=attrs.get('readonly', False),
+                                default=attrs.get('default'),
+                                options=attrs.get('options'),
+                                condition=attrs.get('condition'),
+                                format=attrs.get('format'),
                                 page=page_num,
                                 x=bbox[0],
                                 y=bbox[1],
@@ -218,6 +289,11 @@ def extract_tags_from_pdf(pdf_data: bytes, normalize: bool = True) -> Dict[str, 
                             type=attrs['type'],
                             role=attrs['role'],
                             required=attrs['required'],
+                            readonly=attrs.get('readonly', False),
+                            default=attrs.get('default'),
+                            options=attrs.get('options'),
+                            condition=attrs.get('condition'),
+                            format=attrs.get('format'),
                             page=page_num,
                             x=tag_x / page_width,
                             y=y0 / page_height,
@@ -232,6 +308,11 @@ def extract_tags_from_pdf(pdf_data: bytes, normalize: bool = True) -> Dict[str, 
                             type=attrs['type'],
                             role=attrs['role'],
                             required=attrs['required'],
+                            readonly=attrs.get('readonly', False),
+                            default=attrs.get('default'),
+                            options=attrs.get('options'),
+                            condition=attrs.get('condition'),
+                            format=attrs.get('format'),
                             page=page_num,
                             x=tag_x,
                             y=y0,

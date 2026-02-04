@@ -503,6 +503,18 @@ module Templates
     end
     
     # Parse a field tag like "BuyerSign;type=signature;role=Buyer;required=true"
+    # Official DocuSeal attributes:
+    # - name: Name of the field
+    # - type: text, signature, initials, date, datenow, image, file, payment, stamp, 
+    #         select, checkbox, multiple, radio, phone, verification, kba
+    # - role: Signer role name
+    # - default: Default field value
+    # - required: true/false (default: true)
+    # - readonly: true/false (default: false)
+    # - options: Comma-separated list for select/radio
+    # - condition: FieldName:value for conditional display
+    # - width/height: Absolute dimensions in pixels
+    # - format: Date format or signature format
     def parse_field_tag(tag_content)
       parts = tag_content.split(';').map(&:strip)
       return nil if parts.blank?
@@ -517,40 +529,67 @@ module Templates
         attrs[key.strip.downcase] = value&.strip if key.present?
       end
 
-      # Handle case where first part contains type specification
+      # Handle case where first part contains type specification (e.g., {{type=checkbox}})
       if name.include?('=')
         key, value = name.split('=', 2)
         if key.strip.downcase == 'type'
           attrs['type'] = value&.strip
-          name = "Field #{SecureRandom.hex(3).upcase}"
+          name = nil
         end
       end
 
       field_type = normalize_field_type(attrs['type'] || 'text')
+      field_name = name.presence || attrs['name'].presence || "#{field_type.titleize} #{SecureRandom.hex(3).upcase}"
       
-      {
+      result = {
         uuid: SecureRandom.uuid,
-        name: name.presence || "#{field_type.titleize} #{SecureRandom.hex(3).upcase}",
+        name: field_name,
         type: field_type,
         role: attrs['role'],
         required: parse_boolean(attrs['required'], true),
-        default_value: attrs['default'],
-        description: attrs['description']
-      }.compact
+        readonly: parse_boolean(attrs['readonly'], false)
+      }
+      
+      # Add optional attributes if present
+      result[:default_value] = attrs['default'] if attrs['default'].present?
+      result[:options] = attrs['options']&.split(',')&.map(&:strip) if attrs['options'].present?
+      result[:condition] = attrs['condition'] if attrs['condition'].present?
+      result[:format] = attrs['format'] if attrs['format'].present?
+      result[:width] = attrs['width'].to_i if attrs['width'].present?
+      result[:height] = attrs['height'].to_i if attrs['height'].present?
+      
+      result.compact
     end
     
+    # Normalize field type aliases to official DocuSeal types
+    # Official types: text, signature, initials, date, datenow, image, file, 
+    # payment, stamp, select, checkbox, multiple, radio, phone, verification, kba, number
     def normalize_field_type(type)
       type = type.to_s.downcase.strip
-      case type
-      when 'sig' then 'signature'
-      when 'init' then 'initials'
-      when 'check' then 'checkbox'
-      when 'multi' then 'multiple'
-      when 'sel' then 'select'
-      when 'img' then 'image'
-      when 'num' then 'number'
-      else type.presence || 'text'
-      end
+      
+      # Map aliases to official types
+      aliases = {
+        'sig' => 'signature',
+        'sign' => 'signature',
+        'init' => 'initials',
+        'check' => 'checkbox',
+        'multi' => 'multiple',
+        'sel' => 'select',
+        'img' => 'image',
+        'num' => 'number',
+        'string' => 'text',
+        'str' => 'text'
+      }
+      
+      normalized = aliases[type] || type
+      
+      # Validate against official types
+      official_types = %w[
+        text signature initials date datenow image file payment stamp 
+        select checkbox multiple radio phone verification kba number
+      ]
+      
+      official_types.include?(normalized) ? normalized : 'text'
     end
     
     def parse_boolean(value, default)
