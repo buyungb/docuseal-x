@@ -65,7 +65,7 @@ def main():
     contract_date = datetime.now().strftime("%B %d, %Y")
     
     payload = {
-        "name": "Sales Contract - #4",
+        "name": "Sales Contract - #6",
         "variables": {
             "contract_number": contract_num,
             "contract_date": contract_date,
@@ -156,7 +156,7 @@ def main():
     ctx.verify_mode = ssl.CERT_NONE
     
     try:
-        with urllib.request.urlopen(req, context=ctx, timeout=60) as response:
+        with urllib.request.urlopen(req, context=ctx, timeout=300) as response:
             result = response.read().decode('utf-8')
             print()
             print("=== Response ===")

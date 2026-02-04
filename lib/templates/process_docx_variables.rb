@@ -181,16 +181,22 @@ module Templates
       xml_content.gsub!(/\[\[else\]\]/, '')
       xml_content.gsub!(/\[\[end(:\w+)?\]\]/, '')
       
-      # Process {{field}} tags without type - replace with content
+      # Process {{field}} tags:
+      # - Tags WITHOUT type: {{name}} → Replace with content from variables
+      # - Tags WITH type: {{name;type=X}} → Replace with underscores for field detection
+      
+      # First: Replace tags WITHOUT type with content
       xml_content.gsub!(/\{\{(\w+)\}\}/) do
         field_name = ::Regexp.last_match(1)
-        # Only replace if no type= in the tag (simple content replacement)
         value = variables[field_name] || variables[field_name.downcase] || variables[field_name.underscore]
         modified = true if value.present?
         value.present? ? value.to_s : "{{#{field_name}}}"
       end
       
-      # Note: {{field;type=X}} tags are kept as-is for form field detection
+      # Second: KEEP tags WITH type as-is for ParsePdfTextTags to find in PDF
+      # ParsePdfTextTags will detect {{...}} tags and extract their positions
+      # We just ensure the tags are clean (no split across XML nodes)
+      # Note: Tags are NOT replaced - they stay visible in PDF for detection
       
       if modified || xml_content != original_content
         zip_file.get_output_stream(entry_name) { |os| os.write(xml_content) }
@@ -382,12 +388,13 @@ module Templates
     # Extract FORM FIELD tags from DOCX - only tags WITH type attribute
     # {{field;type=signature;role=Buyer}} → form field
     # {{field}} (no type) → NOT extracted, replaced with content by process_field_tags
+    # 
+    # Traverses XML in document order to preserve visual layout order
     def extract_field_tags(docx_data)
       return [] if docx_data.blank?
       return [] unless docx_data[0..3] == "PK\x03\x04"
 
       fields = []
-      # Match {{...}} tags that contain "type="
       field_tag_regex = /\{\{([^}]*type=[^}]+)\}\}/i
 
       tempfile = Tempfile.new(['docx_fields', '.docx'])
@@ -401,34 +408,60 @@ module Templates
           return [] unless entry
 
           xml_content = entry.get_input_stream.read
-          
           doc = Nokogiri::XML(xml_content)
           namespaces = { 'w' => 'http://schemas.openxmlformats.org/wordprocessingml/2006/main' }
           
-          all_text = doc.xpath('//w:t', namespaces).map(&:content).join(' ')
-          normalized_text = all_text.gsub(/\s+/, ' ')
+          Rails.logger.info("ProcessDocxVariables: Scanning for form field tags in document order")
           
-          Rails.logger.info("ProcessDocxVariables: Scanning for form field tags (with type=)")
+          # Traverse in document order: all child elements of body
+          # For tables, we iterate through rows, then cells
+          body = doc.at_xpath('//w:body', namespaces)
+          return [] unless body
           
-          # Find all form field tags (those with type attribute)
-          normalized_text.scan(field_tag_regex) do |match|
-            tag_content = match[0]
-            field_def = parse_field_tag(tag_content)
-            
-            if field_def.present?
-              fields << field_def
-              Rails.logger.info("ProcessDocxVariables: Form field '#{tag_content}' -> #{field_def[:name]} (#{field_def[:type]}) role=#{field_def[:role]}")
-            end
-          end
+          extract_fields_from_element(body, namespaces, field_tag_regex, fields)
         end
 
         Rails.logger.info("ProcessDocxVariables: Found #{fields.size} form field tags")
+        fields.each_with_index { |f, i| Rails.logger.info("  #{i+1}. #{f[:name]} (#{f[:type]}) role=#{f[:role]}") }
         fields
       rescue StandardError => e
         Rails.logger.error("ProcessDocxVariables.extract_field_tags error: #{e.message}")
+        Rails.logger.error(e.backtrace.first(3).join("\n"))
         []
       ensure
         tempfile.unlink if tempfile
+      end
+    end
+    
+    # Recursively extract fields from XML element in document order
+    def extract_fields_from_element(element, namespaces, regex, fields)
+      element.children.each do |child|
+        case child.name
+        when 'p' # Paragraph
+          text = child.xpath('.//w:t', namespaces).map(&:content).join
+          extract_tags_from_text(text, regex, fields)
+        when 'tbl' # Table - iterate rows then cells
+          child.xpath('.//w:tr', namespaces).each do |row|
+            row.xpath('.//w:tc', namespaces).each do |cell|
+              text = cell.xpath('.//w:t', namespaces).map(&:content).join
+              extract_tags_from_text(text, regex, fields)
+            end
+          end
+        end
+      end
+    end
+    
+    def extract_tags_from_text(text, regex, fields)
+      text.scan(regex) do |match|
+        tag_content = match[0]
+        field_def = parse_field_tag(tag_content)
+        
+        if field_def.present?
+          # Assign marker index (1-based) - this matches the [#N#] markers in PDF
+          field_def[:marker_index] = fields.size + 1
+          fields << field_def
+          Rails.logger.info("ProcessDocxVariables: [##{field_def[:marker_index]}#] #{field_def[:name]} (#{field_def[:type]}) role=#{field_def[:role]}")
+        end
       end
     end
     

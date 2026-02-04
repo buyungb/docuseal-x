@@ -123,75 +123,63 @@ module Api
       Rails.logger.info("DOCX Submission: Template has #{template.documents.count} documents")
 
       # Field detection strategy:
-      # 1. PDF extractor service (PyMuPDF) finds {{name;type=X}} tags with exact positions
-      # 2. Tags are already parsed with all attributes (name, type, role, etc.)
-      # 3. Fallback: use DOCX-extracted metadata with calculated positions
+      # 1. Tags WITH type {{name;type=X}} are KEPT in DOCX (not replaced)
+      # 2. After PDF conversion, use Pdfium to find {{...}} tag positions
+      # 3. Merge DOCX field metadata with PDF tag positions
       #
-      # Note: Tags WITHOUT type ({{name}}) are replaced with content in DOCX processor
-      # Only tags WITH type ({{name;type=X}}) become interactive form fields
+      # Tags WITHOUT type: {{name}} → replaced with content from variables
+      # Tags WITH type: {{name;type=X}} → kept visible for detection
       
       all_fields = []
       first_doc = template.documents.first
       
-      if first_doc
+      if first_doc && docx_extracted_fields.any?
         begin
           document_data = first_doc.download
-          pdf_extractor_url = ENV.fetch('PDF_EXTRACTOR_URL', nil)
           
-          if pdf_extractor_url.present?
-            Rails.logger.info("DOCX Submission: Using PDF Extractor for field positions...")
-            extracted_fields = extract_tags_via_service(document_data, pdf_extractor_url)
-            
-            if extracted_fields.any?
-              Rails.logger.info("DOCX Submission: Found #{extracted_fields.size} form field tags")
+          # Use Pdfium to find {{...}} tags in PDF (more reliable than HexaPDF)
+          Rails.logger.info("DOCX Submission: Using Pdfium to find {{...}} tag positions...")
+          
+          tag_positions = find_tags_with_pdfium(document_data, docx_extracted_fields)
+          
+          Rails.logger.info("DOCX Submission: Found #{tag_positions.size} tag positions")
+          
+          if tag_positions.any?
+            # Match DOCX fields with detected positions by name
+            docx_extracted_fields.each do |docx_field|
+              field_name = docx_field[:name]
+              position = tag_positions[field_name]
               
-              extracted_fields.each do |field|
-                all_fields << {
+              if position
+                merged = docx_field.merge(
                   uuid: SecureRandom.uuid,
-                  name: field[:name],
-                  type: field[:type] || 'text',
-                  role: field[:role],
-                  required: field[:required] != false,
-                  readonly: field[:readonly] || false,
-                  default_value: field[:default],
-                  options: field[:options],
-                  condition: field[:condition],
-                  format: field[:format],
                   areas: [{
-                    page: field[:page] || 0,
-                    x: field[:x],
-                    y: field[:y],
-                    w: [field[:w], 0.15].max,
-                    h: [field[:h], 0.03].max,
+                    page: position[:page],
+                    x: position[:x],
+                    y: position[:y],
+                    w: default_width_for_type(docx_field[:type]),
+                    h: default_height_for_type(docx_field[:type]),
                     attachment_uuid: first_doc.uuid
                   }]
-                }
-                Rails.logger.info("  - Field: #{field[:name]} (#{field[:type]}) role=#{field[:role]} pos=(#{field[:x]&.round(3)}, #{field[:y]&.round(3)})")
+                )
+                all_fields << merged
+                
+                Rails.logger.info("  #{field_name} (#{docx_field[:type]}) -> pos=(#{position[:x].round(3)}, #{position[:y].round(3)})")
+              else
+                # No matching tag found - use fallback
+                role = docx_field[:role]&.downcase || 'default'
+                column_idx = determine_column_for_role(role) == :left ? 0 : 1
+                add_fallback_field(all_fields, docx_field, role, column_idx, first_doc, 2)
+                Rails.logger.warn("  #{field_name} -> FALLBACK (tag not found in PDF)")
               end
             end
           else
-            Rails.logger.info("DOCX Submission: PDF_EXTRACTOR_URL not set, using DOCX metadata with fallback positions")
-          end
-          
-          # Fallback: Use DOCX-extracted metadata with calculated positions
-          if all_fields.empty? && docx_extracted_fields.any?
-            Rails.logger.info("DOCX Submission: Using #{docx_extracted_fields.size} fields from DOCX with calculated positions")
-            
-            docx_by_role = docx_extracted_fields.group_by { |f| f[:role]&.downcase || 'default' }
-            
-            docx_by_role.each do |role, role_fields|
-              column = determine_column_for_role(role)
-              type_order = %w[signature initials image text number date datenow checkbox select]
-              sorted_fields = role_fields.sort_by { |f| type_order.index(f[:type]) || 99 }
-              
-              sorted_fields.each do |field|
-                add_fallback_field(all_fields, field, role, column, first_doc)
-              end
-            end
+            Rails.logger.warn("DOCX Submission: No tags found in PDF, using fallback")
+            use_fallback_positions(all_fields, docx_extracted_fields, first_doc)
           end
         rescue StandardError => e
           Rails.logger.warn("DOCX Submission: Field detection failed: #{e.message}")
-          Rails.logger.warn(e.backtrace.first(3).join("\n"))
+          Rails.logger.warn(e.backtrace.first(5).join("\n"))
         end
       end
       
@@ -311,6 +299,14 @@ module Api
       template.fields = assigned_fields
 
       Rails.logger.info("DOCX Submission: Schema has #{template.schema.size} documents, #{template.fields.size} fields")
+      
+      # Log all fields for debugging
+      Rails.logger.info("DOCX Submission: Final template fields:")
+      template.fields.each_with_index do |f, i|
+        area = f['areas']&.first
+        pos_str = area ? "pos=(#{area['x'].to_f.round(3)}, #{area['y'].to_f.round(3)})" : "no position"
+        Rails.logger.info("  #{i + 1}. #{f['name']} (type=#{f['type']}) #{pos_str}")
+      end
 
       template.save!
 
@@ -378,6 +374,103 @@ module Api
 
     private
     
+    # Find {{...}} tags in PDF using Pdfium and return positions
+    # Returns: { "FieldName" => {page:, x:, y:}, ... }
+    def find_tags_with_pdfium(pdf_data, docx_fields)
+      positions = {}
+      
+      begin
+        pdf_doc = Pdfium::Document.open_bytes(pdf_data)
+        
+        (0...pdf_doc.page_count).each do |page_idx|
+          page = pdf_doc.get_page(page_idx)
+          text_nodes = page.text_nodes
+          
+          # Build full page text with position mapping
+          # text_nodes are already sorted by Y then X
+          text_with_positions = []
+          text_nodes.each do |node|
+            content = node.content.to_s
+            next if content.empty?
+            
+            text_with_positions << {
+              text: content,
+              x: node.x,       # Already normalized 0-1
+              y: node.y,       # Already normalized 0-1
+              w: node.w,
+              h: node.h
+            }
+          end
+          
+          # Build full text for searching
+          full_text = text_with_positions.map { |t| t[:text] }.join
+          
+          Rails.logger.info("DOCX Submission: Page #{page_idx} text length: #{full_text.length}")
+          Rails.logger.debug("DOCX Submission: Page #{page_idx} text sample: #{full_text[0..500]}...")
+          
+          # Find each DOCX field's tag in the text
+          docx_fields.each do |field|
+            field_name = field[:name]
+            next if positions[field_name]  # Already found
+            
+            # Search for the tag pattern containing this field name
+            # Match: {{FieldName;...}} or {{FieldName}}
+            field_pattern = /\{\{#{Regexp.escape(field_name)}[^}]*\}\}/
+            
+            match = full_text.match(field_pattern)
+            next unless match
+            
+            # Find position of the match
+            match_start = match.begin(0)
+            
+            # Find which text node contains this position
+            char_count = 0
+            text_with_positions.each do |node_info|
+              node_end = char_count + node_info[:text].length
+              
+              if match_start >= char_count && match_start < node_end
+                # Found the node containing the tag
+                positions[field_name] = {
+                  page: page_idx,
+                  x: node_info[:x],
+                  y: node_info[:y]
+                }
+                
+                Rails.logger.info("  Found '#{field_name}' at page=#{page_idx} pos=(#{node_info[:x].round(3)}, #{node_info[:y].round(3)})")
+                break
+              end
+              
+              char_count = node_end
+            end
+          end
+          
+          page.close
+        end
+        
+        pdf_doc.close
+        
+      rescue => e
+        Rails.logger.error("find_tags_with_pdfium error: #{e.message}")
+        Rails.logger.error(e.backtrace.first(5).join("\n"))
+      end
+      
+      positions
+    end
+    
+    # Use fallback positions when PDF tag detection fails
+    def use_fallback_positions(all_fields, docx_fields, first_doc)
+      docx_by_role = docx_fields.group_by { |f| f[:role]&.downcase || 'default' }
+      num_columns = [docx_by_role.size, 2].max
+      
+      docx_by_role.each_with_index do |(role, role_fields), role_idx|
+        column_idx = role_idx % num_columns
+        
+        role_fields.each do |field|
+          add_fallback_field(all_fields, field, role, column_idx, first_doc, num_columns)
+        end
+      end
+    end
+    
     # Determine column (left/right) for a role name
     def determine_column_for_role(role)
       role_lower = role.to_s.downcase
@@ -399,17 +492,43 @@ module Api
       :left # Default to left column
     end
     
-    # Add a field with fallback positioning based on role and column
-    def add_fallback_field(all_fields, docx_field, role, column, first_doc)
+    # Default field width based on type
+    def default_width_for_type(field_type)
+      case field_type.to_s
+      when 'signature', 'initials', 'image'
+        0.25
+      when 'checkbox'
+        0.03
+      else
+        0.15
+      end
+    end
+    
+    # Default field height based on type
+    def default_height_for_type(field_type)
+      case field_type.to_s
+      when 'signature', 'initials', 'image'
+        0.05
+      when 'checkbox'
+        0.025
+      else
+        0.025
+      end
+    end
+    
+    # Add a field with fallback positioning based on role and column index
+    def add_fallback_field(all_fields, docx_field, role, column_idx, first_doc, total_columns = 2)
       role_lower = role.to_s.downcase
       field_type = docx_field[:type]
       
       # Count existing fields for this role to determine Y position
       role_field_count = all_fields.count { |f| (f[:role] || '').to_s.downcase == role_lower }
       
-      # Base positions - configurable starting Y based on document layout
-      # You can override these with API params in the future
-      base_x = column == :left ? 0.08 : 0.52
+      # Calculate X position based on column index and total columns
+      # Spread columns evenly across the page width
+      column_width = 1.0 / total_columns
+      base_x = (column_idx * column_width) + 0.05  # 5% margin from column start
+      
       signature_start_y = 0.82  # Where signature section typically starts
       
       # Stack fields vertically
@@ -417,7 +536,7 @@ module Api
       
       # Size based on field type
       is_signature = field_type.in?(%w[signature initials])
-      field_w = is_signature ? 0.38 : 0.35
+      field_w = [is_signature ? 0.38 : 0.35, column_width - 0.1].min  # Don't exceed column width
       field_h = is_signature ? 0.045 : 0.025
       
       fallback_field = docx_field.merge(
@@ -433,7 +552,7 @@ module Api
       )
       
       all_fields << fallback_field
-      Rails.logger.info("  - Fallback: #{docx_field[:name]} (#{field_type}) role=#{role} column=#{column} -> pos=(#{base_x}, #{field_y.round(3)})")
+      Rails.logger.info("  - Fallback: #{docx_field[:name]} (#{field_type}) role=#{role} col=#{column_idx} -> pos=(#{base_x.round(3)}, #{field_y.round(3)})")
     end
     
     # Extract tag positions from PDF using the PyMuPDF microservice
