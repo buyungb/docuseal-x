@@ -1,5 +1,5 @@
 # Build stage
-FROM rust:1.82-slim-bookworm as builder
+FROM rust:latest as builder
 
 WORKDIR /app
 
@@ -9,20 +9,12 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy manifests
+# Copy all source files
 COPY Cargo.toml ./
-
-# Create dummy main.rs for dependency caching
-RUN mkdir -p src && echo "fn main() {}" > src/main.rs
-
-# Build dependencies only (for caching)
-RUN cargo build --release && rm -rf src
-
-# Copy actual source
 COPY src ./src
 
-# Build the actual application
-RUN touch src/main.rs && cargo build --release
+# Build the application
+RUN cargo build --release
 
 # Runtime stage
 FROM debian:bookworm-slim
@@ -32,6 +24,7 @@ WORKDIR /app
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
     ca-certificates \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the built binary
