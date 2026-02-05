@@ -106,11 +106,29 @@ module Templates
           
           # Create dehyphenated text for finding tags split across lines
           # LibreOffice PDFs often break words like "re-\nquired" -> should be "required"
-          dehyphenated_text = full_text.gsub(/-\s*[\r\n]+\s*/, '')  # Remove hyphen + newline
+          # Handle various hyphen characters: regular hyphen, soft hyphen (U+00AD), non-breaking hyphen (U+2011), hyphen-minus
+          dehyphenated_text = full_text.gsub(/[-\u00AD\u2010\u2011\u2012]\s*[\r\n]+\s*/, '')  # Remove hyphen + newline
           dehyphenated_text = dehyphenated_text.gsub(/[\r\n]+/, ' ')  # Replace remaining newlines with space
           
           Rails.logger.info("ParsePdfTextTags: Full text (#{full_text.length} chars): #{full_text[0..500]}...")
           Rails.logger.info("ParsePdfTextTags: Dehyphenated text sample: #{dehyphenated_text[0..500]}...")
+          
+          # Debug: Look for SellerSign specifically
+          if full_text.include?('SellerSign')
+            seller_idx = full_text.index('SellerSign')
+            context_start = [seller_idx - 10, 0].max
+            context_end = [seller_idx + 80, full_text.length].min
+            context = full_text[context_start...context_end]
+            Rails.logger.info("ParsePdfTextTags: SellerSign found in full_text at #{seller_idx}, context: #{context.inspect}")
+          elsif full_text.include?('Seller')
+            # Check if Seller exists but SellerSign doesn't (might be split)
+            Rails.logger.warn("ParsePdfTextTags: 'Seller' found but 'SellerSign' not found directly - checking for split tags")
+            full_text.scan(/\{\{Seller[^}]*\}\}/m) do |match|
+              Rails.logger.info("ParsePdfTextTags: Found Seller tag pattern: #{match.inspect}")
+            end
+          else
+            Rails.logger.warn("ParsePdfTextTags: Neither 'SellerSign' nor 'Seller' found in page text!")
+          end
           
           # Log if we find any {{ patterns
           braces_count = full_text.scan(/\{\{/).count
@@ -141,256 +159,166 @@ module Templates
       all_tags
     end
     
-    # Remove {{...}} tags from PDF
-    # Uses external Rust/lopdf service if available, falls back to HexaPDF overlay
-    # Returns the modified PDF data
-    def remove_tags_from_pdf(pdf_data, tag_positions)
-      return pdf_data if tag_positions.blank?
-      
-      # Try external PDF tag remover service first (uses lopdf for proper text removal)
-      remover_url = ENV['PDF_TAG_REMOVER_URL']
-      if remover_url.present?
-        result = remove_tags_via_service(pdf_data, remover_url)
-        return result if result != pdf_data
-      end
-      
-      # Fallback to HexaPDF overlay method
-      remove_tags_with_hexapdf(pdf_data, tag_positions)
-    end
-    
-    # Remove tags using external Rust/lopdf service
-    def remove_tags_via_service(pdf_data, service_url)
-      require 'net/http'
-      require 'uri'
-      require 'json'
-      require 'base64'
-      
-      begin
-        uri = URI.parse("#{service_url}/remove_tags")
-        http = Net::HTTP.new(uri.host, uri.port)
-        http.read_timeout = 60
-        http.open_timeout = 10
-        
-        request = Net::HTTP::Post.new(uri.path)
-        request['Content-Type'] = 'application/json'
-        request.body = {
-          pdf_base64: Base64.strict_encode64(pdf_data),
-          tag_pattern: '\\{\\{[^}]+\\}\\}'  # Match {{...}} tags
-        }.to_json
-        
-        Rails.logger.info("ParsePdfTextTags: Calling PDF tag remover service at #{service_url}")
-        
-        response = http.request(request)
-        
-        if response.code == '200'
-          result = JSON.parse(response.body)
-          if result['success']
-            Rails.logger.info("ParsePdfTextTags: Service removed #{result['tags_removed']} tags")
-            return Base64.strict_decode64(result['pdf_base64'])
-          else
-            Rails.logger.warn("ParsePdfTextTags: Service returned error: #{result['message']}")
-          end
-        else
-          Rails.logger.warn("ParsePdfTextTags: Service returned HTTP #{response.code}")
-        end
-      rescue StandardError => e
-        Rails.logger.warn("ParsePdfTextTags: Service call failed: #{e.message}")
-      end
-      
-      pdf_data  # Return original on error
-    end
-    
-    # Fallback: Remove tags using HexaPDF white rectangle overlay
-    def remove_tags_with_hexapdf(pdf_data, tag_positions)
-      require 'hexapdf'
-      
-      begin
-        pdf = HexaPDF::Document.new(io: StringIO.new(pdf_data))
-        
-        # Group tags by page for efficiency
-        tags_by_page = tag_positions.group_by { |t| t[:page] }
-        
-        tags_by_page.each do |page_index, page_tags|
-          next if page_index >= pdf.pages.count
-          
-          page = pdf.pages[page_index]
-          page_width = page.box(:media).width
-          page_height = page.box(:media).height
-          
-          # Get canvas for drawing overlay
-          canvas = page.canvas(type: :overlay)
-          canvas.fill_color(255, 255, 255)  # White
-          
-          page_tags.each do |tag_info|
-            # Convert normalized coordinates (0-1) to PDF points
-            x = tag_info[:x] * page_width
-            y = page_height - (tag_info[:y] * page_height) - (tag_info[:h] * page_height)
-            w = tag_info[:w] * page_width
-            h = tag_info[:h] * page_height
-            
-            # Expand the area to ensure full coverage
-            margin_x = 8
-            margin_y = 5
-            x = [x - margin_x, 0].max
-            y = [y - margin_y, 0].max
-            w = w + (margin_x * 2)
-            h = h + (margin_y * 2)
-            
-            if h > 20
-              h += 10
-            end
-            
-            canvas.rectangle(x, y, w, h).fill
-            
-            Rails.logger.info("ParsePdfTextTags: Redacted '#{tag_info[:tag_content][0..25]}' via HexaPDF overlay")
-          end
-        end
-        
-        output = StringIO.new
-        pdf.write(output, validate: false)
-        
-        Rails.logger.info("ParsePdfTextTags: Removed #{tag_positions.size} tags via HexaPDF")
-        output.string
-      rescue StandardError => e
-        Rails.logger.warn("ParsePdfTextTags: HexaPDF fallback failed: #{e.message}")
-        pdf_data
-      end
-    end
-    
     # Find {{...}} tags in Pdfium text nodes
     def find_tags_in_pdfium_text(chars_with_positions, full_text, page_index, dehyphenated_text = nil)
       tags = []
       
       # Use dehyphenated text if provided, otherwise create normalized version
-      dehyphenated_text ||= full_text.gsub(/-\s*[\r\n]+\s*/, '').gsub(/[\r\n]+/, ' ')
+      # Handle various hyphen characters: regular hyphen, soft hyphen (U+00AD), non-breaking hyphen (U+2011), etc.
+      dehyphenated_text ||= full_text.gsub(/[-\u00AD\u2010\u2011\u2012]\s*[\r\n]+\s*/, '').gsub(/[\r\n]+/, ' ')
       normalized_text = full_text.gsub(/[\r\n]+/, ' ').gsub(/\s+/, ' ')
       
-      # Find all {{...}} tags in dehyphenated text first (catches hyphenated breaks)
-      # then also try normalized and original text
-      [dehyphenated_text, normalized_text, full_text].each do |search_text|
-        search_text.scan(TAG_REGEX) do |match|
-          tag_content = match[0]
-          full_tag = "{{#{tag_content}}}"
+      Rails.logger.info("ParsePdfTextTags: Searching for tags in page #{page_index}")
+      Rails.logger.info("ParsePdfTextTags: dehyphenated_text has #{dehyphenated_text.scan(TAG_REGEX).count} tags")
+      
+      # Find all {{...}} tags in dehyphenated text (catches hyphenated breaks like "re-\nquired")
+      dehyphenated_text.scan(TAG_REGEX) do |match|
+        tag_content = match[0]
+        
+        # Parse the tag to get field name
+        field_def = parse_tag(tag_content)
+        next if field_def.blank?
+        
+        field_name = field_def[:name]
+        
+        # Skip if we already found this tag
+        next if tags.any? { |t| parse_tag(t[:tag_content])&.dig(:name) == field_name }
+        
+        Rails.logger.info("ParsePdfTextTags: Looking for tag '#{field_name}' (#{field_def[:type]})")
+        
+        # Strategy 1: Find "{{FieldName" directly in original text
+        idx = full_text.index("{{#{field_name}")
+        
+        # Strategy 2: If not found, find all "{{" positions and check which one is for this field
+        unless idx
+          Rails.logger.info("ParsePdfTextTags: '{{#{field_name}' not found directly, trying alternative search")
           
-          # Skip if we already found this tag (by name, not full content to handle hyphenation)
-          field_def = parse_tag(tag_content)
-          next if field_def.blank?
-          next if tags.any? { |t| parse_tag(t[:tag_content])&.dig(:name) == field_def[:name] }
-          
-          Rails.logger.info("ParsePdfTextTags: Trying to locate tag '#{field_def[:name]}' (#{field_def[:type]})")
-          
-          # Find where the tag starts - look for "{{" followed by the field name
-          # This handles cases where the tag content might be hyphenated differently
-          tag_start_pattern = "{{#{field_def[:name]}"
-          idx = full_text.index(tag_start_pattern)
-          
-          # If not found in original, the tag might have hyphenation in the name itself
-          unless idx
-            # Try finding just "{{" near where the name appears
-            name_idx = full_text.gsub(/-\s*[\r\n]+\s*/, '').index(field_def[:name])
-            if name_idx
-              # Search backwards for {{
-              search_start = [name_idx - 50, 0].max
-              brace_idx = full_text[search_start..name_idx].rindex('{{')
-              idx = search_start + brace_idx if brace_idx
-            end
+          # Find all {{ positions in full_text
+          brace_positions = []
+          search_pos = 0
+          while (pos = full_text.index('{{', search_pos))
+            brace_positions << pos
+            search_pos = pos + 2
           end
           
-          next unless idx
+          Rails.logger.info("ParsePdfTextTags: Found #{brace_positions.size} '{{' positions")
           
-          # Calculate character index to position mapping
-          char_idx = 0
-          pos_idx = 0
-          
-          chars_with_positions.each_with_index do |pos_entry, i|
-            if char_idx >= idx
-              pos_idx = i
+          # For each {{ position, extract text until }} and check if it matches our field
+          brace_positions.each do |brace_pos|
+            end_brace = full_text.index('}}', brace_pos + 2)
+            next unless end_brace
+            
+            # Extract the tag content (may contain hyphens/newlines)
+            raw_tag_content = full_text[brace_pos + 2...end_brace]
+            
+            # Remove hyphens+newlines and check if it matches
+            # Handle various hyphen characters: regular hyphen, soft hyphen, non-breaking hyphen, etc.
+            cleaned_content = raw_tag_content.gsub(/[-\u00AD\u2010\u2011\u2012]\s*[\r\n]+\s*/, '').gsub(/[\r\n]+/, ' ')
+            
+            if cleaned_content.start_with?(field_name)
+              idx = brace_pos
+              Rails.logger.info("ParsePdfTextTags: Found '#{field_name}' at position #{idx} via alternative search")
               break
             end
-            char_idx += pos_entry[:char].length
           end
-          
-          next unless pos_idx < chars_with_positions.size
-          
-          start_pos = chars_with_positions[pos_idx]
-          
-          # Find end position by looking for the closing "}}" after the start
-          # This handles hyphenated tags better than looking for full_tag length
-          end_idx = full_text.index('}}', idx + 2)
-          end_char_idx = end_idx ? end_idx + 1 : idx + full_tag.length - 1
-          
-          end_pos_idx = pos_idx
-          temp_idx = char_idx
-          
-          chars_with_positions[pos_idx..].each_with_index do |pos_entry, i|
-            if temp_idx >= end_char_idx
-              end_pos_idx = pos_idx + i
-              break
-            end
-            temp_idx += pos_entry[:char].length
-          end
-          
-          end_pos = chars_with_positions[[end_pos_idx, chars_with_positions.size - 1].min]
-          
-          Rails.logger.info("ParsePdfTextTags: Tag '#{field_def[:name]}' spans from idx=#{idx} to end_idx=#{end_idx}, pos_idx=#{pos_idx} to end_pos_idx=#{end_pos_idx}")
-          
-          # Calculate tag bounds
-          # Pdfium coordinates are already normalized (0-1)
-          tag_x = start_pos[:x]
-          tag_y = start_pos[:y]
-          
-          # Handle multi-line tags: if end_pos.x < start_pos.x, tag wraps to next line
-          # Use a reasonable width instead
-          raw_w = (end_pos[:endx] || end_pos[:x] + end_pos[:w]) - tag_x
-          if raw_w < 0 || raw_w > 0.5
-            # Tag spans multiple lines, use width from first line or default
-            tag_w = 0.2  # Default width for multi-line tags
-          else
-            tag_w = raw_w
-          end
-          
-          # For multi-line tags, calculate height including all lines
-          tag_h = start_pos[:h]
-          if end_pos[:y] != start_pos[:y]
-            # Multi-line: extend height
-            tag_h = (end_pos[:y] + end_pos[:h]) - start_pos[:y]
-            tag_h = start_pos[:h] if tag_h < 0  # Fallback
-          end
-          
-          # Ensure minimum sizes
-          tag_w = [tag_w, 0.08].max
-          tag_h = [tag_h, 0.015].max
-          
-          # Adjust size based on field type (field_def already parsed above)
-          case field_def[:type]
-          when 'signature', 'initials'
-            tag_w = [tag_w, 0.15].max
-            tag_h = [tag_h, 0.032].max  # Smaller signature height
-          when 'text'
-            tag_w = [tag_w, 0.12].max
-            tag_h = [tag_h, 0.020].max
-          when 'date', 'datenow'
-            tag_w = [tag_w, 0.10].max
-            tag_h = [tag_h, 0.020].max
-          end
-          
-          # Clamp values
-          tag_x = [[tag_x, 0.0].max, 0.95].min
-          tag_y = [[tag_y, 0.0].max, 0.95].min
-          tag_w = [[tag_w, 0.05].max, 0.35].min
-          tag_h = [[tag_h, 0.015].max, 0.05].min
-          
-          tags << {
-            tag_content: tag_content,
-            page: page_index,
-            x: tag_x,
-            y: tag_y,
-            w: tag_w,
-            h: tag_h
-          }
-          
-          Rails.logger.info("ParsePdfTextTags: Found tag '#{tag_content[0..30]}' at page=#{page_index} (#{tag_x.round(3)}, #{tag_y.round(3)}) size=(#{tag_w.round(3)}x#{tag_h.round(3)})")
         end
+        
+        next unless idx
+        
+        Rails.logger.info("ParsePdfTextTags: Tag '#{field_name}' found at index #{idx}")
+        
+        # Calculate character index to position mapping
+        char_idx = 0
+        pos_idx = 0
+        
+        chars_with_positions.each_with_index do |pos_entry, i|
+          if char_idx >= idx
+            pos_idx = i
+            break
+          end
+          char_idx += pos_entry[:char].length
+        end
+        
+        next unless pos_idx < chars_with_positions.size
+        
+        start_pos = chars_with_positions[pos_idx]
+        
+        # Find end position by looking for the closing "}}" after the start
+        # This handles hyphenated tags better than looking for full_tag length
+        end_idx = full_text.index('}}', idx + 2)
+        end_char_idx = end_idx ? end_idx + 1 : idx + tag_content.length + 4  # +4 for {{}}
+        
+        end_pos_idx = pos_idx
+        temp_idx = char_idx
+        
+        chars_with_positions[pos_idx..].each_with_index do |pos_entry, i|
+          if temp_idx >= end_char_idx
+            end_pos_idx = pos_idx + i
+            break
+          end
+          temp_idx += pos_entry[:char].length
+        end
+        
+        end_pos = chars_with_positions[[end_pos_idx, chars_with_positions.size - 1].min]
+        
+        Rails.logger.info("ParsePdfTextTags: Tag '#{field_name}' spans from idx=#{idx} to end_idx=#{end_idx}, pos_idx=#{pos_idx} to end_pos_idx=#{end_pos_idx}")
+        
+        # Calculate tag bounds
+        # Pdfium coordinates are already normalized (0-1)
+        tag_x = start_pos[:x]
+        tag_y = start_pos[:y]
+        
+        # Handle multi-line tags: if end_pos.x < start_pos.x, tag wraps to next line
+        # Use a reasonable width instead
+        raw_w = (end_pos[:endx] || end_pos[:x] + end_pos[:w]) - tag_x
+        if raw_w < 0 || raw_w > 0.5
+          # Tag spans multiple lines, use width from first line or default
+          tag_w = 0.2  # Default width for multi-line tags
+        else
+          tag_w = raw_w
+        end
+        
+        # For multi-line tags, calculate height including all lines
+        tag_h = start_pos[:h]
+        if end_pos[:y] != start_pos[:y]
+          # Multi-line: extend height
+          tag_h = (end_pos[:y] + end_pos[:h]) - start_pos[:y]
+          tag_h = start_pos[:h] if tag_h < 0  # Fallback
+        end
+        
+        # Ensure minimum sizes
+        tag_w = [tag_w, 0.08].max
+        tag_h = [tag_h, 0.015].max
+        
+        # Adjust size based on field type (field_def already parsed above)
+        case field_def[:type]
+        when 'signature', 'initials'
+          tag_w = [tag_w, 0.15].max
+          tag_h = [tag_h, 0.032].max  # Smaller signature height
+        when 'text'
+          tag_w = [tag_w, 0.12].max
+          tag_h = [tag_h, 0.020].max
+        when 'date', 'datenow'
+          tag_w = [tag_w, 0.10].max
+          tag_h = [tag_h, 0.020].max
+        end
+        
+        # Clamp values
+        tag_x = [[tag_x, 0.0].max, 0.95].min
+        tag_y = [[tag_y, 0.0].max, 0.95].min
+        tag_w = [[tag_w, 0.05].max, 0.35].min
+        tag_h = [[tag_h, 0.015].max, 0.05].min
+        
+        tags << {
+          tag_content: tag_content,
+          page: page_index,
+          x: tag_x,
+          y: tag_y,
+          w: tag_w,
+          h: tag_h
+        }
+        
+        Rails.logger.info("ParsePdfTextTags: Found tag '#{tag_content[0..30]}' at page=#{page_index} (#{tag_x.round(3)}, #{tag_y.round(3)}) size=(#{tag_w.round(3)}x#{tag_h.round(3)})")
       end
       
       tags

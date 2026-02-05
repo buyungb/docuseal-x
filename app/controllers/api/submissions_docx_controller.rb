@@ -77,19 +77,43 @@ module Api
       template.save!
 
       # Create attachments from processed documents
+      # For DOCX files, we create TWO PDFs:
+      # 1. PDF with tags - used for detecting tag positions
+      # 2. PDF without tags - the clean final document where form fields are placed
+      tagged_pdf_data = nil
+      
       processed_documents.each do |doc|
         # Convert DOCX to PDF if needed
         if doc[:content_type].include?('wordprocessingml') || doc[:name].to_s.end_with?('.docx')
-          pdf_data = convert_docx_to_pdf(doc[:data], doc[:name])
+          original_docx_data = doc[:data]
           
-          if pdf_data.nil?
+          # Step 1: Convert DOCX (with tags) to PDF for position detection
+          Rails.logger.info("DOCX Submission: Converting DOCX with tags to PDF for position detection...")
+          tagged_pdf_data = convert_docx_to_pdf(original_docx_data, doc[:name])
+          
+          if tagged_pdf_data.nil?
             return render json: { 
               error: 'DOCX to PDF conversion not available. Please upload a PDF file instead, or configure Gotenberg service.',
               hint: 'Set GOTENBERG_URL environment variable to enable DOCX conversion (e.g., http://gotenberg:3000)'
             }, status: :unprocessable_entity
           end
           
-          doc[:data] = pdf_data
+          Rails.logger.info("DOCX Submission: Tagged PDF size: #{tagged_pdf_data.bytesize} bytes")
+          
+          # Step 2: Remove tags from DOCX and convert to clean PDF
+          Rails.logger.info("DOCX Submission: Removing tags from DOCX and converting to clean PDF...")
+          clean_docx_data = remove_tags_from_docx(original_docx_data)
+          clean_pdf_data = convert_docx_to_pdf(clean_docx_data, doc[:name])
+          
+          if clean_pdf_data.nil?
+            Rails.logger.warn("DOCX Submission: Clean PDF conversion failed, using tagged PDF")
+            clean_pdf_data = tagged_pdf_data
+          else
+            Rails.logger.info("DOCX Submission: Clean PDF size: #{clean_pdf_data.bytesize} bytes")
+          end
+          
+          # Use the clean PDF (without tags) as the final document
+          doc[:data] = clean_pdf_data
           doc[:name] = doc[:name].to_s.sub(/\.docx$/i, '.pdf')
           doc[:content_type] = 'application/pdf'
         end
@@ -122,72 +146,40 @@ module Api
       template.reload
       Rails.logger.info("DOCX Submission: Template has #{template.documents.count} documents")
 
-      # Field detection strategy:
-      # 1. Tags WITH type {{name;type=X}} are KEPT visible in DOCX/PDF
-      # 2. Use HexaPDF (ParsePdfTextTags) to find exact tag positions
-      # 3. Create fields at those positions
+      # Field detection strategy (TWO-PDF APPROACH):
+      # 1. Use the TAGGED PDF (tagged_pdf_data) to detect tag positions
+      # 2. The final document (first_doc) is the CLEAN PDF without tags
+      # 3. Place form fields on the clean PDF using positions from tagged PDF
       #
-      # Tags WITHOUT type: {{name}} → replaced with content from variables
-      # Tags WITH type: {{name;type=X}} → kept visible for detection
+      # This avoids complex tag removal - tags are removed at DOCX level before conversion
       
       all_fields = []
       first_doc = template.documents.first
       
       if first_doc && docx_extracted_fields.any?
         begin
-          document_data = first_doc.download
+          # Use tagged_pdf_data for position detection (has visible tags)
+          # Fall back to downloading the document if tagged_pdf_data is not available
+          detection_pdf_data = tagged_pdf_data || first_doc.download
           
           # Get PDF page count using Pdfium
-          pdf_page_count = get_pdf_page_count(document_data)
+          pdf_page_count = get_pdf_page_count(detection_pdf_data)
           last_page = [pdf_page_count - 1, 0].max
           
-          # Use Pdfium (via ParsePdfTextTags) to parse PDF and find {{...}} tag positions
-          # Pdfium is more reliable for LibreOffice PDFs as it properly decodes fonts
-          Rails.logger.info("DOCX Submission: Using Pdfium to find {{...}} tags... (#{pdf_page_count} pages)")
+          # Use Pdfium (via ParsePdfTextTags) to parse the TAGGED PDF and find {{...}} tag positions
+          # These positions will be used to place fields on the CLEAN PDF
+          Rails.logger.info("DOCX Submission: Using Pdfium to find {{...}} tags in TAGGED PDF... (#{pdf_page_count} pages)")
           
-          # Check if PDF contains tags (pass raw PDF data for Pdfium)
-          if Templates::ParsePdfTextTags.contains_tags?(document_data)
-            # Parse tags and get their positions (pass raw PDF data for Pdfium)
-            pdf_fields = Templates::ParsePdfTextTags.call(document_data, first_doc)
+          # Check if tagged PDF contains tags
+          if Templates::ParsePdfTextTags.contains_tags?(detection_pdf_data)
+            # Parse tags and get their positions from the TAGGED PDF
+            pdf_fields = Templates::ParsePdfTextTags.call(detection_pdf_data, first_doc)
             
-            Rails.logger.info("DOCX Submission: ParsePdfTextTags found #{pdf_fields.size} fields")
+            Rails.logger.info("DOCX Submission: ParsePdfTextTags found #{pdf_fields.size} fields in tagged PDF")
             
             if pdf_fields.any?
-              # Build tag positions for removal (convert field areas to tag positions)
-              tag_positions_for_removal = pdf_fields.flat_map do |field|
-                field[:areas].map do |area|
-                  {
-                    page: area[:page],
-                    x: area[:x],
-                    y: area[:y],
-                    w: area[:w],
-                    h: area[:h],
-                    tag_content: field[:name]
-                  }
-                end
-              end
-              
-              # Remove {{...}} tags from PDF and update the attachment
-              if tag_positions_for_removal.any?
-                Rails.logger.info("DOCX Submission: Removing #{tag_positions_for_removal.size} tags from PDF...")
-                modified_pdf_data = Templates::ParsePdfTextTags.remove_tags_from_pdf(document_data, tag_positions_for_removal)
-                
-                if modified_pdf_data != document_data
-                  # Update the attachment blob with modified PDF
-                  begin
-                    new_blob = ActiveStorage::Blob.create_and_upload!(
-                      io: StringIO.new(modified_pdf_data),
-                      filename: first_doc.blob.filename.to_s,
-                      content_type: 'application/pdf',
-                      metadata: first_doc.blob.metadata.merge(tags_removed: true)
-                    )
-                    first_doc.update!(blob_id: new_blob.id)
-                    Rails.logger.info("DOCX Submission: Updated attachment with tags removed")
-                  rescue StandardError => e
-                    Rails.logger.warn("DOCX Submission: Failed to update attachment: #{e.message}")
-                  end
-                end
-              end
+              # No need to remove tags - the final document (first_doc) is already clean!
+              Rails.logger.info("DOCX Submission: Using clean PDF for final document (tags already removed at DOCX level)")
               
               # Log all PDF field names and positions for debugging
               Rails.logger.info("DOCX Submission: PDF fields found (#{pdf_fields.size}):")
@@ -822,68 +814,6 @@ module Api
       Rails.logger.info("  - Fallback: #{docx_field[:name]} (#{field_type}) role=#{role} col=#{column_idx} page=#{page} -> pos=(#{base_x.round(3)}, #{field_y.round(3)})")
     end
     
-    # Extract tag positions from PDF using the PyMuPDF microservice
-    def extract_tags_via_service(pdf_data, service_url)
-      require 'net/http'
-      require 'uri'
-      require 'json'
-      
-      uri = URI.parse("#{service_url}/extract-tags")
-      
-      request = Net::HTTP::Post.new(uri.request_uri)
-      request['Content-Type'] = 'application/json'
-      request.body = {
-        pdf_base64: Base64.strict_encode64(pdf_data),
-        normalize_positions: true
-      }.to_json
-      
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = uri.scheme == 'https'
-      http.read_timeout = 30
-      http.open_timeout = 10
-      
-      response = http.request(request)
-      
-      if response.code == '200'
-        result = JSON.parse(response.body)
-        
-        if result['success'] && result['tags'].present?
-          # Convert to our internal format
-          result['tags'].map do |tag|
-            {
-              name: tag['name'],
-              type: tag['type'],
-              role: tag['role'],
-              required: tag['required'],
-              tag_content: tag['tag_content'],
-              page: tag['page'],
-              x: tag['x'],
-              y: tag['y'],
-              w: tag['w'],
-              h: tag['h'],
-              areas: [{
-                page: tag['page'] || 0,
-                x: tag['x'],
-                y: tag['y'],
-                w: tag['w'],
-                h: tag['h'],
-                attachment_uuid: nil  # Will be set later
-              }]
-            }.with_indifferent_access
-          end
-        else
-          Rails.logger.warn("PDF Extractor returned no tags: #{result['message']}")
-          []
-        end
-      else
-        Rails.logger.error("PDF Extractor error: #{response.code} - #{response.body}")
-        []
-      end
-    rescue StandardError => e
-      Rails.logger.error("PDF Extractor service error: #{e.class} - #{e.message}")
-      []
-    end
-
     def normalize_documents(documents)
       Array.wrap(documents).map do |doc|
         if doc.is_a?(ActionController::Parameters) || doc.is_a?(Hash)
@@ -987,11 +917,8 @@ module Api
 
       Rails.logger.info("Converting DOCX to PDF via Gotenberg: #{gotenberg_url}")
 
-      # Create temp file for Gotenberg
-      tempfile = Tempfile.new([filename.to_s.sub(/\.docx$/i, ''), '.docx'])
-      tempfile.binmode
-      tempfile.write(docx_data)
-      tempfile.rewind
+      # Disable auto-hyphenation in DOCX before conversion
+      modified_docx_data = disable_docx_hyphenation(docx_data)
 
       begin
         require 'net/http'
@@ -1005,7 +932,7 @@ module Api
         body << "--#{boundary}\r\n"
         body << "Content-Disposition: form-data; name=\"files\"; filename=\"#{filename}\"\r\n"
         body << "Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document\r\n\r\n"
-        body << docx_data
+        body << modified_docx_data
         body << "\r\n--#{boundary}--\r\n"
         
         request = Net::HTTP::Post.new(uri.request_uri)
@@ -1028,10 +955,195 @@ module Api
       rescue StandardError => e
         Rails.logger.error("DOCX to PDF conversion error: #{e.message}")
         nil
-      ensure
-        tempfile.close
-        tempfile.unlink
       end
+    end
+
+    # Remove all {{...}} tags from DOCX content
+    # This creates a clean version without visible tags
+    def remove_tags_from_docx(docx_data)
+      require 'zip'
+      
+      input_io = StringIO.new(docx_data)
+      output_io = StringIO.new
+      output_io.binmode
+      
+      tags_removed = 0
+      
+      begin
+        Zip::OutputStream.open(output_io) do |zos|
+          Zip::File.open_buffer(input_io) do |zip_file|
+            zip_file.each do |entry|
+              content = entry.get_input_stream.read
+              
+              if entry.name == 'word/document.xml'
+                # Remove {{...}} tags from document content
+                # Match tags like {{Name;type=text;role=buyer}}
+                original_size = content.length
+                
+                # Pattern to match {{...}} that may span across XML elements
+                # First, try simple replacement for tags within single text runs
+                content = content.gsub(/\{\{[^}]+\}\}/, '')
+                
+                # Also handle cases where tags are split across multiple <w:t> elements
+                # This happens when Word breaks up the text for formatting
+                # Pattern: {{...}} split across runs like <w:t>{{Name</w:t>...<w:t>}}</w:t>
+                content = remove_split_tags_from_xml(content)
+                
+                removed_count = (original_size - content.length) / 10 # Rough estimate
+                tags_removed += 1 if content.length < original_size
+                Rails.logger.info("DOCX: Removed tags from document.xml (#{original_size} -> #{content.length} bytes)")
+              end
+              
+              zos.put_next_entry(entry.name)
+              zos.write(content)
+            end
+          end
+        end
+        
+        Rails.logger.info("DOCX: Tags removed, creating clean DOCX")
+        output_io.string
+      rescue StandardError => e
+        Rails.logger.warn("Failed to remove tags from DOCX: #{e.message}, using original")
+        docx_data
+      end
+    end
+    
+    # Remove tags that are split across multiple XML text elements
+    def remove_split_tags_from_xml(xml_content)
+      # This method handles tags split like:
+      # <w:t>{{Name</w:t></w:r><w:r><w:t>;type=text</w:t></w:r><w:r><w:t>}}</w:t>
+      
+      # Strategy: Find all text content, join it, find tags, then remove them
+      # We'll use a simpler approach: look for {{ and }} and remove everything between
+      
+      result = xml_content.dup
+      
+      # Find the start of a tag {{ that might be split
+      loop do
+        # Look for {{ followed eventually by }}
+        # Match pattern: <w:t>... {{ ...</w:t> ... <w:t>... }} ...</w:t>
+        # We need to find {{ not immediately followed by }}
+        
+        # Find opening {{
+        start_match = result.match(/<w:t[^>]*>([^<]*\{\{[^}]*)<\/w:t>/)
+        break unless start_match
+        
+        start_pos = start_match.begin(0)
+        
+        # Check if this text element already contains the closing }}
+        if start_match[1].include?('}}')
+          # Tag is complete within this element, skip (already handled by gsub above)
+          # Just move past it
+          result = result[0...start_pos] + result[start_pos..].sub(/<w:t[^>]*>[^<]*\{\{[^}]*\}\}[^<]*<\/w:t>/, '')
+          next
+        end
+        
+        # Find the closing }} in subsequent text elements
+        search_area = result[start_pos..]
+        
+        # Look for pattern ending with }}
+        end_match = search_area.match(/\}\}[^<]*<\/w:t>/)
+        break unless end_match
+        
+        end_pos = start_pos + end_match.end(0)
+        
+        # Extract the full range and remove tag content while preserving XML structure
+        tag_range = result[start_pos...end_pos]
+        
+        # Remove the tag content but keep XML structure
+        # Replace text content within <w:t> tags that are part of the tag
+        cleaned_range = tag_range.gsub(/(<w:t[^>]*>)([^<]*)(<\/w:t>)/) do |match|
+          open_tag = $1
+          text = $2
+          close_tag = $3
+          
+          # Remove {{ and everything after, or }} and everything before, or middle parts
+          text = text.gsub(/\{\{.*/, '').gsub(/.*\}\}/, '').gsub(/^[^{]*$/, '') if text.include?('{{') || text.include?('}}')
+          text = '' if !text.include?('{{') && !text.include?('}}') && tag_range.include?('{{')
+          
+          "#{open_tag}#{text}#{close_tag}"
+        end
+        
+        result = result[0...start_pos] + cleaned_range + result[end_pos..]
+        
+        # Safety: prevent infinite loop
+        break if result == xml_content
+        xml_content = result
+      end
+      
+      result
+    end
+
+    # Disable auto-hyphenation in DOCX by modifying word/settings.xml
+    def disable_docx_hyphenation(docx_data)
+      require 'zip'
+      
+      input_io = StringIO.new(docx_data)
+      output_io = StringIO.new
+      output_io.binmode
+      
+      begin
+        Zip::OutputStream.open(output_io) do |zos|
+          Zip::File.open_buffer(input_io) do |zip_file|
+            zip_file.each do |entry|
+              content = entry.get_input_stream.read
+              
+              if entry.name == 'word/settings.xml'
+                # Add or modify autoHyphenation setting to disable it
+                content = modify_settings_xml(content)
+                Rails.logger.info("DOCX: Modified settings.xml to disable hyphenation")
+              elsif entry.name == 'word/document.xml'
+                # Add suppressAutoHyphens to all paragraphs
+                content = modify_document_xml(content)
+                Rails.logger.info("DOCX: Modified document.xml to suppress hyphenation")
+              end
+              
+              zos.put_next_entry(entry.name)
+              zos.write(content)
+            end
+          end
+        end
+        
+        output_io.string
+      rescue StandardError => e
+        Rails.logger.warn("Failed to disable DOCX hyphenation: #{e.message}, using original")
+        docx_data
+      end
+    end
+
+    def modify_settings_xml(content)
+      # Check if autoHyphenation already exists
+      if content.include?('w:autoHyphenation')
+        # Set it to false
+        content.gsub(/<w:autoHyphenation[^>]*\/>/, '<w:autoHyphenation w:val="false"/>')
+               .gsub(/<w:autoHyphenation[^>]*>.*?<\/w:autoHyphenation>/m, '<w:autoHyphenation w:val="false"/>')
+      else
+        # Add it after the opening settings tag
+        content.gsub(/<w:settings[^>]*>/) do |match|
+          "#{match}\n  <w:autoHyphenation w:val=\"false\"/>"
+        end
+      end
+    end
+
+    def modify_document_xml(content)
+      # Add w:suppressAutoHyphens to paragraph properties (w:pPr)
+      # This ensures each paragraph won't be hyphenated
+      
+      # If pPr exists, add suppressAutoHyphens inside it
+      modified = content.gsub(/<w:pPr>/) do |match|
+        "#{match}<w:suppressAutoHyphens w:val=\"true\"/>"
+      end
+      
+      # Also add to existing pPr that might have other attributes
+      modified = modified.gsub(/<w:pPr ([^>]*)>/) do |match|
+        attrs = $1
+        "<w:pPr #{attrs}><w:suppressAutoHyphens w:val=\"true\"/>"
+      end
+      
+      # For paragraphs without pPr, we could add it but that's more complex
+      # The settings.xml change should handle most cases
+      
+      modified
     end
   end
 end
