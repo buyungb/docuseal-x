@@ -12,6 +12,8 @@ services:
         condition: service_started
       pdf-extractor:
         condition: service_started
+      pdf-tag-remover:
+        condition: service_started
     environment:
       # Koneksi DB internal docker network
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/docuseal
@@ -21,6 +23,9 @@ services:
       
       # PDF Tag Extractor for accurate field positioning
       PDF_EXTRACTOR_URL: http://pdf-extractor:8000
+      
+      # PDF Tag Remover (Rust/lopdf) for removing {{...}} tags after positioning
+      PDF_TAG_REMOVER_URL: http://pdf-tag-remover:8081
 
       # IMPORTANT: Set a persistent SECRET_KEY_BASE to avoid re-setup after deploy
       # Generate with: openssl rand -hex 64
@@ -70,6 +75,23 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+    networks:
+      - internal
+
+  # PDF Tag Remover: Remove {{...}} tags from PDF using Rust/lopdf
+  pdf-tag-remover:
+    image: buyungbahari/docuseal-pdf-tag-remover:latest
+    pull_policy: always
+    restart: unless-stopped
+    environment:
+      PORT: "8081"
+      RUST_LOG: info
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     networks:
       - internal
 

@@ -193,10 +193,9 @@ module Templates
         value.present? ? value.to_s : "{{#{field_name}}}"
       end
       
-      # Second: KEEP tags WITH type as-is for ParsePdfTextTags to find in PDF
-      # ParsePdfTextTags will detect {{...}} tags and extract their positions
-      # We just ensure the tags are clean (no split across XML nodes)
-      # Note: Tags are NOT replaced - they stay visible in PDF for detection
+      # Second: KEEP tags WITH type visible for ParsePdfTextTags to find
+      # They will be detected and replaced with form fields
+      # No replacement needed - tags stay as-is
       
       if modified || xml_content != original_content
         zip_file.get_output_stream(entry_name) { |os| os.write(xml_content) }
