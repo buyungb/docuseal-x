@@ -1,5 +1,4 @@
 use actix_web::{web, App, HttpResponse, HttpServer};
-use base64::{engine::general_purpose::STANDARD, Engine};
 use lopdf::{Document, Object, Stream};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -95,7 +94,7 @@ async fn remove_tags(req: web::Json<RemoveTagsRequest>) -> HttpResponse {
     log::info!("Received remove_tags request, PDF base64 length: {}", req.pdf_base64.len());
     
     // Decode base64 PDF
-    let pdf_data = match STANDARD.decode(&req.pdf_base64) {
+    let pdf_data = match base64::decode(&req.pdf_base64) {
         Ok(data) => data,
         Err(e) => {
             log::error!("Failed to decode base64: {}", e);
@@ -113,7 +112,7 @@ async fn remove_tags(req: web::Json<RemoveTagsRequest>) -> HttpResponse {
         Ok((modified_pdf, tags_removed)) => {
             log::info!("Successfully removed {} tags", tags_removed);
             
-            let pdf_base64 = STANDARD.encode(&modified_pdf);
+            let pdf_base64 = base64::encode(&modified_pdf);
             
             HttpResponse::Ok().json(RemoveTagsResponse {
                 pdf_base64,
