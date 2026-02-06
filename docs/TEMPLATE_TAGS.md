@@ -542,3 +542,107 @@ When a DOCX template with `{{...}}` tags is submitted, DocuSeal uses a sophistic
 | `required` | `true`/`false` | Field is mandatory |
 | `readonly` | `true`/`false` | Field cannot be edited |
 | `default` | Any value | Default field value |
+
+---
+
+## API Submitter Parameters
+
+When creating submissions via API, these parameters are available for each submitter:
+
+### Basic Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `role` | string | Must match a role in template (e.g., `{{Field;type=X;role=Signer}}`) |
+| `email` | string | Submitter's email address |
+| `name` | string | Submitter's display name |
+| `phone` | string | Phone number in E.164 format (e.g., `+628123456789`) |
+| `external_id` | string | Your app's unique identifier for this submitter |
+| `completed` | boolean | Mark as pre-completed (skip signing) |
+
+### Communication Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `send_email` | boolean | `true` | Send signature request email |
+| `send_sms` | boolean | `false` | Send signature request SMS |
+| `message.subject` | string | - | Custom email subject |
+| `message.body` | string | - | Custom email body |
+| `reply_to` | string | - | Reply-to email address |
+| `completed_redirect_url` | string | - | URL to redirect after completion |
+
+### Two-Factor Authentication (2FA)
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `require_phone_2fa` | boolean | `false` | Require phone OTP verification to access documents |
+| `require_email_2fa` | boolean | `false` | Require email OTP verification to access documents |
+
+#### Phone 2FA Setup
+
+When `require_phone_2fa: true`:
+1. The submitter must have a valid `phone` number
+2. DocuSeal sends an OTP code via:
+   - **Phone OTP Webhook** (if configured) - You send SMS via your provider
+   - **Built-in SMS** (if no webhook configured and SMS is enabled)
+3. Submitter enters the 6-digit code to access the form
+4. OTP codes are valid for **10 minutes**
+
+#### Email 2FA Setup
+
+When `require_email_2fa: true`:
+1. The submitter must have a valid `email` address
+2. DocuSeal sends an OTP code via email automatically
+3. Submitter enters the 6-digit code to access the form
+4. OTP codes are valid for **5 minutes**
+
+> **Note**: Email 2FA does not have a webhook option - emails are always sent by DocuSeal. Only Phone 2FA supports custom webhook delivery.
+
+#### Example with 2FA
+
+```json
+{
+  "template_id": 123,
+  "submitters": [
+    {
+      "role": "Signer",
+      "email": "signer@example.com",
+      "phone": "+628123456789",
+      "require_phone_2fa": true
+    }
+  ]
+}
+```
+
+### Field Configuration
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `fields` | array | Override field settings |
+| `fields[].name` | string | Field name to configure |
+| `fields[].default_value` | any | Set default value |
+| `fields[].readonly` | boolean | Make field read-only |
+| `fields[].required` | boolean | Override required setting |
+| `values` | object | Pre-fill field values (key-value pairs) |
+| `readonly_fields` | array | List of field names to make read-only |
+
+### Metadata
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `metadata` | object | Custom key-value pairs for your app |
+
+### Workflow
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `order` | integer | Signing order (0 = first, 1 = second, etc.) |
+| `go_to_last` | boolean | Start at the last unfilled field |
+
+---
+
+## Related Documentation
+
+- [Phone OTP Webhook](./webhooks/phone-otp-webhook.md) - Custom SMS provider integration
+- [Form Webhook](./webhooks/form-webhook.md) - Form lifecycle events
+- [Submission Webhook](./webhooks/submission-webhook.md) - Submission events
