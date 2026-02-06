@@ -2,46 +2,84 @@
 
 This folder contains sample templates demonstrating DOCX variables and text tags.
 
-## PDF Tag Extractor Service (PyMuPDF)
+## Two-PDF Architecture
 
-For accurate `{{...}}` tag position detection, DocuSeal uses a PyMuPDF-based microservice.
+DocuSeal uses a sophisticated **two-PDF approach** for accurate form field placement while keeping the final document clean:
 
 ### Architecture
 
 ```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  DOCX Template  │ --> │    Gotenberg    │ --> │  PDF with tags  │
-│  with {{tags}}  │     │  (DOCX to PDF)  │     │                 │
-└─────────────────┘     └─────────────────┘     └────────┬────────┘
-                                                         │
-                                                         v
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  Form Fields    │ <-- │   DocuSeal      │ <-- │  PDF Extractor  │
-│  at exact pos   │     │   Controller    │     │  (PyMuPDF)      │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         DOCX SUBMISSION FLOW                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────┐
+│  DOCX Template  │
+│  with [[vars]]  │
+│  and {{tags}}   │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Variable Subst. │  [[...]] placeholders replaced with data
+│ ([[...]] only)  │
+└────────┬────────┘
+         │
+         ├─────────────────────────────────────┐
+         │                                     │
+         ▼                                     ▼
+┌─────────────────┐                   ┌─────────────────┐
+│  PDF 1: Tagged  │                   │ Tag Removal     │
+│  (with {{...}}) │                   │ (DOCX level)    │
+└────────┬────────┘                   └────────┬────────┘
+         │                                     │
+         ▼                                     ▼
+┌─────────────────┐                   ┌─────────────────┐
+│ Tag Detection   │                   │  PDF 2: Clean   │
+│ (Pdfium finds   │                   │  (no {{...}})   │
+│  X,Y positions) │                   └────────┬────────┘
+└────────┬────────┘                            │
+         │                                     │
+         └──────────────┬──────────────────────┘
+                        │
+                        ▼
+              ┌─────────────────┐
+              │  Final Document │
+              │  Clean PDF with │
+              │  form fields at │
+              │  correct pos    │
+              └─────────────────┘
 ```
+
+### Why Two PDFs?
+
+| PDF | Purpose | Content |
+|-----|---------|---------|
+| **Tagged PDF** | Position detection only | Contains visible `{{...}}` tags for coordinate extraction |
+| **Clean PDF** | Final document | Tags removed, professional appearance |
+
+### Processing Steps
+
+1. **Variable Substitution**: `[[...]]` placeholders replaced with data from API
+2. **Tagged PDF Generation**: DOCX → PDF with `{{...}}` tags visible
+3. **Tag Position Detection**: Pdfium extracts exact X,Y coordinates of each tag
+4. **Clean DOCX Creation**: All `{{...}}` tags removed from DOCX content
+5. **Clean PDF Generation**: Clean DOCX → PDF (no visible tags)
+6. **Field Placement**: Form fields placed on clean PDF at detected positions
 
 ### Environment Variables
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `GOTENBERG_URL` | Gotenberg service URL | `http://gotenberg:3000` |
-| `PDF_EXTRACTOR_URL` | PDF Extractor service URL | `http://pdf-extractor:8000` |
+| `GOTENBERG_URL` | Gotenberg service URL (DOCX→PDF) | `http://gotenberg:3000` |
 
-### How It Works
+### Result
 
-1. **DOCX Processing**: Variables (`[[...]]`) are replaced, `{{...}}` tags are preserved
-2. **PDF Conversion**: Gotenberg converts DOCX to PDF
-3. **Tag Extraction**: PDF Extractor finds `{{...}}` tags and their exact positions using PyMuPDF
-4. **Field Creation**: Form fields are placed at the exact tag positions
-5. **Signing**: User sees fields overlaying the tag text
-
-## Files
-
-| File | Description |
-|------|-------------|
-| `sales_contract_template.txt` | Full sales contract with all features |
-| `simple_contract_template.txt` | Simplified contract for quick testing |
+Users see a professional document with:
+- ✅ All `[[...]]` variables replaced with actual data
+- ✅ No visible `{{...}}` tag text
+- ✅ Interactive form fields at correct positions
+- ✅ Clean, professional appearance
 
 ## How to Create DOCX Files
 
@@ -70,7 +108,10 @@ For accurate `{{...}}` tag position detection, DocuSeal uses a PyMuPDF-based mic
 
 ## Template Syntax
 
-### 1. Dynamic Content Variables `[[...]]` (Replaced by API data)
+### 1. Data Variables `[[...]]` (Replaced with API data)
+
+Use double square brackets for data that should be replaced before the document is signed:
+
 ```
 [[variable_name]]           - Simple variable
 [[if:condition]]...[[end]]  - Conditional block
@@ -78,31 +119,40 @@ For accurate `{{...}}` tag position detection, DocuSeal uses a PyMuPDF-based mic
 [[item.property]]           - Item accessor in loops
 ```
 
-### 2. Content Tags `{{name}}` WITHOUT type (Replaced by API data)
+**Examples:**
 ```
-{{prepared_by}}             - Replaced with variables["prepared_by"]
-{{company_rep}}             - Replaced with variables["company_rep"]
+Contract #: [[contract_number]]
+Customer: [[customer_name]]
+Prepared By: [[prepared_by]]
+Date: [[contract_date]]
 ```
-These tags are replaced with content from the `variables` object before PDF generation.
 
-### 3. Form Field Tags `{{name;type=X}}` WITH type (Interactive fields)
-```
-{{FieldName;type=text}}                    - Text input field
-{{Sign;type=signature;role=Buyer}}         - Signature field
-{{Init;type=initials;role=Buyer}}          - Initials field
-{{Date;type=datenow}}                      - Auto-filled date
-{{Agree;type=checkbox}}                    - Checkbox
-{{Choice;type=select;options=A,B,C}}       - Dropdown
-```
-These tags become interactive form fields that signers fill out.
+### 2. Form Field Tags `{{name;type=X}}` (Interactive fields for signers)
 
-### Key Difference
+Use double curly braces WITH `type=` option for fields that signers will fill out:
 
-| Tag | Has `type=` | Behavior |
-|-----|-------------|----------|
-| `[[name]]` | N/A | Replaced with API data |
-| `{{name}}` | NO | Replaced with API data |
-| `{{name;type=X}}` | YES | Interactive form field |
+```
+{{FieldName;type=text;role=Buyer}}               - Text input field
+{{Sign;type=signature;role=Buyer;required=true}} - Signature field
+{{Init;type=initials;role=Buyer}}                - Initials field
+{{Date;type=datenow;role=Buyer}}                 - Auto-filled date
+{{Agree;type=checkbox;role=Buyer}}               - Checkbox
+```
+
+**Important:** Form field tags MUST have `type=` to be recognized as interactive fields.
+
+### Quick Reference
+
+| Syntax | Purpose | When Replaced | Example |
+|--------|---------|---------------|---------|
+| `[[name]]` | Data placeholder | Before signing | `[[customer_name]]` → "John Doe" |
+| `{{name;type=X}}` | Form field | During signing | `{{Sign;type=signature}}` → signature pad |
+
+### Common Mistake
+
+❌ **Wrong:** `{{prepared_by}}` - No type, ambiguous behavior
+✅ **Correct:** `[[prepared_by]]` - Data variable, replaced with API data
+✅ **Correct:** `{{Name;type=text;role=Buyer}}` - Form field with type
 
 ## API Usage Example
 
@@ -141,28 +191,59 @@ curl -X POST "https://your-docuseal.com/api/submissions/docx" \
     },
     "documents": [{"name": "contract.docx", "file": "'"$DOCX_BASE64"'"}],
     "submitters": [
-      {"role": "Buyer", "email": "buyer@example.com"},
-      {"role": "Seller", "email": "seller@example.com"}
+      {"role": "Buyer", "email": "buyer@example.com", "name": "John Doe"},
+      {"role": "Seller", "email": "seller@example.com", "name": "Jane Smith"}
     ]
   }'
 ```
 
-Note: Both `[[variable]]` and `{{variable}}` (without type) are replaced by data from the `variables` object.
+### What Happens
 
-## Testing Variables Only
+1. `[[...]]` variables are replaced with data from `variables` object
+2. `{{...;type=X}}` tags become interactive form fields
+3. Tags are removed from the final PDF (clean document)
+4. Form fields appear at the exact positions where tags were
 
-To test just the variable substitution without signing:
+## Sample Files
 
-```javascript
-// Test with minimal variables
-const variables = {
-  contract_number: "TEST-001",
-  contract_date: "February 3, 2026",
-  company_name: "Test Company",
-  customer_name: "Test Customer",
-  items: [
-    { name: "Item 1", quantity: "1", unit_price: "100", subtotal: "100" }
-  ],
-  total: "100"
-};
+| File | Description |
+|------|-------------|
+| `simple_contract_template.txt` | Basic contract with loops and conditionals |
+| `sales_contract_template.txt` | Full-featured sales agreement |
+| `test_docx_python.py` | Python script to test DOCX submission API |
+| `test_docx_submission.sh` | Shell script for API testing |
+
+## Testing
+
+### Using Python Script
+
+```bash
+# Test with a DOCX file
+python3 test_docx_python.py your_template.docx https://your-server.com YOUR_API_KEY
 ```
+
+### Using cURL
+
+```bash
+# Encode and submit
+DOCX_BASE64=$(base64 -i your_template.docx)
+curl -X POST "https://your-server.com/api/submissions/docx" \
+  -H "X-Auth-Token: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"documents":[{"name":"doc.docx","file":"'"$DOCX_BASE64"'"}],"submitters":[{"role":"Buyer","email":"test@example.com"}]}'
+```
+
+## Debugging
+
+Check server logs for tag processing:
+
+```
+DOCX TAG REMOVAL: Starting - found 6 tags in raw XML
+DOCX TAG REMOVAL: Strategy 1 (global gsub) removed 6 tags
+DOCX TAG REMOVAL: SUCCESS - All tags removed (total: 6)
+```
+
+If tags still appear in the final PDF, check:
+1. Tag syntax is correct: `{{Name;type=text;role=Buyer}}`
+2. Gotenberg service is running
+3. No encoding issues in the DOCX file

@@ -962,36 +962,44 @@ module Api
     # This creates a clean version without visible tags
     def remove_tags_from_docx(docx_data)
       require 'zip'
+      require 'nokogiri'
       
-      input_io = StringIO.new(docx_data)
-      output_io = StringIO.new
-      output_io.binmode
+      Rails.logger.info("DOCX TAG REMOVAL: Starting remove_tags_from_docx, input size: #{docx_data.bytesize} bytes")
       
       tags_removed = 0
       
+      # List of XML files that may contain text with tags
+      text_xml_files = [
+        'word/document.xml',
+        'word/header1.xml', 'word/header2.xml', 'word/header3.xml',
+        'word/footer1.xml', 'word/footer2.xml', 'word/footer3.xml',
+        'word/footnotes.xml', 'word/endnotes.xml',
+        'word/comments.xml'
+      ]
+      
       begin
-        Zip::OutputStream.open(output_io) do |zos|
-          Zip::File.open_buffer(input_io) do |zip_file|
+        # Use write_buffer to create the output ZIP in memory
+        # This is the correct way to create a ZIP to a StringIO
+        output_io = Zip::OutputStream.write_buffer do |zos|
+          Zip::File.open_buffer(docx_data) do |zip_file|
             zip_file.each do |entry|
               content = entry.get_input_stream.read
               
-              if entry.name == 'word/document.xml'
-                # Remove {{...}} tags from document content
-                # Match tags like {{Name;type=text;role=buyer}}
+              # Check if this is a text-containing XML file
+              is_text_xml = text_xml_files.include?(entry.name) || 
+                            entry.name.match?(/^word\/(header|footer)\d+\.xml$/)
+              
+              if is_text_xml
                 original_size = content.length
+                original_content = content.dup
                 
-                # Pattern to match {{...}} that may span across XML elements
-                # First, try simple replacement for tags within single text runs
-                content = content.gsub(/\{\{[^}]+\}\}/, '')
+                # Remove tags from this XML file
+                content, removed = remove_tags_from_document_xml(content)
+                tags_removed += removed
                 
-                # Also handle cases where tags are split across multiple <w:t> elements
-                # This happens when Word breaks up the text for formatting
-                # Pattern: {{...}} split across runs like <w:t>{{Name</w:t>...<w:t>}}</w:t>
-                content = remove_split_tags_from_xml(content)
-                
-                removed_count = (original_size - content.length) / 10 # Rough estimate
-                tags_removed += 1 if content.length < original_size
-                Rails.logger.info("DOCX: Removed tags from document.xml (#{original_size} -> #{content.length} bytes)")
+                if removed > 0 || content != original_content
+                  Rails.logger.info("DOCX TAG REMOVAL: Processed #{entry.name} (#{original_size} -> #{content.length} bytes, #{removed} tags)")
+                end
               end
               
               zos.put_next_entry(entry.name)
@@ -1000,102 +1008,186 @@ module Api
           end
         end
         
-        Rails.logger.info("DOCX: Tags removed, creating clean DOCX")
-        output_io.string
+        # Get the resulting bytes
+        output_io.rewind
+        result = output_io.read
+        
+        Rails.logger.info("DOCX TAG REMOVAL: Complete! Removed #{tags_removed} tags, output size: #{result.bytesize} bytes")
+        
+        # Verify the result is a valid ZIP
+        if result[0..3] == "PK\x03\x04"
+          Rails.logger.info("DOCX TAG REMOVAL: Output verified as valid DOCX/ZIP")
+          result
+        else
+          Rails.logger.error("DOCX TAG REMOVAL: Output is not a valid ZIP! Falling back to original")
+          docx_data
+        end
+        
       rescue StandardError => e
-        Rails.logger.warn("Failed to remove tags from DOCX: #{e.message}, using original")
+        Rails.logger.error("DOCX TAG REMOVAL: FAILED - #{e.class}: #{e.message}")
+        Rails.logger.error(e.backtrace.first(5).join("\n"))
         docx_data
       end
     end
     
-    # Remove tags that are split across multiple XML text elements
-    def remove_split_tags_from_xml(xml_content)
-      # This method handles tags split like:
-      # <w:t>{{Name</w:t></w:r><w:r><w:t>;type=text</w:t></w:r><w:r><w:t>}}</w:t>
+    # Remove {{...}} tags from Word document.xml using multiple strategies
+    def remove_tags_from_document_xml(xml_content)
+      tags_removed = 0
       
-      # Strategy: Find all text content, join it, find tags, then remove them
-      # We'll use a simpler approach: look for {{ and }} and remove everything between
+      # Ensure we're working with a string with proper encoding
+      result_xml = xml_content.to_s.dup
+      result_xml.force_encoding('UTF-8') if result_xml.respond_to?(:force_encoding)
       
-      result = xml_content.dup
+      # Count initial tags for logging
+      initial_tags = result_xml.scan(/\{\{[^}]+\}\}/)
+      Rails.logger.info("DOCX TAG REMOVAL: Starting - found #{initial_tags.size} tags in raw XML")
+      initial_tags.first(5).each { |t| Rails.logger.info("DOCX TAG REMOVAL:   - #{t}") }
       
-      # Find the start of a tag {{ that might be split
-      loop do
-        # Look for {{ followed eventually by }}
-        # Match pattern: <w:t>... {{ ...</w:t> ... <w:t>... }} ...</w:t>
-        # We need to find {{ not immediately followed by }}
-        
-        # Find opening {{
-        start_match = result.match(/<w:t[^>]*>([^<]*\{\{[^}]*)<\/w:t>/)
-        break unless start_match
-        
-        start_pos = start_match.begin(0)
-        
-        # Check if this text element already contains the closing }}
-        if start_match[1].include?('}}')
-          # Tag is complete within this element, skip (already handled by gsub above)
-          # Just move past it
-          result = result[0...start_pos] + result[start_pos..].sub(/<w:t[^>]*>[^<]*\{\{[^}]*\}\}[^<]*<\/w:t>/, '')
-          next
-        end
-        
-        # Find the closing }} in subsequent text elements
-        search_area = result[start_pos..]
-        
-        # Look for pattern ending with }}
-        end_match = search_area.match(/\}\}[^<]*<\/w:t>/)
-        break unless end_match
-        
-        end_pos = start_pos + end_match.end(0)
-        
-        # Extract the full range and remove tag content while preserving XML structure
-        tag_range = result[start_pos...end_pos]
-        
-        # Remove the tag content but keep XML structure
-        # Replace text content within <w:t> tags that are part of the tag
-        cleaned_range = tag_range.gsub(/(<w:t[^>]*>)([^<]*)(<\/w:t>)/) do |match|
-          open_tag = $1
-          text = $2
-          close_tag = $3
-          
-          # Remove {{ and everything after, or }} and everything before, or middle parts
-          text = text.gsub(/\{\{.*/, '').gsub(/.*\}\}/, '').gsub(/^[^{]*$/, '') if text.include?('{{') || text.include?('}}')
-          text = '' if !text.include?('{{') && !text.include?('}}') && tag_range.include?('{{')
-          
-          "#{open_tag}#{text}#{close_tag}"
-        end
-        
-        result = result[0...start_pos] + cleaned_range + result[end_pos..]
-        
-        # Safety: prevent infinite loop
-        break if result == xml_content
-        xml_content = result
+      # STRATEGY 1: Direct string replacement on the raw XML
+      # This is the most aggressive approach - replace tags anywhere they appear
+      # The tag pattern matches {{anything_except_closing_braces}}
+      tag_pattern = /\{\{[^}]+\}\}/
+      
+      # First, do a simple global replacement to catch obvious tags
+      before_count = result_xml.scan(tag_pattern).size
+      if before_count > 0
+        result_xml = result_xml.gsub(tag_pattern, '')
+        tags_removed += before_count
+        Rails.logger.info("DOCX TAG REMOVAL: Strategy 1 (global gsub) removed #{before_count} tags")
       end
       
-      result
+      # STRATEGY 2: Process w:t elements specifically
+      # This handles cases where tags are within Word text elements
+      wt_tag_count = 0
+      result_xml = result_xml.gsub(%r{(<w:t[^>]*>)(.*?)(</w:t>)}m) do |_match|
+        open_tag = Regexp.last_match(1)
+        text_content = Regexp.last_match(2)
+        close_tag = Regexp.last_match(3)
+        
+        if text_content.include?('{{') && text_content.include?('}}')
+          clean_text = text_content.gsub(tag_pattern, '')
+          if clean_text != text_content
+            wt_tag_count += 1
+            Rails.logger.debug("DOCX TAG REMOVAL: Cleaned w:t: '#{text_content}' -> '#{clean_text}'")
+          end
+          "#{open_tag}#{clean_text}#{close_tag}"
+        else
+          Regexp.last_match(0)
+        end
+      end
+      tags_removed += wt_tag_count
+      Rails.logger.info("DOCX TAG REMOVAL: Strategy 2 (w:t elements) cleaned #{wt_tag_count} elements") if wt_tag_count > 0
+      
+      # STRATEGY 3: Handle split tags using Nokogiri
+      # Word sometimes splits {{tag}} across multiple <w:t> elements like:
+      # <w:t>{{</w:t><w:t>signature</w:t><w:t>}}</w:t>
+      begin
+        doc = Nokogiri::XML(result_xml)
+        namespaces = { 'w' => 'http://schemas.openxmlformats.org/wordprocessingml/2006/main' }
+        nokogiri_removed = 0
+        
+        doc.xpath('//w:p', namespaces).each do |paragraph|
+          text_nodes = paragraph.xpath('.//w:t', namespaces)
+          next if text_nodes.empty?
+          
+          # Build the full paragraph text
+          text_parts = text_nodes.map { |node| { node: node, text: node.text || '' } }
+          full_text = text_parts.map { |p| p[:text] }.join
+          
+          # Process while there are tags
+          iteration = 0
+          while full_text.match?(tag_pattern) && iteration < 50
+            iteration += 1
+            match_data = full_text.match(tag_pattern)
+            break unless match_data
+            
+            tag_start = match_data.begin(0)
+            tag_end = match_data.end(0)
+            
+            # Remove tag from the appropriate text nodes
+            current_pos = 0
+            text_parts.each do |part|
+              part_start = current_pos
+              part_end = current_pos + part[:text].length
+              
+              if part_end > tag_start && part_start < tag_end
+                remove_start = [tag_start - part_start, 0].max
+                remove_end = [tag_end - part_start, part[:text].length].min
+                
+                new_text = part[:text][0...remove_start].to_s + part[:text][remove_end..].to_s
+                part[:node].content = new_text
+                part[:text] = new_text
+              end
+              
+              current_pos = part_end
+            end
+            
+            nokogiri_removed += 1
+            full_text = text_parts.map { |p| p[:text] }.join
+          end
+        end
+        
+        if nokogiri_removed > 0
+          tags_removed += nokogiri_removed
+          Rails.logger.info("DOCX TAG REMOVAL: Strategy 3 (Nokogiri split tags) removed #{nokogiri_removed} tags")
+          
+          # Get the XML back, preserving declaration
+          result_xml = doc.to_xml
+          
+          # Restore original XML declaration if needed
+          if xml_content.start_with?('<?xml') && !result_xml.start_with?('<?xml')
+            declaration = xml_content[/^<\?xml[^?]*\?>/]
+            result_xml = "#{declaration}\n#{result_xml}" if declaration
+          end
+        end
+        
+      rescue StandardError => e
+        Rails.logger.warn("DOCX TAG REMOVAL: Nokogiri pass failed: #{e.message}")
+      end
+      
+      # STRATEGY 4: Final aggressive cleanup
+      # One more pass to catch anything that might have been missed
+      final_tags = result_xml.scan(tag_pattern)
+      if final_tags.any?
+        Rails.logger.warn("DOCX TAG REMOVAL: Final cleanup needed - #{final_tags.size} tags still present")
+        final_tags.each { |t| Rails.logger.warn("DOCX TAG REMOVAL:   Remaining: #{t}") }
+        
+        result_xml = result_xml.gsub(tag_pattern, '')
+        tags_removed += final_tags.size
+        Rails.logger.info("DOCX TAG REMOVAL: Final cleanup removed #{final_tags.size} tags")
+      end
+      
+      # Verify complete removal
+      verify_tags = result_xml.scan(/\{\{[^}]+\}\}/)
+      if verify_tags.any?
+        Rails.logger.error("DOCX TAG REMOVAL: FAILED - #{verify_tags.size} tags still in document!")
+        verify_tags.first(3).each { |t| Rails.logger.error("DOCX TAG REMOVAL:   #{t}") }
+      else
+        Rails.logger.info("DOCX TAG REMOVAL: SUCCESS - All tags removed (total: #{tags_removed})")
+      end
+      
+      [result_xml, tags_removed]
     end
 
     # Disable auto-hyphenation in DOCX by modifying word/settings.xml
     def disable_docx_hyphenation(docx_data)
       require 'zip'
       
-      input_io = StringIO.new(docx_data)
-      output_io = StringIO.new
-      output_io.binmode
-      
       begin
-        Zip::OutputStream.open(output_io) do |zos|
-          Zip::File.open_buffer(input_io) do |zip_file|
+        # Use write_buffer to create the output ZIP in memory
+        output_io = Zip::OutputStream.write_buffer do |zos|
+          Zip::File.open_buffer(docx_data) do |zip_file|
             zip_file.each do |entry|
               content = entry.get_input_stream.read
               
               if entry.name == 'word/settings.xml'
                 # Add or modify autoHyphenation setting to disable it
                 content = modify_settings_xml(content)
-                Rails.logger.info("DOCX: Modified settings.xml to disable hyphenation")
+                Rails.logger.debug("DOCX: Modified settings.xml to disable hyphenation")
               elsif entry.name == 'word/document.xml'
                 # Add suppressAutoHyphens to all paragraphs
                 content = modify_document_xml(content)
-                Rails.logger.info("DOCX: Modified document.xml to suppress hyphenation")
+                Rails.logger.debug("DOCX: Modified document.xml to suppress hyphenation")
               end
               
               zos.put_next_entry(entry.name)
@@ -1104,7 +1196,8 @@ module Api
           end
         end
         
-        output_io.string
+        output_io.rewind
+        output_io.read
       rescue StandardError => e
         Rails.logger.warn("Failed to disable DOCX hyphenation: #{e.message}, using original")
         docx_data

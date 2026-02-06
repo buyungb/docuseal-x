@@ -1,0 +1,42 @@
+# Loop Test Template
+# This template demonstrates the [[for:items]]...[[end]] loop syntax
+
+INVOICE
+=======
+
+Invoice Number: [[invoice_number]]
+Date: [[invoice_date]]
+Customer: [[customer_name]]
+
+---
+
+ITEMS
+-----
+
+[[for:items]]
+- Product: [[item.name]]
+  Description: [[item.description]]
+  Qty: [[item.quantity]] x $[[item.unit_price]] = $[[item.subtotal]]
+
+[[end]]
+
+---
+
+SUMMARY
+-------
+
+Subtotal: $[[subtotal]]
+[[if:has_discount]]
+Discount ([[discount_percent]]%): -$[[discount_amount]]
+[[end]]
+Tax ([[tax_rate]]%): $[[tax_amount]]
+-----------------------
+TOTAL: $[[total]]
+
+---
+
+APPROVAL
+
+Approved By: {{ApproverSign;type=signature;role=Approver;required=true}}
+Name: {{ApproverName;type=text;role=Approver}}
+Date: {{ApproverDate;type=datenow;role=Approver}}
