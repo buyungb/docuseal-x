@@ -1,12 +1,34 @@
 #!/usr/bin/env python3
 """
-Test DOCX Submission API
+Test DOCX Submission API with simple_contract_template.txt
+
+This script tests the /api/submissions/docx endpoint with all the variables
+and form fields defined in simple_contract_template.txt.
 
 Usage:
     python3 test_docx_python.py <docx_file> <api_url> <api_token>
     
 Example:
     python3 test_docx_python.py simple_contract.docx https://your-docuseal.com YOUR_TOKEN
+
+Template Variables (replaced by API):
+    [[contract_number]], [[contract_date]]
+    [[company_name]], [[company_address]]
+    [[customer_name]], [[customer_company]], [[customer_address]], [[customer_email]]
+    [[for:items]] with [[item.name]], [[item.description]], [[item.quantity]], [[item.unit_price]], [[item.subtotal]]
+    [[subtotal]], [[has_discount]], [[discount_percent]], [[discount_amount]]
+    [[tax_rate]], [[tax_amount]], [[total]]
+    [[payment_days]], [[delivery_days]], [[warranty_months]]
+    [[special_terms]] (optional)
+    [[prepared_by]], [[prepared_date]]
+
+Form Fields (interactive, for signers):
+    {{BuyerSign;type=signature;role=Buyer;required=true}}
+    {{BuyerName;type=text;role=Buyer}}
+    {{BuyerDate;type=datenow;role=Buyer}}
+    {{SellerSign;type=signature;role=Seller;required=true}}
+    {{SellerName;type=text;role=Seller}}
+    {{SellerDate;type=datenow;role=Seller}}
 """
 
 import sys
@@ -27,7 +49,7 @@ def main():
     api_url = sys.argv[2].rstrip('/')
     api_token = sys.argv[3]
     
-    print(f"=== DocuSeal DOCX Submission Test (Python) ===")
+    print("=== DocuSeal DOCX Submission Test (Python) ===")
     print(f"File: {docx_file}")
     print(f"API: {api_url}")
     print()
@@ -60,55 +82,76 @@ def main():
         sys.exit(1)
     print("Base64 roundtrip verified OK")
     
-    # Build request payload
+    # Build request payload matching simple_contract_template.txt
     contract_num = f"SC-{int(datetime.now().timestamp())}"
     contract_date = datetime.now().strftime("%B %d, %Y")
+    prepared_date = datetime.now().strftime("%B %d, %Y")
     
     payload = {
-        "name": "Sales Contract - #6",
+        "name": f"Simple Contract - {contract_num}",
         "variables": {
+            # Contract header
             "contract_number": contract_num,
             "contract_date": contract_date,
+            
+            # Seller (company) info
             "company_name": "TechVendor Inc.",
-            "company_address": "123 Business Ave, San Francisco, CA",
-            "sales_rep_name": "Jane Smith",
-            "sales_rep_email": "jane@techvendor.com",
+            "company_address": "123 Business Ave, San Francisco, CA 94102",
+            
+            # Buyer (customer) info
             "customer_name": "John Doe",
             "customer_company": "Acme Corporation",
-            "customer_address": "456 Corporate Blvd, New York, NY",
-            "customer_phone": "+1 555 123 4567",
-            "customer_email": "john@acme.com",
+            "customer_address": "456 Corporate Blvd, New York, NY 10001",
+            "customer_email": "john.doe@acme.com",
+            
+            # Order items (loop)
             "items": [
                 {
                     "name": "Enterprise Software License",
-                    "description": "1-year license",
+                    "description": "Annual subscription - 50 users",
                     "quantity": "1",
-                    "unit_price": "15000",
-                    "subtotal": "15000"
+                    "unit_price": "15,000.00",
+                    "subtotal": "15,000.00"
                 },
                 {
-                    "name": "Training",
-                    "description": "2-day training",
+                    "name": "Professional Training",
+                    "description": "2-day on-site training session",
                     "quantity": "1",
-                    "unit_price": "2500",
-                    "subtotal": "2500"
+                    "unit_price": "2,500.00",
+                    "subtotal": "2,500.00"
+                },
+                {
+                    "name": "Technical Support",
+                    "description": "12-month premium support package",
+                    "quantity": "1",
+                    "unit_price": "3,000.00",
+                    "subtotal": "3,000.00"
                 }
             ],
-            "subtotal": "17500",
-            "has_discount": True,
+            
+            # Pricing
+            "subtotal": "20,500.00",
+            "has_discount": True,           # Enable discount section
             "discount_percent": "10",
-            "discount_amount": "1750",
-            "tax_rate": "10",
-            "tax_amount": "1575",
-            "total": "17325",
-            "payment_installment": False,
+            "discount_amount": "2,050.00",
+            "tax_rate": "8.5",
+            "tax_amount": "1,568.25",
+            "total": "20,018.25",
+            
+            # Terms
             "payment_days": "30",
             "delivery_days": "14",
             "warranty_months": "12",
-            "jurisdiction": "California"
+            
+            # Optional special terms (set to False to hide section)
+            "special_terms": "Early payment discount: 2% if paid within 10 days.",
+            
+            # Signature section
+            "prepared_by": "Sales Department",
+            "prepared_date": prepared_date
         },
         "documents": [{
-            "name": "simple_contract.docx",
+            "name": docx_file,
             "file": docx_base64
         }],
         "submitters": [
@@ -129,8 +172,25 @@ def main():
         "order": "preserved"
     }
     
+    # Print variables being sent
+    print()
+    print("Variables being sent:")
+    for key, value in payload["variables"].items():
+        if key == "items":
+            print(f"  {key}: [{len(value)} items]")
+            for i, item in enumerate(value):
+                print(f"    [{i}] {item['name']}: {item['quantity']} x ${item['unit_price']}")
+        elif isinstance(value, bool):
+            print(f"  {key}: {value}")
+        else:
+            print(f"  {key}: {value[:50]}..." if len(str(value)) > 50 else f"  {key}: {value}")
+    
+    print()
+    print(f"Submitters: {[s['role'] + ' (' + s['email'] + ')' for s in payload['submitters']]}")
+    
     # Convert to JSON
     json_data = json.dumps(payload).encode('utf-8')
+    print()
     print(f"JSON payload size: {len(json_data)} bytes")
     
     # Make request
@@ -158,18 +218,43 @@ def main():
     try:
         with urllib.request.urlopen(req, context=ctx, timeout=300) as response:
             result = response.read().decode('utf-8')
+            data = json.loads(result)
+            
             print()
-            print("=== Response ===")
-            print(json.dumps(json.loads(result), indent=2))
+            print("=== SUCCESS ===")
+            print(f"Created {len(data)} submitter(s):")
+            print()
+            
+            for submitter in data:
+                print(f"  {submitter.get('role', 'Unknown')}:")
+                print(f"    ID: {submitter.get('id')}")
+                print(f"    Name: {submitter.get('name')}")
+                print(f"    Email: {submitter.get('email')}")
+                print(f"    Status: {submitter.get('status')}")
+                print(f"    Signing URL: {submitter.get('embed_src')}")
+                print()
+            
+            print("Full response:")
+            print(json.dumps(data, indent=2))
+            
     except urllib.error.HTTPError as e:
+        print()
+        print(f"=== ERROR ===")
         print(f"HTTP Error: {e.code}")
         error_body = e.read().decode('utf-8')
-        print(f"Response: {error_body}")
+        try:
+            error_json = json.loads(error_body)
+            print(f"Error: {json.dumps(error_json, indent=2)}")
+        except:
+            print(f"Response: {error_body}")
     except Exception as e:
+        print()
+        print(f"=== ERROR ===")
         print(f"Error: {type(e).__name__}: {e}")
     
     print()
     print("=== Done ===")
+
 
 if __name__ == "__main__":
     main()

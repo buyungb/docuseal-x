@@ -115,16 +115,47 @@ Use double square brackets for data that should be replaced before the document 
 ```
 [[variable_name]]           - Simple variable
 [[if:condition]]...[[end]]  - Conditional block
-[[for:items]]...[[end]]     - Loop
-[[item.property]]           - Item accessor in loops
+[[for:items]]...[[end]]     - Loop (repeat content for each item)
+[[item.property]]           - Item accessor inside loops
 ```
 
-**Examples:**
+**Simple Variable Examples:**
 ```
 Contract #: [[contract_number]]
 Customer: [[customer_name]]
 Prepared By: [[prepared_by]]
 Date: [[contract_date]]
+```
+
+**Loop Example (for repeating content):**
+```
+[[for:items]]
+Product: [[item.name]]
+Description: [[item.description]]
+Quantity: [[item.quantity]]
+Unit Price: $[[item.unit_price]]
+Subtotal: $[[item.subtotal]]
+
+[[end]]
+```
+
+**Loop API Data:**
+```json
+{
+  "variables": {
+    "items": [
+      {"name": "Product A", "description": "First item", "quantity": "2", "unit_price": "100", "subtotal": "200"},
+      {"name": "Product B", "description": "Second item", "quantity": "1", "unit_price": "150", "subtotal": "150"}
+    ]
+  }
+}
+```
+
+**Conditional Example:**
+```
+[[if:has_discount]]
+Discount ([[discount_percent]]%): -$[[discount_amount]]
+[[end]]
 ```
 
 ### 2. Form Field Tags `{{name;type=X}}` (Interactive fields for signers)
