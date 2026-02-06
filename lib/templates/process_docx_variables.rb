@@ -105,7 +105,57 @@ module Templates
       
       Rails.logger.info("ProcessDocxVariables: Found loop variables: #{loop_vars.inspect}") if loop_vars.any?
       
-      # Process table row loops using regex to find and duplicate <w:tr> elements
+      # STEP 1: Process paragraph-based loops [[for:items]]...[[end]]
+      # This handles loops that are NOT in tables (regular paragraphs)
+      loop_vars.each do |accessor_name, var_name|
+        items = variables[var_name]
+        next unless items.is_a?(Array)
+        
+        # Pattern to match [[for:varname]]...[[end]] blocks in raw XML
+        # The content between for and end can span multiple paragraphs
+        loop_pattern = /\[\[for:#{var_name}\]\](.*?)\[\[end(?::\w+)?\]\]/m
+        
+        xml_content.gsub!(loop_pattern) do |_match|
+          loop_content = ::Regexp.last_match(1)
+          
+          if items.any?
+            Rails.logger.info("ProcessDocxVariables: Expanding loop '#{var_name}' with #{items.size} items")
+            
+            # Generate content for each item
+            expanded = items.map.with_index do |item, idx|
+              item_content = loop_content.dup
+              
+              # Replace [[item.property]] accessors (singular form)
+              singular_name = var_name.singularize
+              item_content = item_content.gsub(/\[\[#{singular_name}\.(\w+)\]\]/) do
+                prop = ::Regexp.last_match(1)
+                value = item.is_a?(Hash) ? (item[prop] || item[prop.to_sym]) : nil
+                Rails.logger.debug("  Item #{idx}: #{singular_name}.#{prop} = #{value}")
+                value.to_s
+              end
+              
+              # Also replace [[items.property]] accessors (plural form)
+              item_content = item_content.gsub(/\[\[#{var_name}\.(\w+)\]\]/) do
+                prop = ::Regexp.last_match(1)
+                value = item.is_a?(Hash) ? (item[prop] || item[prop.to_sym]) : nil
+                value.to_s
+              end
+              
+              item_content
+            end.join
+            
+            modified = true
+            expanded
+          else
+            Rails.logger.info("ProcessDocxVariables: Loop '#{var_name}' has no items, removing block")
+            modified = true
+            ''
+          end
+        end
+      end
+      
+      # STEP 2: Process table row loops using regex to find and duplicate <w:tr> elements
+      # This handles loops inside tables where each item becomes a row
       loop_vars.each do |accessor_name, var_name|
         items = variables[var_name]
         next unless items.is_a?(Array)
@@ -121,8 +171,9 @@ module Templates
               # Remove loop markers
               row_copy.gsub!(/\[\[for:\w+\]\]/, '')
               row_copy.gsub!(/\[\[end(:\w+)?\]\]/, '')
-              # Replace item accessors
-              row_copy.gsub!(/\[\[#{accessor_name}\.(\w+)\]\]/) do
+              # Replace item accessors (both singular and plural forms)
+              singular_name = var_name.singularize
+              row_copy.gsub!(/\[\[(?:#{accessor_name}|#{singular_name})\.(\w+)\]\]/) do
                 prop = ::Regexp.last_match(1)
                 item.is_a?(Hash) ? (item[prop] || item[prop.to_sym]).to_s : ''
               end
@@ -135,7 +186,7 @@ module Templates
         modified = true if xml_content != original_content
       end
       
-      # Remove standalone loop markers
+      # STEP 3: Remove any remaining standalone loop markers
       if xml_content.gsub!(/\[\[for:\w+\]\]/, '')
         modified = true
       end

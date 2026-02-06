@@ -140,27 +140,60 @@ Quantity: [[item.quantity]]
 
 ### Loops `[[for:items]]...[[end]]`
 
-Repeat content for each item in a collection:
+Repeat content for each item in a collection. DocuSeal supports two types of loops:
+
+#### 1. Paragraph Loops (Regular Text)
+
+For repeating paragraphs or text blocks:
 
 ```
 [[for:items]]
-┌─────────────────────────────────────────┐
-│ Product: [[item.name]]                  │
-│ Quantity: [[item.quantity]]             │
-│ Price: $[[item.unit_price]]             │
-│ Subtotal: $[[item.subtotal]]            │
-└─────────────────────────────────────────┘
+Product: [[item.name]]
+Description: [[item.description]]
+Quantity: [[item.quantity]]
+Unit Price: $[[item.unit_price]]
+Subtotal: $[[item.subtotal]]
+
 [[end]]
 ```
 
-**Important Notes:**
+**Output (with 2 items):**
+```
+Product: Enterprise Software License
+Description: Annual subscription
+Quantity: 1
+Unit Price: $15,000.00
+Subtotal: $15,000.00
 
-1. **Variable name**: Use plural form in `[[for:items]]`
-2. **Item accessor**: Use singular form `[[item.property]]` inside the loop
-3. **Both forms work**: `[[item.name]]` or `[[items.name]]` (system handles both)
-4. **Table rows**: When used in a table, the entire `<w:tr>` row is duplicated for each item
+Product: Professional Training
+Description: 2-day on-site training
+Quantity: 1
+Unit Price: $2,500.00
+Subtotal: $2,500.00
+```
 
-**API Data Structure:**
+#### 2. Table Row Loops
+
+For repeating rows in a Word table - the entire table row (`<w:tr>`) is duplicated for each item:
+
+| Product | Qty | Price | Subtotal |
+|---------|-----|-------|----------|
+| [[item.name]] | [[item.quantity]] | $[[item.unit_price]] | $[[item.subtotal]] |
+
+[[for:items]] [[end]]
+
+**Note:** For table loops, place the item accessors in a single row. The `[[for:items]]` and `[[end]]` tags can be outside the table or in separate rows.
+
+### Loop Syntax Rules
+
+| Rule | Correct | Incorrect |
+|------|---------|-----------|
+| Loop variable | `[[for:items]]` (plural) | `[[for:item]]` |
+| Item accessor | `[[item.name]]` (singular) | - |
+| Alternative | `[[items.name]]` also works | - |
+| Closing tag | `[[end]]` or `[[end:items]]` | Missing `[[end]]` |
+
+### API Data Structure for Loops
 
 ```json
 {
@@ -168,46 +201,67 @@ Repeat content for each item in a collection:
     "items": [
       {
         "name": "Product A",
+        "description": "First product",
         "quantity": "2",
-        "unit_price": "100",
-        "subtotal": "200"
+        "unit_price": "100.00",
+        "subtotal": "200.00"
       },
       {
         "name": "Product B",
+        "description": "Second product",
         "quantity": "1",
-        "unit_price": "150",
-        "subtotal": "150"
+        "unit_price": "150.00",
+        "subtotal": "150.00"
       }
     ]
   }
 }
 ```
 
-**Template Example:**
+### Complete Loop Example
 
+**Template:**
 ```
-ORDER ITEMS:
+ORDER DETAILS
 
 [[for:items]]
-- [[item.name]]
-  Qty: [[item.quantity]] x $[[item.unit_price]] = $[[item.subtotal]]
+┌─────────────────────────────────────────┐
+│ Product: [[item.name]]                  │
+│ Description: [[item.description]]       │
+│ Quantity: [[item.quantity]]             │
+│ Price: $[[item.unit_price]]             │
+│ Subtotal: $[[item.subtotal]]            │
+└─────────────────────────────────────────┘
 [[end]]
 
-Total: $[[total]]
+TOTAL: $[[total]]
 ```
 
 **Output:**
-
 ```
-ORDER ITEMS:
+ORDER DETAILS
 
-- Product A
-  Qty: 2 x $100 = $200
-- Product B
-  Qty: 1 x $150 = $150
+┌─────────────────────────────────────────┐
+│ Product: Product A                      │
+│ Description: First product              │
+│ Quantity: 2                             │
+│ Price: $100.00                          │
+│ Subtotal: $200.00                       │
+└─────────────────────────────────────────┘
+┌─────────────────────────────────────────┐
+│ Product: Product B                      │
+│ Description: Second product             │
+│ Quantity: 1                             │
+│ Price: $150.00                          │
+│ Subtotal: $150.00                       │
+└─────────────────────────────────────────┘
 
-Total: $350
+TOTAL: $350.00
 ```
+
+### Empty Loop Handling
+
+If the `items` array is empty or not provided, the entire loop block is removed from the output.
 
 ### Conditionals `[[if:condition]]...[[end]]`
 
