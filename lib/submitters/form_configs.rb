@@ -41,15 +41,40 @@ module Submitters
       with_field_labels = find_safe_value(configs, AccountConfig::WITH_FIELD_LABELS_KEY) != false
       policy_links = find_safe_value(configs, AccountConfig::POLICY_LINKS_KEY)
 
-      # Consent: Check template preferences first, fall back to account defaults
+      # Consent: Check submitter > template per-role > submission > template > account defaults
+      submitter_prefs = submitter.preferences || {}
+      submission_prefs = submitter.submission.preferences || {}
       template_prefs = submitter.submission.template&.preferences || {}
-      consent_enabled = template_prefs['consent_enabled'] == true
+
+      # Per-role consent from template preferences (set via UI)
+      role_consent = (template_prefs['consent_roles'] || {})[submitter.uuid] || {}
+
+      # Consent enabled: submitter API > template per-role > submission API > template global
+      consent_enabled = if submitter_prefs.key?('consent_enabled')
+                          submitter_prefs['consent_enabled'] == true
+                        elsif role_consent.key?('enabled')
+                          role_consent['enabled'] == true || role_consent['enabled'] == 'true'
+                        elsif submission_prefs.key?('consent_enabled')
+                          submission_prefs['consent_enabled'] == true
+                        else
+                          template_prefs['consent_enabled'] == true
+                        end
+
+      # Consent URL: submitter API > template per-role > submission API > template global > account
       consent_document_url = if consent_enabled
-                               template_prefs['consent_document_url'].presence ||
+                               submitter_prefs['consent_document_url'].presence ||
+                                 role_consent['url'].presence ||
+                                 submission_prefs['consent_document_url'].presence ||
+                                 template_prefs['consent_document_url'].presence ||
                                  find_safe_value(configs, AccountConfig::CONSENT_DOCUMENT_URL_KEY)
                              end
+
+      # Consent text: submitter API > template per-role > submission API > template global > account
       consent_document_text = if consent_enabled
-                                template_prefs['consent_document_text'].presence ||
+                                submitter_prefs['consent_document_text'].presence ||
+                                  role_consent['text'].presence ||
+                                  submission_prefs['consent_document_text'].presence ||
+                                  template_prefs['consent_document_text'].presence ||
                                   find_safe_value(configs, AccountConfig::CONSENT_DOCUMENT_TEXT_KEY)
                               end
 

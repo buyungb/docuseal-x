@@ -60,7 +60,8 @@ class TemplatesPreferencesController < ApplicationController
                       completed_notification_email_enabled completed_notification_email_attach_audit
                       consent_enabled consent_document_url consent_document_text] +
                       [completed_message: %i[title body],
-                       submitters: [%i[uuid request_email_subject request_email_body]], link_form_fields: []]
+                       submitters: [%i[uuid request_email_subject request_email_body]], link_form_fields: [],
+                       consent_roles: {}]
     ).tap do |attrs|
       attrs[:preferences].delete(:submitters) if params[:request_email_per_submitter] != '1'
 

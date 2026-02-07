@@ -1,5 +1,7 @@
 <% account_consent_url = AccountConfigs.find_or_initialize_for_key(current_account, AccountConfig::CONSENT_DOCUMENT_URL_KEY).value %>
 <% account_consent_text = AccountConfigs.find_or_initialize_for_key(current_account, AccountConfig::CONSENT_DOCUMENT_TEXT_KEY).value %>
+<% consent_roles = template.preferences['consent_roles'] || {} %>
+<% has_multiple_submitters = template.submitters.to_a.length > 1 %>
 
 <div class="border-t border-base-300 mt-4 pt-4">
   <h3 class="font-semibold mb-3"><%= t('consent_document') %></h3>
@@ -55,7 +57,42 @@
         <% end %>
       </div>
     <% end %>
-    
+
+    <% if has_multiple_submitters %>
+      <div class="border-t border-base-200 mt-3 pt-3">
+        <p class="text-sm font-medium mb-2"><%= t('per_role_consent_overrides') %></p>
+        <p class="text-xs text-base-content/60 mb-3"><%= t('override_consent_settings_for_specific_roles_leave_empty_to_use_the_default_above') %></p>
+        <% template.submitters.each do |item| %>
+          <% role_consent = consent_roles[item['uuid']] || {} %>
+          <div class="collapse collapse-arrow border border-base-200 mb-2">
+            <input type="checkbox" name="consent_role_accordion">
+            <div class="collapse-title text-sm font-medium min-h-0 py-2">
+              <%= item['name'] %>
+            </div>
+            <div class="collapse-content">
+              <div class="flex items-center justify-between py-2 px-1 mb-2">
+                <span class="text-sm"><%= t('enable_consent_for_this_role') %></span>
+                <input type="hidden" name="template[preferences][consent_roles][<%= item['uuid'] %>][enabled]" value="">
+                <submit-form data-on="change" class="flex">
+                  <input type="checkbox" name="template[preferences][consent_roles][<%= item['uuid'] %>][enabled]" value="true" class="toggle toggle-sm" <%= 'checked' if role_consent['enabled'] == true %>>
+                </submit-form>
+              </div>
+              <div class="form-control mb-2">
+                <label class="label text-sm"><%= t('consent_document_url') %></label>
+                <input type="url" name="template[preferences][consent_roles][<%= item['uuid'] %>][url]" value="<%= role_consent['url'] %>" class="base-input input-sm" dir="auto" placeholder="<%= t('leave_empty_to_use_default') %>">
+              </div>
+              <div class="form-control mb-2">
+                <label class="label text-sm"><%= t('consent_text') %></label>
+                <autoresize-textarea>
+                  <textarea name="template[preferences][consent_roles][<%= item['uuid'] %>][text]" class="base-input w-full py-2 text-sm" dir="auto" rows="2" placeholder="<%= t('leave_empty_to_use_default') %>"><%= role_consent['text'] %></textarea>
+                </autoresize-textarea>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
     <div class="form-control pt-2">
       <%= f.button button_title(title: t('save'), disabled_with: t('saving')), class: 'base-button' %>
       <div class="flex justify-center">

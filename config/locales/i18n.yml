@@ -831,6 +831,10 @@ en: &en
   require_consent_before_signing: Require consent before signing
   consent_document_url: Consent Document URL
   leave_empty_to_use_account_default: Leave empty to use account default
+  leave_empty_to_use_default: Leave empty to use default
+  per_role_consent_overrides: Per-Role Consent Overrides
+  override_consent_settings_for_specific_roles_leave_empty_to_use_the_default_above: Override consent settings for specific roles. Leave empty to use the default above.
+  enable_consent_for_this_role: Enable consent for this role
   the_sender_has_requested_phone_verification_via_otp_sent_to_your_phone_html: The sender has requested phone verification. An OTP code will be sent to your phone number ending in <strong>%{phone}</strong>.
   resend_code: Resend Code
   send_via_phone_webhook: Send via phone webhook

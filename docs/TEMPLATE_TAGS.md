@@ -632,12 +632,269 @@ When `require_email_2fa: true`:
 |-----------|------|-------------|
 | `metadata` | object | Custom key-value pairs for your app |
 
-### Workflow
+### Workflow & Signing Order
+
+DocuSeal supports two levels of signing order control:
+
+#### Submission-Level Order (Top-Level Parameter)
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `order` | string | `"preserved"` | Controls overall signing workflow |
+
+**Values:**
+- `"preserved"` - Sequential signing. Second party receives signature request only after the first party signs.
+- `"random"` - Parallel signing. All parties receive signature requests immediately and can sign in any order.
+
+#### Submitter-Level Order (Per-Submitter Parameter)
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `order` | integer | Signing order (0 = first, 1 = second, etc.) |
+| `order` | integer | Position in signing sequence (0 = first, 1 = second, etc.) |
 | `go_to_last` | boolean | Start at the last unfilled field |
+
+**Order Groups:** Use the same `order` number for multiple submitters to create parallel signing within a sequential workflow.
+
+#### Signing Order Examples
+
+**Example 1: Sequential Signing (Default)**
+
+```json
+{
+  "template_id": 123,
+  "order": "preserved",
+  "submitters": [
+    { "role": "Buyer", "email": "buyer@example.com" },
+    { "role": "Seller", "email": "seller@example.com" }
+  ]
+}
+```
+- Buyer signs first → Seller receives request after Buyer completes
+
+**Example 2: Parallel Signing**
+
+```json
+{
+  "template_id": 123,
+  "order": "random",
+  "submitters": [
+    { "role": "Buyer", "email": "buyer@example.com" },
+    { "role": "Seller", "email": "seller@example.com" }
+  ]
+}
+```
+- Both Buyer and Seller receive requests immediately, can sign in any order
+
+**Example 3: Custom Order with Groups**
+
+```json
+{
+  "template_id": 123,
+  "order": "preserved",
+  "submitters": [
+    { "role": "Witness 1", "email": "witness1@example.com", "order": 0 },
+    { "role": "Witness 2", "email": "witness2@example.com", "order": 0 },
+    { "role": "Manager", "email": "manager@example.com", "order": 1 },
+    { "role": "Director", "email": "director@example.com", "order": 2 }
+  ]
+}
+```
+- **Order 0**: Witness 1 and Witness 2 sign in parallel (same order group)
+- **Order 1**: Manager signs after both witnesses complete
+- **Order 2**: Director signs last
+
+**Example 4: Reverse Order**
+
+```json
+{
+  "template_id": 123,
+  "order": "preserved",
+  "submitters": [
+    { "role": "Employee", "email": "employee@example.com", "order": 1 },
+    { "role": "HR Manager", "email": "hr@example.com", "order": 0 }
+  ]
+}
+```
+- HR Manager signs first (order: 0), then Employee (order: 1)
+
+---
+
+## Consent Settings
+
+Consent allows you to require signers to accept terms and conditions before signing documents.
+
+### How Consent Works
+
+When enabled, submitters see a checkbox with your consent text and a link to your terms document. They must check the box before they can proceed with signing.
+
+### Configuration Levels
+
+#### 1. Account-Level Defaults (Settings UI)
+
+Go to **Settings** → **Consent** to configure default consent for all templates:
+
+| Setting | Description |
+|---------|-------------|
+| **Consent Document URL** | URL to your terms and conditions document |
+| **Consent Text** | Checkbox label (default: "I have read and agree to the terms and conditions") |
+
+#### 2. Template-Level Override (Template Settings UI)
+
+In the template editor, go to **Settings** → **Consent** to override account defaults:
+
+| Setting | Description |
+|---------|-------------|
+| **Enable Consent** | Toggle consent for this template |
+| **Consent Document URL** | Override URL for this template |
+| **Consent Text** | Override text for this template |
+
+### Template Preferences for Consent
+
+Consent is controlled via template `preferences`:
+
+| Preference Key | Type | Description |
+|----------------|------|-------------|
+| `consent_enabled` | boolean | Enable consent checkbox for this template |
+| `consent_document_url` | string | URL to terms document (falls back to account default) |
+| `consent_document_text` | string | Consent checkbox text (falls back to account default) |
+
+### API Parameters for Consent
+
+Consent can be configured at **top-level** (all submitters) or **per-submitter** (per role):
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `consent_enabled` | boolean | `false` | Enable consent checkbox |
+| `consent_document_url` | string | - | URL to terms and conditions document |
+| `consent_document_text` | string | - | Consent checkbox label text |
+
+#### Priority Order
+
+Consent settings are resolved in this priority:
+1. **Per-submitter API parameters** (highest priority)
+2. **Top-level submission API parameters**
+3. **Template preferences** (set via Template Editor UI)
+4. **Account defaults** (set via Settings → Consent)
+
+#### API Example: Same Consent for All Submitters (Top-Level)
+
+```json
+{
+  "template_id": 123,
+  "consent_enabled": true,
+  "consent_document_url": "https://example.com/terms",
+  "consent_document_text": "I agree to the Terms of Service",
+  "submitters": [
+    { "role": "Buyer", "email": "buyer@example.com" },
+    { "role": "Seller", "email": "seller@example.com" }
+  ]
+}
+```
+
+Both Buyer and Seller see the same consent.
+
+#### API Example: Different Consent Per Role
+
+```json
+{
+  "template_id": 123,
+  "submitters": [
+    {
+      "role": "Buyer",
+      "email": "buyer@example.com",
+      "consent_enabled": true,
+      "consent_document_url": "https://example.com/buyer-terms",
+      "consent_document_text": "I agree to the Buyer Terms of Service"
+    },
+    {
+      "role": "Seller",
+      "email": "seller@example.com",
+      "consent_enabled": true,
+      "consent_document_url": "https://example.com/seller-terms",
+      "consent_document_text": "I agree to the Seller Agreement"
+    }
+  ]
+}
+```
+
+Each role sees their own consent document.
+
+#### API Example: Consent for One Role Only
+
+```json
+{
+  "template_id": 123,
+  "submitters": [
+    {
+      "role": "Buyer",
+      "email": "buyer@example.com",
+      "consent_enabled": true,
+      "consent_document_url": "https://example.com/terms",
+      "consent_document_text": "I agree to the Terms"
+    },
+    {
+      "role": "Seller",
+      "email": "seller@example.com",
+      "consent_enabled": false
+    }
+  ]
+}
+```
+
+Only Buyer sees consent; Seller signs without consent.
+
+#### API Example: DOCX Submission with Per-Role Consent
+
+```json
+{
+  "name": "Contract with Terms",
+  "documents": [{"name": "contract.docx", "file": "BASE64_ENCODED_DOCX"}],
+  "submitters": [
+    {
+      "role": "Buyer",
+      "email": "buyer@example.com",
+      "consent_enabled": true,
+      "consent_document_url": "https://example.com/buyer-terms.pdf"
+    },
+    {
+      "role": "Seller",
+      "email": "seller@example.com",
+      "consent_enabled": false
+    }
+  ]
+}
+```
+
+#### Fallback Behavior
+
+If `consent_enabled: true` but no URL/text is provided:
+- `consent_document_url` falls back to: submission setting → template setting → account default
+- `consent_document_text` falls back to: submission setting → template setting → account default (or "I have read and agree to the terms and conditions")
+
+### Example Consent Flow
+
+```
+┌─────────────────────────────────────────────┐
+│         Document Signing Form               │
+├─────────────────────────────────────────────┤
+│                                             │
+│  [Document Preview]                         │
+│                                             │
+│  ☐ I have read and agree to the            │
+│    terms and conditions                     │
+│    (Click to view terms)                    │
+│                                             │
+│  [Sign Document] ← disabled until checked   │
+│                                             │
+└─────────────────────────────────────────────┘
+```
+
+### Audit Trail
+
+When consent is enabled, the audit trail records:
+- Timestamp when the submitter agreed to consent
+- The consent text that was displayed
+- The consent document URL that was linked
 
 ---
 

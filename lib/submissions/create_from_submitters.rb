@@ -17,6 +17,18 @@ module Submissions
 
         set_submission_preferences = submission_preferences.slice('send_email', 'bcc_completed')
         set_submission_preferences['send_email'] = true if params['send_completed_email']
+
+        # Consent settings from API (override template defaults)
+        if attrs[:consent_enabled].present?
+          set_submission_preferences['consent_enabled'] = attrs[:consent_enabled].to_s == 'true'
+        end
+        if attrs[:consent_document_url].present?
+          set_submission_preferences['consent_document_url'] = attrs[:consent_document_url]
+        end
+        if attrs[:consent_document_text].present?
+          set_submission_preferences['consent_document_text'] = attrs[:consent_document_text]
+        end
+
         expire_at = attrs[:expire_at] || Templates.build_default_expire_at(template)
 
         submission = template.submissions.new(

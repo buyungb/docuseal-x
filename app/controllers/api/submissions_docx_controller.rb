@@ -429,7 +429,7 @@ module Api
       Rails.logger.info("DOCX Submission: Template saved with ID #{template.id}, submitters: #{template.submitters.inspect}")
 
       # Create submissions - use HashWithIndifferentAccess for compatibility
-      submissions_attrs = [{
+      submission_data = {
         submitters: submitters_params.map.with_index do |s, i|
           role_name = (s['role'] || s[:role] || s['name'] || s[:name] || "Party #{i + 1}").to_s
           email_val = (s['email'] || s[:email]).to_s
@@ -446,7 +446,23 @@ module Api
           submitter_data['name'] = name_val if name_val.present?
           submitter_data['external_id'] = (s['external_id'] || s[:external_id]).to_s if (s['external_id'] || s[:external_id]).present?
           submitter_data['metadata'] = (s['metadata'] || s[:metadata] || {})
-          
+
+          # Pass through communication and verification settings
+          submitter_data['send_email'] = s['send_email'] || s[:send_email] unless (s['send_email'] || s[:send_email]).nil?
+          submitter_data['send_sms'] = s['send_sms'] || s[:send_sms] unless (s['send_sms'] || s[:send_sms]).nil?
+          submitter_data['require_phone_2fa'] = s['require_phone_2fa'] || s[:require_phone_2fa] unless (s['require_phone_2fa'] || s[:require_phone_2fa]).nil?
+          submitter_data['require_email_2fa'] = s['require_email_2fa'] || s[:require_email_2fa] unless (s['require_email_2fa'] || s[:require_email_2fa]).nil?
+          submitter_data['completed_redirect_url'] = (s['completed_redirect_url'] || s[:completed_redirect_url]).to_s if (s['completed_redirect_url'] || s[:completed_redirect_url]).present?
+          submitter_data['reply_to'] = (s['reply_to'] || s[:reply_to]).to_s if (s['reply_to'] || s[:reply_to]).present?
+          submitter_data['go_to_last'] = s['go_to_last'] || s[:go_to_last] unless (s['go_to_last'] || s[:go_to_last]).nil?
+          submitter_data['order'] = s['order'] || s[:order] if (s['order'] || s[:order]).present?
+          submitter_data['message'] = (s['message'] || s[:message]) if (s['message'] || s[:message]).present?
+
+          # Pass through per-submitter consent settings
+          submitter_data['consent_enabled'] = s['consent_enabled'] || s[:consent_enabled] unless (s['consent_enabled'] || s[:consent_enabled]).nil?
+          submitter_data['consent_document_url'] = (s['consent_document_url'] || s[:consent_document_url]).to_s if (s['consent_document_url'] || s[:consent_document_url]).present?
+          submitter_data['consent_document_text'] = (s['consent_document_text'] || s[:consent_document_text]).to_s if (s['consent_document_text'] || s[:consent_document_text]).present?
+
           # Convert to HashWithIndifferentAccess so both symbol and string keys work
           submitter_data = submitter_data.with_indifferent_access
           
@@ -454,7 +470,14 @@ module Api
           
           submitter_data
         end
-      }]
+      }
+
+      # Add consent settings if provided
+      submission_data[:consent_enabled] = params[:consent_enabled] if params.key?(:consent_enabled)
+      submission_data[:consent_document_url] = params[:consent_document_url] if params[:consent_document_url].present?
+      submission_data[:consent_document_text] = params[:consent_document_text] if params[:consent_document_text].present?
+
+      submissions_attrs = [submission_data]
 
       Rails.logger.info("DOCX Submission: submissions_attrs = #{submissions_attrs.inspect}")
 

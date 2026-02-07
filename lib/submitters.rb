@@ -164,6 +164,11 @@ module Submitters
     preferences['go_to_last'] = params['go_to_last'] if params.key?('go_to_last')
     preferences['completed_redirect_url'] = params['completed_redirect_url'] if params.key?('completed_redirect_url')
 
+    # Per-submitter consent settings
+    preferences['consent_enabled'] = params['consent_enabled'].in?(TRUE_VALUES) if params.key?('consent_enabled')
+    preferences['consent_document_url'] = params['consent_document_url'] if params.key?('consent_document_url')
+    preferences['consent_document_text'] = params['consent_document_text'] if params.key?('consent_document_text')
+
     preferences
   end
 
