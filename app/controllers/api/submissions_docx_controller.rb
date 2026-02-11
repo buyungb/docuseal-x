@@ -1016,7 +1016,11 @@ module Api
                 original_size = content.length
                 original_content = content.dup
                 
-                # Remove tags from this XML file
+                # Preserve table row heights before tag removal
+                # This prevents rows from collapsing when tag text is removed
+                content = preserve_table_row_heights(content)
+                
+                # Remove tags from this XML file (replaces with spaces)
                 content, removed = remove_tags_from_document_xml(content)
                 tags_removed += removed
                 
@@ -1072,11 +1076,13 @@ module Api
       tag_pattern = /\{\{[^}]+\}\}/
       
       # First, do a simple global replacement to catch obvious tags
+      # Replace with a space character (not empty string) to preserve table row heights
+      # and overall layout consistency between tagged and clean PDFs
       before_count = result_xml.scan(tag_pattern).size
       if before_count > 0
-        result_xml = result_xml.gsub(tag_pattern, '')
+        result_xml = result_xml.gsub(tag_pattern, ' ')
         tags_removed += before_count
-        Rails.logger.info("DOCX TAG REMOVAL: Strategy 1 (global gsub) removed #{before_count} tags")
+        Rails.logger.info("DOCX TAG REMOVAL: Strategy 1 (global gsub) replaced #{before_count} tags with spaces")
       end
       
       # STRATEGY 2: Process w:t elements specifically
@@ -1088,7 +1094,7 @@ module Api
         close_tag = Regexp.last_match(3)
         
         if text_content.include?('{{') && text_content.include?('}}')
-          clean_text = text_content.gsub(tag_pattern, '')
+          clean_text = text_content.gsub(tag_pattern, ' ')
           if clean_text != text_content
             wt_tag_count += 1
             Rails.logger.debug("DOCX TAG REMOVAL: Cleaned w:t: '#{text_content}' -> '#{clean_text}'")
@@ -1127,8 +1133,10 @@ module Api
             tag_start = match_data.begin(0)
             tag_end = match_data.end(0)
             
-            # Remove tag from the appropriate text nodes
+            # Remove tag from the appropriate text nodes, replacing with space
+            # to preserve table row heights and layout
             current_pos = 0
+            first_affected = true
             text_parts.each do |part|
               part_start = current_pos
               part_end = current_pos + part[:text].length
@@ -1137,7 +1145,11 @@ module Api
                 remove_start = [tag_start - part_start, 0].max
                 remove_end = [tag_end - part_start, part[:text].length].min
                 
-                new_text = part[:text][0...remove_start].to_s + part[:text][remove_end..].to_s
+                # Insert a space in the first affected node to preserve cell layout
+                space_insert = first_affected ? ' ' : ''
+                first_affected = false
+                
+                new_text = part[:text][0...remove_start].to_s + space_insert + part[:text][remove_end..].to_s
                 part[:node].content = new_text
                 part[:text] = new_text
               end
@@ -1175,21 +1187,81 @@ module Api
         Rails.logger.warn("DOCX TAG REMOVAL: Final cleanup needed - #{final_tags.size} tags still present")
         final_tags.each { |t| Rails.logger.warn("DOCX TAG REMOVAL:   Remaining: #{t}") }
         
-        result_xml = result_xml.gsub(tag_pattern, '')
+        result_xml = result_xml.gsub(tag_pattern, ' ')
         tags_removed += final_tags.size
-        Rails.logger.info("DOCX TAG REMOVAL: Final cleanup removed #{final_tags.size} tags")
+        Rails.logger.info("DOCX TAG REMOVAL: Final cleanup replaced #{final_tags.size} tags with spaces")
       end
       
-      # Verify complete removal
+      # Verify complete replacement
       verify_tags = result_xml.scan(/\{\{[^}]+\}\}/)
       if verify_tags.any?
         Rails.logger.error("DOCX TAG REMOVAL: FAILED - #{verify_tags.size} tags still in document!")
         verify_tags.first(3).each { |t| Rails.logger.error("DOCX TAG REMOVAL:   #{t}") }
       else
-        Rails.logger.info("DOCX TAG REMOVAL: SUCCESS - All tags removed (total: #{tags_removed})")
+        Rails.logger.info("DOCX TAG REMOVAL: SUCCESS - All tags replaced with spaces (total: #{tags_removed})")
       end
       
       [result_xml, tags_removed]
+    end
+
+    # Preserve table row heights for rows that contain {{...}} tags
+    # This prevents rows from collapsing when tag text is replaced with spaces
+    # Sets explicit w:trHeight on affected rows to maintain consistent layout
+    def preserve_table_row_heights(xml_content)
+      tag_pattern = /\{\{[^}]+\}\}/
+      
+      # Quick check: only process if there are tags AND tables
+      return xml_content unless xml_content.include?('{{') && xml_content.include?('<w:tbl')
+      
+      begin
+        doc = Nokogiri::XML(xml_content)
+        namespaces = { 'w' => 'http://schemas.openxmlformats.org/wordprocessingml/2006/main' }
+        modified = false
+        
+        # Find all table rows
+        doc.xpath('//w:tr', namespaces).each do |row|
+          # Check if any cell in this row contains a form field tag
+          row_text = row.xpath('.//w:t', namespaces).map(&:content).join
+          next unless row_text.match?(tag_pattern)
+          
+          # This row contains tags - ensure it has explicit row height
+          tr_pr = row.at_xpath('w:trPr', namespaces)
+          
+          # Create trPr if it doesn't exist
+          unless tr_pr
+            tr_pr = Nokogiri::XML::Node.new('w:trPr', doc)
+            row.children.first ? row.children.first.add_previous_sibling(tr_pr) : row.add_child(tr_pr)
+            modified = true
+          end
+          
+          # Check if trHeight already exists
+          tr_height = tr_pr.at_xpath('w:trHeight', namespaces)
+          
+          unless tr_height
+            # Add minimum row height (360 twips = ~0.25 inch = ~1 line of text)
+            tr_height = Nokogiri::XML::Node.new('w:trHeight', doc)
+            tr_height['w:val'] = '360'
+            tr_height['w:hRule'] = 'atLeast'
+            tr_pr.add_child(tr_height)
+            modified = true
+            Rails.logger.info("DOCX TAG REMOVAL: Set row height on table row containing tags")
+          end
+        end
+        
+        if modified
+          result = doc.to_xml
+          # Preserve original XML declaration
+          if xml_content.start_with?('<?xml') && !result.start_with?('<?xml')
+            declaration = xml_content[/^<\?xml[^?]*\?>/]
+            result = "#{declaration}\n#{result}" if declaration
+          end
+          return result
+        end
+      rescue StandardError => e
+        Rails.logger.warn("DOCX TAG REMOVAL: preserve_table_row_heights failed: #{e.message}")
+      end
+      
+      xml_content
     end
 
     # Disable auto-hyphenation in DOCX by modifying word/settings.xml

@@ -268,12 +268,20 @@ module Templates
         tag_x = start_pos[:x]
         tag_y = start_pos[:y]
         
+        # Detect table cell boundaries for this tag position
+        cell_bounds = detect_table_cell_bounds(chars_with_positions, tag_x, tag_y, start_pos[:h])
+        in_table = cell_bounds.present?
+        
+        if in_table
+          Rails.logger.info("ParsePdfTextTags: Tag '#{field_name}' is inside a table cell: x=#{cell_bounds[:x].round(3)}..#{(cell_bounds[:x] + cell_bounds[:w]).round(3)}, w=#{cell_bounds[:w].round(3)}")
+        end
+        
         # Handle multi-line tags: if end_pos.x < start_pos.x, tag wraps to next line
         # Use a reasonable width instead
         raw_w = (end_pos[:endx] || end_pos[:x] + end_pos[:w]) - tag_x
         if raw_w < 0 || raw_w > 0.5
-          # Tag spans multiple lines, use width from first line or default
-          tag_w = 0.2  # Default width for multi-line tags
+          # Tag spans multiple lines - use cell width if in table, otherwise default
+          tag_w = in_table ? [cell_bounds[:w] - 0.01, 0.05].max : 0.2
         else
           tag_w = raw_w
         end
@@ -286,28 +294,68 @@ module Templates
           tag_h = start_pos[:h] if tag_h < 0  # Fallback
         end
         
-        # Ensure minimum sizes
-        tag_w = [tag_w, 0.08].max
-        tag_h = [tag_h, 0.015].max
-        
-        # Adjust size based on field type (field_def already parsed above)
-        case field_def[:type]
-        when 'signature', 'initials'
-          tag_w = [tag_w, 0.15].max
-          tag_h = [tag_h, 0.032].max  # Smaller signature height
-        when 'text'
-          tag_w = [tag_w, 0.12].max
-          tag_h = [tag_h, 0.020].max
-        when 'date', 'datenow'
-          tag_w = [tag_w, 0.10].max
-          tag_h = [tag_h, 0.020].max
+        # Apply field sizing based on context (table cell vs free-form)
+        if in_table
+          # Table cell context: use smaller minimums constrained to cell bounds
+          # Calculate max width from tag position to cell right edge (not from cell left)
+          cell_right = cell_bounds[:x] + cell_bounds[:w]
+          max_w_from_tag = cell_right - tag_x - 0.005  # Space from tag position to cell right edge
+          max_cell_w = [max_w_from_tag, cell_bounds[:w] - 0.01].min
+          max_cell_w = [max_cell_w, 0.04].max  # Ensure at least some minimum
+          
+          # Trust the detected raw_w if it's valid, otherwise use available space
+          if raw_w > 0.03 && raw_w < 0.5
+            tag_w = [raw_w, max_cell_w].min
+          end
+          
+          # Smaller minimums for table cells - constrained to available space
+          case field_def[:type]
+          when 'signature', 'initials'
+            tag_w = [[tag_w, 0.06].max, max_cell_w].min
+            tag_h = [tag_h, 0.025].max
+          when 'text'
+            tag_w = [[tag_w, 0.04].max, max_cell_w].min
+            tag_h = [tag_h, 0.015].max
+          when 'date', 'datenow'
+            tag_w = [[tag_w, 0.04].max, max_cell_w].min
+            tag_h = [tag_h, 0.015].max
+          else
+            tag_w = [[tag_w, 0.04].max, max_cell_w].min
+            tag_h = [tag_h, 0.015].max
+          end
+          
+          # Keep the original tag_x from Pdfium position detection - do NOT override
+          # The detected position is where the tag text appeared in the tagged PDF
+        else
+          # Free-form context: use original minimums, but trust raw_w when valid
+          if raw_w > 0.03 && raw_w < 0.5
+            # Valid detected width - use it with modest padding
+            tag_w = raw_w * 1.1  # 10% padding
+          end
+          
+          # Ensure minimum sizes for free-form fields
+          tag_w = [tag_w, 0.08].max
+          tag_h = [tag_h, 0.015].max
+          
+          # Adjust size based on field type
+          case field_def[:type]
+          when 'signature', 'initials'
+            tag_w = [tag_w, 0.15].max
+            tag_h = [tag_h, 0.032].max
+          when 'text'
+            tag_w = [tag_w, 0.12].max
+            tag_h = [tag_h, 0.020].max
+          when 'date', 'datenow'
+            tag_w = [tag_w, 0.10].max
+            tag_h = [tag_h, 0.020].max
+          end
         end
         
         # Clamp values
         tag_x = [[tag_x, 0.0].max, 0.95].min
         tag_y = [[tag_y, 0.0].max, 0.95].min
-        tag_w = [[tag_w, 0.05].max, 0.35].min
-        tag_h = [[tag_h, 0.015].max, 0.05].min
+        tag_w = [[tag_w, 0.03].max, in_table ? 0.5 : 0.35].min
+        tag_h = [[tag_h, 0.012].max, 0.05].min
         
         tags << {
           tag_content: tag_content,
@@ -315,13 +363,129 @@ module Templates
           x: tag_x,
           y: tag_y,
           w: tag_w,
-          h: tag_h
+          h: tag_h,
+          in_table: in_table
         }
         
-        Rails.logger.info("ParsePdfTextTags: Found tag '#{tag_content[0..30]}' at page=#{page_index} (#{tag_x.round(3)}, #{tag_y.round(3)}) size=(#{tag_w.round(3)}x#{tag_h.round(3)})")
+        Rails.logger.info("ParsePdfTextTags: Found tag '#{tag_content[0..30]}' at page=#{page_index} (#{tag_x.round(3)}, #{tag_y.round(3)}) size=(#{tag_w.round(3)}x#{tag_h.round(3)}) #{in_table ? '[TABLE]' : '[FREE]'}")
       end
       
       tags
+    end
+    
+    # Detect table cell boundaries by analyzing text node positions
+    # Returns { x:, y:, w:, h: } of the cell containing the tag, or nil if not in a table
+    #
+    # Detection strategy:
+    # 1. Find text nodes at a similar Y position (same row)
+    # 2. Group them by distinct X ranges (columns)
+    # 3. If there are multiple columns, this suggests a table structure
+    # 4. Find the column boundaries for the cell containing the tag
+    def detect_table_cell_bounds(chars_with_positions, tag_x, tag_y, tag_h)
+      return nil if chars_with_positions.empty?
+      
+      # Y tolerance: text nodes on the "same row" should be within this range
+      y_tolerance = [tag_h * 2.5, 0.025].max
+      
+      # Find all text nodes at a similar Y position (same visual row)
+      same_row_nodes = chars_with_positions.select do |node|
+        (node[:y] - tag_y).abs < y_tolerance
+      end
+      
+      return nil if same_row_nodes.size < 2
+      
+      # Collect distinct X positions to detect column boundaries
+      # Group nodes by their X position into "columns" using gap detection
+      x_positions = same_row_nodes.map { |n| n[:x] }.sort.uniq
+      
+      return nil if x_positions.size < 2
+      
+      # Find significant gaps in X positions that indicate column boundaries
+      # A gap larger than the threshold suggests a cell boundary
+      gap_threshold = 0.03  # 3% of page width minimum gap between columns
+      
+      # Use actual content boundaries (not page edges 0.0/1.0)
+      # to avoid treating page margins as cell boundaries
+      content_left = x_positions.first
+      content_right = same_row_nodes.map { |n| (n[:endx] || n[:x] + (n[:w] || 0.01)) }.max || 1.0
+      
+      # Start with the leftmost content position (with small margin)
+      column_boundaries = [[content_left - 0.02, 0.0].max]
+      
+      prev_x = x_positions.first
+      x_positions.each do |x|
+        if x - prev_x > gap_threshold
+          # Found a gap - this is a column boundary
+          # The boundary is midway between the end of previous content and start of next
+          column_boundaries << (prev_x + x) / 2.0
+        end
+        prev_x = x
+      end
+      
+      # End with the rightmost content position (with small margin)
+      column_boundaries << [content_right + 0.02, 1.0].min
+      
+      # Need at least 3 boundaries (2 columns) to be considered a table
+      return nil if column_boundaries.size < 3
+      
+      # Find which column contains our tag
+      cell_left = 0.0
+      cell_right = 1.0
+      
+      column_boundaries.each_cons(2) do |left, right|
+        if tag_x >= left && tag_x < right
+          cell_left = left
+          cell_right = right
+          break
+        end
+      end
+      
+      cell_w = cell_right - cell_left
+      
+      # Sanity check: cell should be reasonable size (not the whole page)
+      return nil if cell_w > 0.8 || cell_w < 0.05
+      
+      # Also check for multiple rows at similar X to further confirm table structure
+      # Look for text nodes above and below with similar column structure
+      nearby_rows = chars_with_positions.select do |node|
+        (node[:y] - tag_y).abs < y_tolerance * 4 && (node[:y] - tag_y).abs > y_tolerance * 0.5
+      end
+      
+      # If there are nearby rows with content in the same column range, it's likely a table
+      has_adjacent_rows = nearby_rows.any? do |node|
+        node[:x] >= cell_left && node[:x] < cell_right
+      end
+      
+      # Require adjacent rows to confirm table structure
+      return nil unless has_adjacent_rows
+      
+      # Calculate cell height from row spacing
+      all_y_positions = chars_with_positions
+        .select { |n| n[:x] >= cell_left && n[:x] < cell_right }
+        .map { |n| n[:y] }
+        .sort
+        .uniq
+      
+      # Find the Y boundaries for this row
+      cell_top = tag_y
+      cell_bottom = tag_y + tag_h
+      
+      all_y_positions.each_cons(2) do |y1, y2|
+        if y1 <= tag_y && y2 > tag_y
+          cell_top = y1
+          cell_bottom = y2
+          break
+        end
+      end
+      
+      cell_h = [cell_bottom - cell_top, tag_h * 1.5].max
+      
+      {
+        x: cell_left,
+        y: cell_top,
+        w: cell_w,
+        h: cell_h
+      }
     end
     
     # Fallback extraction from PDF data

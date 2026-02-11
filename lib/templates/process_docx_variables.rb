@@ -84,6 +84,12 @@ module Templates
       return unless entry
 
       xml_content = entry.get_input_stream.read.force_encoding('UTF-8')
+      
+      # Pre-process: consolidate split [[...]] tags in the XML
+      # Word often splits tags like [[for:items]] across multiple <w:r>/<w:t> elements,
+      # which prevents the regex-based processing from finding them
+      xml_content = consolidate_variable_tags(xml_content)
+      
       original_content = xml_content.dup
       
       # Use simple string-based replacement to preserve DOCX XML structure
@@ -254,6 +260,112 @@ module Templates
       end
     end
 
+    # Consolidate split [[...]] and {{...}} tags in DOCX XML
+    # Word often splits tags across multiple <w:r>/<w:t> elements like:
+    #   <w:r><w:t>[[</w:t></w:r><w:r><w:t>for:items</w:t></w:r><w:r><w:t>]]</w:t></w:r>
+    # This method merges them so regex processing can find complete tags
+    def consolidate_variable_tags(xml_content)
+      return xml_content if xml_content.blank?
+      
+      # Quick check: skip if no brackets at all
+      return xml_content unless xml_content.include?('[[') || xml_content.include?('{{')
+      
+      begin
+        doc = Nokogiri::XML(xml_content)
+        namespaces = { 'w' => 'http://schemas.openxmlformats.org/wordprocessingml/2006/main' }
+        consolidated_count = 0
+        
+        # Process each paragraph
+        doc.xpath('//w:p', namespaces).each do |paragraph|
+          text_nodes = paragraph.xpath('.//w:t', namespaces)
+          next if text_nodes.empty?
+          
+          # Build the full paragraph text by joining all w:t content
+          text_parts = text_nodes.map { |node| { node: node, text: node.text || '' } }
+          full_text = text_parts.map { |p| p[:text] }.join
+          
+          # Check if the full text contains any tags that might be split
+          has_variable_tags = full_text.match?(/\[\[[^\]]*\]\]/)
+          has_field_tags = full_text.match?(/\{\{[^}]*\}\}/)
+          
+          next unless has_variable_tags || has_field_tags
+          
+          # Check if tags are already intact in individual w:t elements
+          # If so, no consolidation needed
+          individual_texts = text_parts.map { |p| p[:text] }
+          all_tags_intact = true
+          
+          # Scan the full text for all [[...]] and {{...}} patterns
+          tag_positions = []
+          full_text.scan(/\[\[[^\]]*\]\]|\{\{[^}]*\}\}/) do |match|
+            tag_start = Regexp.last_match.begin(0)
+            tag_end = Regexp.last_match.end(0)
+            tag_positions << { start: tag_start, end: tag_end, tag: match }
+          end
+          
+          # Check if each tag falls within a single w:t element
+          tag_positions.each do |tag_pos|
+            current_offset = 0
+            tag_in_single_element = false
+            
+            text_parts.each do |part|
+              part_start = current_offset
+              part_end = current_offset + part[:text].length
+              
+              if tag_pos[:start] >= part_start && tag_pos[:end] <= part_end
+                tag_in_single_element = true
+                break
+              end
+              
+              current_offset = part_end
+            end
+            
+            unless tag_in_single_element
+              all_tags_intact = false
+              break
+            end
+          end
+          
+          next if all_tags_intact
+          
+          # Tags are split across elements - consolidate
+          # Strategy: put the full merged text into the first w:t element,
+          # clear the other w:t elements
+          Rails.logger.info("ProcessDocxVariables: Consolidating split tags in paragraph: #{full_text[0..80]}...")
+          
+          # Preserve xml:space attribute
+          first_node = text_parts.first[:node]
+          first_node['xml:space'] = 'preserve' unless first_node['xml:space']
+          first_node.content = full_text
+          
+          # Clear the remaining text nodes
+          text_parts[1..].each do |part|
+            part[:node].content = ''
+          end
+          
+          consolidated_count += 1
+        end
+        
+        if consolidated_count > 0
+          Rails.logger.info("ProcessDocxVariables: Consolidated split tags in #{consolidated_count} paragraphs")
+          result = doc.to_xml
+          
+          # Preserve original XML declaration
+          if xml_content.start_with?('<?xml') && !result.start_with?('<?xml')
+            declaration = xml_content[/^<\?xml[^?]*\?>/]
+            result = "#{declaration}\n#{result}" if declaration
+          end
+          
+          return result
+        end
+      rescue StandardError => e
+        Rails.logger.warn("ProcessDocxVariables: consolidate_variable_tags failed: #{e.message}")
+        Rails.logger.warn(e.backtrace.first(3).join("\n"))
+      end
+      
+      xml_content
+    end
+
     def process_text(text, variables)
       return text if text.blank?
       
@@ -421,9 +533,24 @@ module Templates
 
           xml_content = entry.get_input_stream.read
           
+          # Check raw XML first (fast path)
           return true if xml_content.match?(SIMPLE_VAR_REGEX)
           return true if xml_content.match?(CONDITIONAL_START_REGEX)
           return true if xml_content.match?(LOOP_START_REGEX)
+          
+          # Also check consolidated text (handles split tags across w:t elements)
+          begin
+            doc = Nokogiri::XML(xml_content)
+            ns = { 'w' => 'http://schemas.openxmlformats.org/wordprocessingml/2006/main' }
+            doc.xpath('//w:p', ns).each do |paragraph|
+              para_text = paragraph.xpath('.//w:t', ns).map(&:content).join
+              return true if para_text.match?(SIMPLE_VAR_REGEX)
+              return true if para_text.match?(CONDITIONAL_START_REGEX)
+              return true if para_text.match?(LOOP_START_REGEX)
+            end
+          rescue StandardError => e
+            Rails.logger.debug("ProcessDocxVariables: Nokogiri check failed: #{e.message}")
+          end
         end
 
         false
