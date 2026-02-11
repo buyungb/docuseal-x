@@ -159,215 +159,100 @@ module Templates
       all_tags
     end
     
-    # Find {{...}} tags in Pdfium text nodes
+    # Find {{...}} tags in Pdfium text nodes.
+    # 
+    # SIMPLE APPROACH: The position of each form field = the position of the
+    # first "{{" character in the tagged PDF. The width/height come from the
+    # tag text extent. NO label adjustments, NO cell heuristics on position.
+    # The tagged PDF and clean PDF have the same layout (tags replaced with
+    # equal-length whitespace), so positions map 1:1.
     def find_tags_in_pdfium_text(chars_with_positions, full_text, page_index, dehyphenated_text = nil)
       tags = []
       
-      # Use dehyphenated text if provided, otherwise create normalized version
-      # Handle various hyphen characters: regular hyphen, soft hyphen (U+00AD), non-breaking hyphen (U+2011), etc.
       dehyphenated_text ||= full_text.gsub(/[-\u00AD\u2010\u2011\u2012]\s*[\r\n]+\s*/, '').gsub(/[\r\n]+/, ' ')
-      normalized_text = full_text.gsub(/[\r\n]+/, ' ').gsub(/\s+/, ' ')
       
       Rails.logger.info("ParsePdfTextTags: Searching for tags in page #{page_index}")
       Rails.logger.info("ParsePdfTextTags: dehyphenated_text has #{dehyphenated_text.scan(TAG_REGEX).count} tags")
       
-      # Find all {{...}} tags in dehyphenated text (catches hyphenated breaks like "re-\nquired")
+      # Build a simple full-text string from chars and map char offsets to indices
+      char_texts = chars_with_positions.map { |c| c[:char].to_s }
+      simple_text = char_texts.join
+      
+      # Find all {{...}} tags in dehyphenated text
       dehyphenated_text.scan(TAG_REGEX) do |match|
         tag_content = match[0]
         
-        # Parse the tag to get field name
         field_def = parse_tag(tag_content)
         next if field_def.blank?
         
         field_name = field_def[:name]
-        
-        # Skip if we already found this tag
         next if tags.any? { |t| parse_tag(t[:tag_content])&.dig(:name) == field_name }
         
         Rails.logger.info("ParsePdfTextTags: Looking for tag '#{field_name}' (#{field_def[:type]})")
         
-        # Strategy 1: Find "{{FieldName" directly in original text
-        idx = full_text.index("{{#{field_name}")
+        # PRIMARY STRATEGY: Character-by-character matching against Pdfium chars.
+        # This is the most reliable method because each matched character carries
+        # its own (x, y) coordinates from Pdfium. Unlike simple_text.index(),
+        # this correctly handles tables where Pdfium interleaves text from
+        # different columns at the same Y position.
+        start_ci, end_ci = find_tag_positions_in_chars(chars_with_positions, tag_content)
         
-        # Strategy 2: If not found, find all "{{" positions and check which one is for this field
-        unless idx
-          Rails.logger.info("ParsePdfTextTags: '{{#{field_name}' not found directly, trying alternative search")
-          
-          # Find all {{ positions in full_text
-          brace_positions = []
-          search_pos = 0
-          while (pos = full_text.index('{{', search_pos))
-            brace_positions << pos
-            search_pos = pos + 2
-          end
-          
-          Rails.logger.info("ParsePdfTextTags: Found #{brace_positions.size} '{{' positions")
-          
-          # For each {{ position, extract text until }} and check if it matches our field
-          brace_positions.each do |brace_pos|
-            end_brace = full_text.index('}}', brace_pos + 2)
-            next unless end_brace
-            
-            # Extract the tag content (may contain hyphens/newlines)
-            raw_tag_content = full_text[brace_pos + 2...end_brace]
-            
-            # Remove hyphens+newlines and check if it matches
-            # Handle various hyphen characters: regular hyphen, soft hyphen, non-breaking hyphen, etc.
-            cleaned_content = raw_tag_content.gsub(/[-\u00AD\u2010\u2011\u2012]\s*[\r\n]+\s*/, '').gsub(/[\r\n]+/, ' ')
-            
-            if cleaned_content.start_with?(field_name)
-              idx = brace_pos
-              Rails.logger.info("ParsePdfTextTags: Found '#{field_name}' at position #{idx} via alternative search")
-              break
-            end
-          end
+        unless start_ci && end_ci
+          Rails.logger.warn("ParsePdfTextTags: Tag '#{field_name}' not found in Pdfium chars, skipping")
+          next
         end
         
-        next unless idx
+        s_pos = chars_with_positions[start_ci]
+        e_pos = chars_with_positions[end_ci]
         
-        Rails.logger.info("ParsePdfTextTags: Tag '#{field_name}' found at index #{idx}")
+        # Position = exactly where {{ appears in the tagged PDF
+        tag_x = s_pos[:x]
+        tag_y = s_pos[:y]
+        tag_h = s_pos[:h] || 0.015
         
-        # Calculate character index to position mapping
-        char_idx = 0
-        pos_idx = 0
+        Rails.logger.info("ParsePdfTextTags: '#{field_name}' found at char[#{start_ci}..#{end_ci}] raw_pos=(#{tag_x.round(4)}, #{tag_y.round(4)})")
         
-        chars_with_positions.each_with_index do |pos_entry, i|
-          if char_idx >= idx
-            pos_idx = i
-            break
+        # Width = from {{ to }} if on same line, otherwise line width
+        raw_w = (e_pos[:endx] || e_pos[:x] + (e_pos[:w] || 0.01)) - tag_x
+        tag_wrapped = (e_pos[:y] - s_pos[:y]).abs > (tag_h * 0.5)
+        
+        if tag_wrapped || raw_w < 0 || raw_w > 0.6
+          # Tag wraps to multiple lines.
+          # Find the right edge of text on the SAME line AND in the SAME column
+          # (within x range of ±0.3 from tag_x to avoid picking up other column text)
+          same_line_same_col = chars_with_positions.select do |n|
+            (n[:y] - tag_y).abs < tag_h * 0.5 &&
+            (n[:x] - tag_x).abs < 0.3
           end
-          char_idx += pos_entry[:char].length
-        end
-        
-        next unless pos_idx < chars_with_positions.size
-        
-        start_pos = chars_with_positions[pos_idx]
-        
-        # Find end position by looking for the closing "}}" after the start
-        # This handles hyphenated tags better than looking for full_tag length
-        end_idx = full_text.index('}}', idx + 2)
-        end_char_idx = end_idx ? end_idx + 1 : idx + tag_content.length + 4  # +4 for {{}}
-        
-        end_pos_idx = pos_idx
-        temp_idx = char_idx
-        
-        chars_with_positions[pos_idx..].each_with_index do |pos_entry, i|
-          if temp_idx >= end_char_idx
-            end_pos_idx = pos_idx + i
-            break
-          end
-          temp_idx += pos_entry[:char].length
-        end
-        
-        end_pos = chars_with_positions[[end_pos_idx, chars_with_positions.size - 1].min]
-        
-        Rails.logger.info("ParsePdfTextTags: Tag '#{field_name}' spans from idx=#{idx} to end_idx=#{end_idx}, pos_idx=#{pos_idx} to end_pos_idx=#{end_pos_idx}")
-        
-        # Calculate tag bounds
-        # Pdfium coordinates are already normalized (0-1)
-        tag_x = start_pos[:x]
-        tag_y = start_pos[:y]
-        
-        # Detect table cell boundaries for this tag position
-        cell_bounds = detect_table_cell_bounds(chars_with_positions, tag_x, tag_y, start_pos[:h])
-        in_table = cell_bounds.present?
-        
-        if in_table
-          Rails.logger.info("ParsePdfTextTags: Tag '#{field_name}' is inside a table cell: x=#{cell_bounds[:x].round(3)}..#{(cell_bounds[:x] + cell_bounds[:w]).round(3)}, w=#{cell_bounds[:w].round(3)}")
-        end
-        
-        # Handle multi-line tags: if end_pos.x < start_pos.x, tag wraps to next line
-        # Use a reasonable width instead
-        raw_w = (end_pos[:endx] || end_pos[:x] + end_pos[:w]) - tag_x
-        if raw_w < 0 || raw_w > 0.5
-          # Tag spans multiple lines - use cell width if in table, otherwise default
-          tag_w = in_table ? [cell_bounds[:w] - 0.01, 0.05].max : 0.2
+          line_right = same_line_same_col.map { |n| (n[:endx] || n[:x] + (n[:w] || 0.01)) }.max || (tag_x + 0.15)
+          tag_w = line_right - tag_x
+          tag_w = 0.15 if tag_w <= 0.02 || tag_w > 0.5
         else
           tag_w = raw_w
         end
         
-        # For multi-line tags, calculate height including all lines
-        tag_h = start_pos[:h]
-        if end_pos[:y] != start_pos[:y]
-          # Multi-line: extend height
-          tag_h = (end_pos[:y] + end_pos[:h]) - start_pos[:y]
-          tag_h = start_pos[:h] if tag_h < 0  # Fallback
-        end
-        
-        # Apply field sizing based on context (table cell vs free-form)
-        if in_table
-          # Table cell context: use smaller minimums constrained to cell bounds
-          # Calculate max width from tag position to cell right edge (not from cell left)
-          cell_right = cell_bounds[:x] + cell_bounds[:w]
-          max_w_from_tag = cell_right - tag_x - 0.005  # Space from tag position to cell right edge
-          max_cell_w = [max_w_from_tag, cell_bounds[:w] - 0.01].min
-          max_cell_w = [max_cell_w, 0.04].max  # Ensure at least some minimum
-          
-          # Trust the detected raw_w if it's valid, otherwise use available space
-          if raw_w > 0.03 && raw_w < 0.5
-            tag_w = [raw_w, max_cell_w].min
-          end
-          
-          # Smaller minimums for table cells - constrained to available space
-          case field_def[:type]
-          when 'signature', 'initials'
-            tag_w = [[tag_w, 0.06].max, max_cell_w].min
-            tag_h = [tag_h, 0.025].max
-          when 'text'
-            tag_w = [[tag_w, 0.04].max, max_cell_w].min
-            tag_h = [tag_h, 0.015].max
-          when 'date', 'datenow'
-            tag_w = [[tag_w, 0.04].max, max_cell_w].min
-            tag_h = [tag_h, 0.015].max
+        # Adjust height based on field type (signature needs more vertical space)
+        case field_def[:type]
+        when 'signature', 'initials'
+          if tag_wrapped
+            wrapped_h = (e_pos[:y] + (e_pos[:h] || tag_h)) - s_pos[:y]
+            tag_h = [wrapped_h, tag_h * 3, 0.035].max
           else
-            tag_w = [[tag_w, 0.04].max, max_cell_w].min
-            tag_h = [tag_h, 0.015].max
+            tag_h = [tag_h * 3, 0.035].max
           end
-          
-          # Keep the original tag_x from Pdfium position detection - do NOT override
-          # The detected position is where the tag text appeared in the tagged PDF
-        else
-          # Free-form context: use original minimums, but trust raw_w when valid
-          if raw_w > 0.03 && raw_w < 0.5
-            # Valid detected width - use it with modest padding
-            tag_w = raw_w * 1.1  # 10% padding
-          end
-          
-          # Ensure minimum sizes for free-form fields
-          tag_w = [tag_w, 0.08].max
-          tag_h = [tag_h, 0.015].max
-          
-          # Adjust size based on field type
-          case field_def[:type]
-          when 'signature', 'initials'
-            tag_w = [tag_w, 0.15].max
-            tag_h = [tag_h, 0.032].max
-          when 'text'
-            tag_w = [tag_w, 0.12].max
-            tag_h = [tag_h, 0.020].max
-          when 'date', 'datenow'
-            tag_w = [tag_w, 0.10].max
-            tag_h = [tag_h, 0.020].max
-          end
+        when 'image', 'stamp'
+          tag_h = [tag_h * 3, 0.035].max
         end
         
-        # Clamp values
+        # Clamp to page
         tag_x = [[tag_x, 0.0].max, 0.95].min
         tag_y = [[tag_y, 0.0].max, 0.95].min
-        tag_w = [[tag_w, 0.03].max, in_table ? 0.5 : 0.35].min
-        tag_h = [[tag_h, 0.012].max, 0.05].min
+        tag_w = [[tag_w, 0.03].max, 0.48].min
+        tag_h = [[tag_h, 0.012].max, 0.06].min
         
-        tags << {
-          tag_content: tag_content,
-          page: page_index,
-          x: tag_x,
-          y: tag_y,
-          w: tag_w,
-          h: tag_h,
-          in_table: in_table
-        }
+        tags << { tag_content: tag_content, page: page_index, x: tag_x, y: tag_y, w: tag_w, h: tag_h }
         
-        Rails.logger.info("ParsePdfTextTags: Found tag '#{tag_content[0..30]}' at page=#{page_index} (#{tag_x.round(3)}, #{tag_y.round(3)}) size=(#{tag_w.round(3)}x#{tag_h.round(3)}) #{in_table ? '[TABLE]' : '[FREE]'}")
+        Rails.logger.info("ParsePdfTextTags: '#{field_name}' (#{field_def[:type]}) at (#{tag_x.round(3)}, #{tag_y.round(3)}) size=(#{tag_w.round(3)}x#{tag_h.round(3)})")
       end
       
       tags
@@ -486,6 +371,86 @@ module Templates
         w: cell_w,
         h: cell_h
       }
+    end
+
+    # Find start/end indices of a tag sequence in Pdfium characters.
+    # This matches the full tag content (including braces) while skipping
+    # whitespace, hyphenation artifacts, and characters from OTHER table columns.
+    #
+    # IMPORTANT: Pdfium text nodes can be single characters OR multi-character
+    # words/chunks. We first expand all nodes into individual characters, each
+    # carrying the parent node's (x, y) position, then do character-by-character
+    # matching. For multi-line tags in tables, we skip chars whose X is too far
+    # from the match start (they belong to a different column).
+    #
+    # Returns [start_node_idx, end_node_idx] in the original chars_with_positions.
+    def find_tag_positions_in_chars(chars_with_positions, tag_content)
+      return [nil, nil] if tag_content.blank? || chars_with_positions.blank?
+
+      target = "{{#{tag_content}}}"
+      target_compact = target.gsub(/\s+/, '')
+      target_len = target_compact.length
+
+      # Expand multi-character nodes into individual characters,
+      # each mapped back to its parent node index and carrying x position
+      expanded = []  # Array of { char: 'x', node_idx: N, x: Float }
+      chars_with_positions.each_with_index do |entry, node_idx|
+        entry[:char].to_s.each_char do |c|
+          expanded << { char: c, node_idx: node_idx, x: entry[:x].to_f }
+        end
+      end
+
+      (0...expanded.length).each do |start_idx|
+        j = 0
+        k = start_idx
+        first_k = nil
+        match_x = nil  # X position of match start (to filter same column)
+
+        while k < expanded.length && j < target_len
+          ch = expanded[k][:char]
+          ch_x = expanded[k][:x]
+
+          # Once we've started matching, skip characters from OTHER columns.
+          # Characters in the same column should have X within ±0.25 of start.
+          if match_x && (ch_x - match_x).abs > 0.25
+            k += 1
+            next
+          end
+
+          # Skip whitespace in source
+          if ch.match?(/\A\s\z/)
+            k += 1
+            next
+          end
+
+          # Skip hyphenation artifacts if target doesn't expect them
+          if ch.match?(/\A[-\u00AD\u2010\u2011\u2012]\z/) && target_compact[j] != ch
+            k += 1
+            next
+          end
+
+          if ch == target_compact[j]
+            if first_k.nil?
+              first_k = k
+              match_x = ch_x
+            end
+            j += 1
+            k += 1
+            next
+          end
+
+          # Mismatch
+          break
+        end
+
+        if j == target_len && first_k
+          start_node = expanded[first_k][:node_idx]
+          end_node = expanded[k - 1][:node_idx]
+          return [start_node, end_node]
+        end
+      end
+
+      [nil, nil]
     end
     
     # Fallback extraction from PDF data

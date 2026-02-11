@@ -159,8 +159,13 @@ module Api
       if first_doc && docx_extracted_fields.any?
         begin
           # Use tagged_pdf_data for position detection (has visible tags)
-          # Fall back to downloading the document if tagged_pdf_data is not available
-          detection_pdf_data = tagged_pdf_data || first_doc.download
+          # Do NOT fall back to the clean PDF; positions must come from tagged PDF
+          unless tagged_pdf_data.present?
+            Rails.logger.error("DOCX Submission: Tagged PDF data missing - cannot detect tag positions accurately")
+            return render json: { error: 'Tagged PDF not available for field position detection' }, status: :unprocessable_entity
+          end
+          
+          detection_pdf_data = tagged_pdf_data
           
           # Get PDF page count using Pdfium
           pdf_page_count = get_pdf_page_count(detection_pdf_data)
@@ -1076,13 +1081,15 @@ module Api
       tag_pattern = /\{\{[^}]+\}\}/
       
       # First, do a simple global replacement to catch obvious tags
-      # Replace with a space character (not empty string) to preserve table row heights
-      # and overall layout consistency between tagged and clean PDFs
+      # Replace with EQUAL-LENGTH UNDERSCORES to preserve the exact same layout
+      # between tagged and clean PDFs. Underscores have similar width to regular
+      # characters (unlike spaces which are narrower), so line wrapping, cell heights,
+      # and column widths stay identical between tagged PDF and clean PDF.
       before_count = result_xml.scan(tag_pattern).size
       if before_count > 0
-        result_xml = result_xml.gsub(tag_pattern, ' ')
+        result_xml = result_xml.gsub(tag_pattern) { |m| '_' * m.length }
         tags_removed += before_count
-        Rails.logger.info("DOCX TAG REMOVAL: Strategy 1 (global gsub) replaced #{before_count} tags with spaces")
+        Rails.logger.info("DOCX TAG REMOVAL: Strategy 1 replaced #{before_count} tags with equal-length underscores")
       end
       
       # STRATEGY 2: Process w:t elements specifically
@@ -1094,7 +1101,7 @@ module Api
         close_tag = Regexp.last_match(3)
         
         if text_content.include?('{{') && text_content.include?('}}')
-          clean_text = text_content.gsub(tag_pattern, ' ')
+          clean_text = text_content.gsub(tag_pattern) { |m| '_' * m.length }
           if clean_text != text_content
             wt_tag_count += 1
             Rails.logger.debug("DOCX TAG REMOVAL: Cleaned w:t: '#{text_content}' -> '#{clean_text}'")
@@ -1145,8 +1152,9 @@ module Api
                 remove_start = [tag_start - part_start, 0].max
                 remove_end = [tag_end - part_start, part[:text].length].min
                 
-                # Insert a space in the first affected node to preserve cell layout
-                space_insert = first_affected ? ' ' : ''
+                # Insert equal-length underscores in the first affected node to preserve layout
+                removed_len = remove_end - remove_start
+                space_insert = first_affected ? ('_' * [removed_len, 1].max) : ''
                 first_affected = false
                 
                 new_text = part[:text][0...remove_start].to_s + space_insert + part[:text][remove_end..].to_s
@@ -1187,9 +1195,9 @@ module Api
         Rails.logger.warn("DOCX TAG REMOVAL: Final cleanup needed - #{final_tags.size} tags still present")
         final_tags.each { |t| Rails.logger.warn("DOCX TAG REMOVAL:   Remaining: #{t}") }
         
-        result_xml = result_xml.gsub(tag_pattern, ' ')
+        result_xml = result_xml.gsub(tag_pattern) { |m| '_' * m.length }
         tags_removed += final_tags.size
-        Rails.logger.info("DOCX TAG REMOVAL: Final cleanup replaced #{final_tags.size} tags with spaces")
+        Rails.logger.info("DOCX TAG REMOVAL: Final cleanup replaced #{final_tags.size} tags with equal-length underscores")
       end
       
       # Verify complete replacement
