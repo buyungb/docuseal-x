@@ -375,14 +375,11 @@ module Templates
 
     # Find start/end indices of a tag sequence in Pdfium characters.
     # This matches the full tag content (including braces) while skipping
-    # whitespace, hyphenation artifacts, and characters from OTHER table columns.
+    # whitespace and hyphenation artifacts that appear in PDFs.
     #
     # IMPORTANT: Pdfium text nodes can be single characters OR multi-character
     # words/chunks. We first expand all nodes into individual characters, each
-    # carrying the parent node's (x, y) position, then do character-by-character
-    # matching. For multi-line tags in tables, we skip chars whose X is too far
-    # from the match start (they belong to a different column).
-    #
+    # carrying the parent node's index, then do character-by-character matching.
     # Returns [start_node_idx, end_node_idx] in the original chars_with_positions.
     def find_tag_positions_in_chars(chars_with_positions, tag_content)
       return [nil, nil] if tag_content.blank? || chars_with_positions.blank?
@@ -392,11 +389,11 @@ module Templates
       target_len = target_compact.length
 
       # Expand multi-character nodes into individual characters,
-      # each mapped back to its parent node index and carrying x position
-      expanded = []  # Array of { char: 'x', node_idx: N, x: Float }
+      # each mapped back to its parent node index
+      expanded = []  # Array of { char: 'x', node_idx: N }
       chars_with_positions.each_with_index do |entry, node_idx|
         entry[:char].to_s.each_char do |c|
-          expanded << { char: c, node_idx: node_idx, x: entry[:x].to_f }
+          expanded << { char: c, node_idx: node_idx }
         end
       end
 
@@ -404,18 +401,9 @@ module Templates
         j = 0
         k = start_idx
         first_k = nil
-        match_x = nil  # X position of match start (to filter same column)
 
         while k < expanded.length && j < target_len
           ch = expanded[k][:char]
-          ch_x = expanded[k][:x]
-
-          # Once we've started matching, skip characters from OTHER columns.
-          # Characters in the same column should have X within ±0.25 of start.
-          if match_x && (ch_x - match_x).abs > 0.25
-            k += 1
-            next
-          end
 
           # Skip whitespace in source
           if ch.match?(/\A\s\z/)
@@ -430,10 +418,7 @@ module Templates
           end
 
           if ch == target_compact[j]
-            if first_k.nil?
-              first_k = k
-              match_x = ch_x
-            end
+            first_k ||= k
             j += 1
             k += 1
             next
