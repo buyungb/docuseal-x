@@ -29,6 +29,9 @@ Form Fields (interactive, for signers):
     {{SellerSign;type=signature;role=Seller;required=true}}
     {{SellerName;type=text;role=Seller}}
     {{SellerDate;type=datenow;role=Seller}}
+    {{OwnerSign;type=signature;role=Owner;required=true}}
+    {{OwnerName;type=text;role=Owner}}
+    {{OwnerDate;type=datenow;role=Owner}}
 """
 
 import sys
@@ -166,6 +169,12 @@ def main():
                 "email": "anggit@aplindo.tech",
                 "name": "Jane Smith",
                 "phone": "+6281770938580"
+            },
+            {
+                "role": "Owner",
+                "email": "bahari.buyung@gmail.com",
+                "name": "Dudung",
+                "phone": "+6281770938806"
             }
         ],
         "send_email": False,

@@ -28,6 +28,7 @@ module Api
       # Process each DOCX document
       processed_documents = []
       docx_extracted_fields = [] # Fields extracted from DOCX {{...}} tags
+      original_docx_data_for_positioning = nil # Keep original DOCX for field positioning
       
       documents_data.each do |doc_data|
         file_data = decode_file(doc_data[:file])
@@ -43,6 +44,9 @@ module Api
         if docx_file?(file_data, doc_data[:name])
           begin
             require_relative '../../../lib/templates/process_docx_variables'
+            
+            # Save original DOCX data for field positioning later
+            original_docx_data_for_positioning = file_data.dup
             
             # Extract {{...}} field tags from DOCX (before they might get modified)
             fields = Templates::ProcessDocxVariables.extract_field_tags(file_data)
@@ -156,134 +160,32 @@ module Api
       all_fields = []
       first_doc = template.documents.first
       
-      if first_doc && docx_extracted_fields.any?
+      if first_doc && docx_extracted_fields.any? && tagged_pdf_data.present? && original_docx_data_for_positioning.present?
         begin
-          # Use tagged_pdf_data for position detection (has visible tags)
-          # Do NOT fall back to the clean PDF; positions must come from tagged PDF
-          unless tagged_pdf_data.present?
-            Rails.logger.error("DOCX Submission: Tagged PDF data missing - cannot detect tag positions accurately")
-            return render json: { error: 'Tagged PDF not available for field position detection' }, status: :unprocessable_entity
-          end
+          require_relative '../../../lib/templates/extract_docx_field_positions'
           
-          detection_pdf_data = tagged_pdf_data
+          # NEW APPROACH: Use docx gem to parse DOCX structure + Pdfium to find positions
+          # This correctly handles tables and inline tags by using label-based positioning
+          Rails.logger.info("DOCX Submission: Using ExtractDocxFieldPositions (docx gem + Pdfium)...")
           
-          # Get PDF page count using Pdfium
-          pdf_page_count = get_pdf_page_count(detection_pdf_data)
-          last_page = [pdf_page_count - 1, 0].max
+          positioned_fields = Templates::ExtractDocxFieldPositions.call(
+            original_docx_data_for_positioning,
+            tagged_pdf_data,
+            first_doc
+          )
           
-          # Use Pdfium (via ParsePdfTextTags) to parse the TAGGED PDF and find {{...}} tag positions
-          # These positions will be used to place fields on the CLEAN PDF
-          Rails.logger.info("DOCX Submission: Using Pdfium to find {{...}} tags in TAGGED PDF... (#{pdf_page_count} pages)")
+          Rails.logger.info("DOCX Submission: ExtractDocxFieldPositions found #{positioned_fields.size} positioned fields")
           
-          # Check if tagged PDF contains tags
-          if Templates::ParsePdfTextTags.contains_tags?(detection_pdf_data)
-            # Parse tags and get their positions from the TAGGED PDF
-            pdf_fields = Templates::ParsePdfTextTags.call(detection_pdf_data, first_doc)
-            
-            Rails.logger.info("DOCX Submission: ParsePdfTextTags found #{pdf_fields.size} fields in tagged PDF")
-            
-            if pdf_fields.any?
-              # No need to remove tags - the final document (first_doc) is already clean!
-              Rails.logger.info("DOCX Submission: Using clean PDF for final document (tags already removed at DOCX level)")
-              
-              # Log all PDF field names and positions for debugging
-              Rails.logger.info("DOCX Submission: PDF fields found (#{pdf_fields.size}):")
-              pdf_fields.each do |pf|
-                area = pf[:areas]&.first
-                if area
-                  Rails.logger.info("  - #{pf[:name]} (#{pf[:type]}): page=#{area[:page]} pos=(#{area[:x].round(3)}, #{area[:y].round(3)}) size=(#{area[:w].round(3)}x#{area[:h].round(3)})")
-                else
-                  Rails.logger.info("  - #{pf[:name]} (#{pf[:type]}): NO AREAS")
-                end
-              end
-              Rails.logger.info("DOCX Submission: DOCX fields to match: #{docx_extracted_fields.map { |f| f[:name] }.join(', ')}")
-              
-              # Track which PDF fields have been used to avoid duplicates
-              used_pdf_fields = Set.new
-              
-              # Match DOCX fields with PDF tag positions
-              docx_extracted_fields.each do |docx_field|
-                field_name = docx_field[:name]
-                field_type = docx_field[:type]
-                field_role = docx_field[:role]&.downcase
-                
-                # Try matching strategies in order of preference:
-                # 1. Exact name match
-                # 2. Case-insensitive name match
-                # 3. Type + role match (for fields without clear name)
-                pdf_field = nil
-                match_reason = nil
-                
-                # Strategy 1: Exact name match
-                pdf_field = pdf_fields.find { |pf| pf[:name] == field_name && !used_pdf_fields.include?(pf[:uuid]) }
-                match_reason = 'exact name' if pdf_field
-                
-                # Strategy 2: Case-insensitive name match
-                if pdf_field.nil?
-                  pdf_field = pdf_fields.find { |pf| pf[:name]&.downcase == field_name&.downcase && !used_pdf_fields.include?(pf[:uuid]) }
-                  match_reason = 'case-insensitive name' if pdf_field
-                end
-                
-                # Strategy 3: Match by type + role when name contains role or type
-                if pdf_field.nil? && field_role.present?
-                  pdf_field = pdf_fields.find do |pf|
-                    !used_pdf_fields.include?(pf[:uuid]) &&
-                    pf[:type] == field_type &&
-                    pf[:role]&.downcase == field_role
-                  end
-                  match_reason = 'type+role' if pdf_field
-                end
-                
-                # Strategy 4: Partial name match (name starts with or contains)
-                if pdf_field.nil?
-                  pdf_field = pdf_fields.find do |pf|
-                    !used_pdf_fields.include?(pf[:uuid]) &&
-                    (pf[:name]&.downcase&.include?(field_name&.downcase) || 
-                     field_name&.downcase&.include?(pf[:name]&.downcase))
-                  end
-                  match_reason = 'partial name' if pdf_field
-                end
-                
-                if pdf_field && pdf_field[:areas].present?
-                  used_pdf_fields.add(pdf_field[:uuid])
-                  
-                  # Use position from PDF tag detection, but keep DOCX field metadata
-                  merged = docx_field.merge(
-                    uuid: SecureRandom.uuid,
-                    areas: pdf_field[:areas].map { |a| a.merge(attachment_uuid: first_doc.uuid) }
-                  )
-                  all_fields << merged
-                  
-                  pos = pdf_field[:areas].first
-                  Rails.logger.info("  #{field_name} (#{docx_field[:type]}) -> page=#{pos[:page]} pos=(#{pos[:x].round(3)}, #{pos[:y].round(3)}) [matched by #{match_reason}]")
-                else
-                  # No matching tag in PDF - use fallback positioning
-                  role = field_role || 'default'
-                  column_idx = determine_column_for_role(role) == :left ? 0 : 1
-                  add_fallback_field(all_fields, docx_field, role, column_idx, first_doc, 2, last_page)
-                  Rails.logger.warn("  #{field_name} -> FALLBACK (no matching PDF tag found)")
-                end
-              end
-              
-              # Also add any PDF fields that weren't matched to DOCX fields
-              # (in case PDF has extra fields not in DOCX extraction)
-              pdf_fields.each do |pdf_field|
-                next if used_pdf_fields.include?(pdf_field[:uuid])
-                next unless pdf_field[:areas].present?
-                
-                all_fields << pdf_field.merge(
-                  uuid: SecureRandom.uuid,
-                  areas: pdf_field[:areas].map { |a| a.merge(attachment_uuid: first_doc.uuid) }
-                )
-                pos = pdf_field[:areas].first
-                Rails.logger.info("  #{pdf_field[:name]} (#{pdf_field[:type]}) -> page=#{pos[:page]} pos=(#{pos[:x].round(3)}, #{pos[:y].round(3)}) [PDF-only field]")
-              end
-            else
-              Rails.logger.warn("DOCX Submission: ParsePdfTextTags returned empty")
-              use_pdf_fallback(all_fields, docx_extracted_fields, first_doc, last_page)
+          if positioned_fields.any?
+            positioned_fields.each do |field|
+              all_fields << field
+              area = field[:areas]&.first
+              Rails.logger.info("  #{field[:name]} (#{field[:type]}) -> page=#{area[:page]} pos=(#{area[:x].round(3)}, #{area[:y].round(3)}) size=(#{area[:w].round(3)}x#{area[:h].round(3)})")
             end
           else
-            Rails.logger.warn("DOCX Submission: No {{...}} tags found in PDF")
+            # Fallback to old approach if new module finds nothing
+            Rails.logger.warn("DOCX Submission: ExtractDocxFieldPositions returned empty, using fallback")
+            last_page = [get_pdf_page_count(tagged_pdf_data) - 1, 0].max
             use_pdf_fallback(all_fields, docx_extracted_fields, first_doc, last_page)
           end
         rescue StandardError => e
@@ -517,203 +419,6 @@ module Api
     end
 
     private
-    
-    
-    # Find label positions in PDF by building a text map with positions
-    # Returns array of {label:, page:, x:, y:, end_x:}
-    def find_label_positions(pdf_data)
-      labels = []
-      signatures_page = nil
-      signatures_y = nil
-      
-      label_keywords = %w[signature name date]
-      
-      begin
-        pdf_doc = Pdfium::Document.open_bytes(pdf_data)
-        
-        Rails.logger.info("DOCX Submission: PDF has #{pdf_doc.page_count} pages")
-        
-        # Scan all pages to build text maps and find labels
-        (0...pdf_doc.page_count).each do |page_idx|
-          page = pdf_doc.get_page(page_idx)
-          text_nodes = page.text_nodes
-          
-          # Build a map: for each character position, store its x,y coordinates
-          # text_nodes contains individual characters with their positions
-          char_map = []  # Array of {char:, x:, y:, w:, h:}
-          
-          text_nodes.each do |node|
-            char = node.content.to_s
-            next if char.empty?
-            
-            char_map << {
-              char: char,
-              x: node.x,
-              y: node.y,
-              w: node.w,
-              h: node.h
-            }
-          end
-          
-          # Build full text string (removing spaces between characters)
-          full_text = char_map.map { |c| c[:char] }.join.gsub(/\s+/, '').downcase
-          
-          Rails.logger.info("  Page #{page_idx}: #{char_map.size} chars, text: #{full_text[0..60]}...")
-          
-          # Find SIGNATURES section
-          if full_text.include?('signatures') && signatures_page.nil?
-            # Find position of 'signatures' in the text
-            sig_idx = full_text.index('signatures')
-            if sig_idx && sig_idx < char_map.size
-              signatures_page = page_idx
-              signatures_y = char_map[sig_idx][:y]
-              Rails.logger.info("  >>> Found SIGNATURES at page=#{page_idx} y=#{signatures_y.round(3)}")
-            end
-          end
-          
-          # Find labels with colons (signature:, name:, date:)
-          label_keywords.each do |keyword|
-            keyword_with_colon = "#{keyword}:"
-            
-            # Find all occurrences of this label
-            search_text = full_text
-            offset = 0
-            
-            while (idx = search_text.index(keyword_with_colon))
-              actual_idx = offset + idx
-              
-              # Get position from char_map
-              if actual_idx < char_map.size
-                pos = char_map[actual_idx]
-                
-                # Calculate end_x by looking at the character after the colon
-                colon_idx = actual_idx + keyword.length
-                end_x = if colon_idx < char_map.size
-                  char_map[colon_idx][:x] + char_map[colon_idx][:w]
-                else
-                  pos[:x] + 0.15  # Default offset
-                end
-                
-                labels << {
-                  label: keyword,
-                  page: page_idx,
-                  x: pos[:x],
-                  y: pos[:y],
-                  end_x: end_x,
-                  w: end_x - pos[:x],
-                  h: pos[:h]
-                }
-                
-                Rails.logger.info("    Found '#{keyword}:' at page=#{page_idx} pos=(#{pos[:x].round(3)}, #{pos[:y].round(3)}) end_x=#{end_x.round(3)}")
-              end
-              
-              # Continue searching after this occurrence
-              offset += idx + keyword_with_colon.length
-              search_text = search_text[(idx + keyword_with_colon.length)..]
-              break if search_text.nil? || search_text.empty?
-            end
-          end
-          
-          page.close
-        end
-        
-        # If no SIGNATURES found, use last page
-        if signatures_page.nil?
-          signatures_page = pdf_doc.page_count - 1
-          Rails.logger.warn("  SIGNATURES not found, using last page (#{signatures_page})")
-        end
-        
-        # Filter labels to only include those on/after signatures page
-        labels = labels.select do |l|
-          l[:page] >= signatures_page && (l[:page] > signatures_page || signatures_y.nil? || l[:y] >= signatures_y)
-        end
-        
-        pdf_doc.close
-        
-        Rails.logger.info("  Total labels found after filtering: #{labels.size}")
-        
-      rescue => e
-        Rails.logger.error("find_label_positions error: #{e.message}")
-        Rails.logger.error(e.backtrace.first(5).join("\n"))
-      end
-      
-      labels
-    end
-    
-    # Find position for a specific field based on its name, type, and available labels
-    def find_field_position(field_name, field_type, role, label_positions, used_labels)
-      # Determine which column this role should be in (left=0, right=1)
-      role_column = determine_column_for_role(role)
-      
-      # Map field type to expected label keyword
-      label_keyword = case field_type
-      when 'signature', 'initials' then 'signature'
-      when 'date', 'datenow' then 'date'
-      when 'text'
-        if field_name.downcase.include?('name')
-          'name'
-        elsif field_name.downcase.include?('date')
-          'date'
-        else
-          'name'  # Default
-        end
-      else
-        field_type
-      end
-      
-      Rails.logger.info("    Looking for '#{label_keyword}' label for #{field_name} (#{role}, col=#{role_column})")
-      
-      # Find matching labels
-      matching_labels = label_positions.select do |lp|
-        label_key = "#{lp[:page]}_#{lp[:x].round(3)}_#{lp[:y].round(3)}"
-        
-        # Skip if already used
-        next false if used_labels.include?(label_key)
-        
-        # Check if label matches
-        next false unless lp[:label] == label_keyword
-        
-        # Check column position (left: x < 0.5, right: x >= 0.4)
-        column_match = if role_column == :left
-          lp[:x] < 0.5
-        else
-          lp[:x] >= 0.4
-        end
-        
-        column_match
-      end
-      
-      if matching_labels.empty?
-        Rails.logger.warn("    No matching '#{label_keyword}' label found for #{role_column} column")
-        return nil
-      end
-      
-      # Sort by Y (top to bottom)
-      matching_labels.sort_by! { |lp| [lp[:page], lp[:y]] }
-      
-      label = matching_labels.first
-      label_key = "#{label[:page]}_#{label[:x].round(3)}_#{label[:y].round(3)}"
-      
-      # Position field on the SAME LINE as the label, right after it
-      # For signatures, position below the label line
-      field_y = label[:y]
-      field_x = label[:end_x] + 0.02  # Small gap after colon
-      
-      # For signature fields, position slightly below the label
-      if field_type.in?(%w[signature initials])
-        field_y = label[:y] + 0.01  # Slightly below
-        field_x = label[:x]  # Start at label X
-      end
-      
-      Rails.logger.info("    Matched label at (#{label[:x].round(3)}, #{label[:y].round(3)}) -> field at (#{field_x.round(3)}, #{field_y.round(3)})")
-      
-      {
-        page: label[:page],
-        x: field_x,
-        y: field_y,
-        label_key: label_key
-      }
-    end
     
     # Use fallback positions when PDF tag detection fails
     def use_pdf_fallback(all_fields, docx_fields, first_doc, last_page)
@@ -1206,10 +911,137 @@ module Api
         Rails.logger.error("DOCX TAG REMOVAL: FAILED - #{verify_tags.size} tags still in document!")
         verify_tags.first(3).each { |t| Rails.logger.error("DOCX TAG REMOVAL:   #{t}") }
       else
-        Rails.logger.info("DOCX TAG REMOVAL: SUCCESS - All tags replaced with spaces (total: #{tags_removed})")
+        Rails.logger.info("DOCX TAG REMOVAL: SUCCESS - All tags replaced with underscores (total: #{tags_removed})")
+      end
+      
+      # Make underscore placeholders invisible by setting font color to white.
+      # This keeps the same character width (preserving layout) but hides the
+      # underscores in the final clean PDF.
+      if tags_removed > 0
+        result_xml = make_underscores_white(result_xml)
       end
       
       [result_xml, tags_removed]
+    end
+
+    # Make underscore placeholder text invisible by setting font color to white.
+    # Underscores preserve character width (so PDF layout matches the tagged PDF),
+    # but we don't want them visible in the final document.
+    #
+    # Handles mixed content like "Buyer Signature: ___________" by splitting
+    # the <w:r> into two runs: one normal (label) and one white (underscores).
+    def make_underscores_white(xml_content)
+      begin
+        doc = Nokogiri::XML(xml_content)
+        namespaces = { 'w' => 'http://schemas.openxmlformats.org/wordprocessingml/2006/main' }
+        modified = false
+        
+        # Find all w:r (run) elements containing w:t with underscores
+        doc.xpath('//w:r', namespaces).each do |run|
+          text_node = run.at_xpath('w:t', namespaces)
+          next unless text_node
+          
+          text = text_node.text.to_s
+          next unless text.include?('___')  # At least 3 consecutive underscores
+          
+          # Get existing run properties XML to clone for new runs
+          rpr_node = run.at_xpath('w:rPr', namespaces)
+          rpr_xml = rpr_node ? rpr_node.to_xml : nil
+          
+          # Split text into segments: [normal_text, underscore_run, normal_text, ...]
+          segments = text.split(/(_{3,})/)
+          next if segments.size <= 1  # No split needed (shouldn't happen)
+          
+          # If the entire text is underscores, just add white color to this run
+          if text.match?(/\A_+\z/)
+            rpr = rpr_node || begin
+              new_rpr = Nokogiri::XML::Node.new('w:rPr', doc)
+              run.children.first ? run.children.first.add_previous_sibling(new_rpr) : run.add_child(new_rpr)
+              new_rpr
+            end
+            color = rpr.at_xpath('w:color', namespaces)
+            if color
+              color['w:val'] = 'FFFFFF'
+            else
+              color = Nokogiri::XML::Node.new('w:color', doc)
+              color['w:val'] = 'FFFFFF'
+              rpr.add_child(color)
+            end
+            modified = true
+            next
+          end
+          
+          # Mixed content: split into multiple runs
+          # Build new runs to insert after the current run, then remove the current run
+          new_runs = []
+          segments.each do |seg|
+            next if seg.empty?
+            
+            new_run = Nokogiri::XML::Node.new('w:r', doc)
+            
+            # Clone run properties
+            if rpr_xml
+              new_rpr = Nokogiri.XML(rpr_xml).root
+              # Import the node into this document
+              new_rpr = doc.import(new_rpr)
+              new_run.add_child(new_rpr)
+              
+              # If this is an underscore segment, add white color
+              if seg.match?(/\A_+\z/)
+                color = new_rpr.at_xpath('w:color', namespaces)
+                if color
+                  color['w:val'] = 'FFFFFF'
+                else
+                  color = Nokogiri::XML::Node.new('w:color', doc)
+                  color['w:val'] = 'FFFFFF'
+                  new_rpr.add_child(color)
+                end
+              end
+            elsif seg.match?(/\A_+\z/)
+              # No existing rPr, create one with white color for underscore segments
+              new_rpr = Nokogiri::XML::Node.new('w:rPr', doc)
+              color = Nokogiri::XML::Node.new('w:color', doc)
+              color['w:val'] = 'FFFFFF'
+              new_rpr.add_child(color)
+              new_run.add_child(new_rpr)
+            end
+            
+            # Add the text element
+            new_t = Nokogiri::XML::Node.new('w:t', doc)
+            new_t['xml:space'] = 'preserve'
+            new_t.content = seg
+            new_run.add_child(new_t)
+            
+            new_runs << new_run
+          end
+          
+          # Insert new runs after the current run, then remove the current run
+          insert_point = run
+          new_runs.each do |new_run|
+            insert_point.add_next_sibling(new_run)
+            insert_point = new_run
+          end
+          run.remove
+          
+          modified = true
+        end
+        
+        if modified
+          result = doc.to_xml
+          # Preserve original XML declaration
+          if xml_content.start_with?('<?xml') && !result.start_with?('<?xml')
+            declaration = xml_content[/^<\?xml[^?]*\?>/]
+            result = "#{declaration}\n#{result}" if declaration
+          end
+          Rails.logger.info("DOCX TAG REMOVAL: Made underscore placeholders white (invisible)")
+          return result
+        end
+      rescue StandardError => e
+        Rails.logger.warn("DOCX TAG REMOVAL: make_underscores_white failed: #{e.message}")
+        Rails.logger.warn(e.backtrace.first(3).join("\n"))
+      end
+      
+      xml_content
     end
 
     # Preserve table row heights for rows that contain {{...}} tags
