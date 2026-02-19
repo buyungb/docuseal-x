@@ -54,6 +54,7 @@ Form field tags create interactive fields that signers can fill out. These tags 
 | `email` | Email input | `{{EmailAddress;type=email;role=Buyer}}` |
 | `image` | Image upload field | `{{Photo;type=image;role=Buyer}}` |
 | `stamp` | Stamp/seal field | `{{CompanyStamp;type=stamp;role=Seller}}` |
+| `stamp` (background) | Stamp behind content | `{{CompanyStamp;type=stamp;role=Seller;position=background}}` |
 | `payment` | Payment field | `{{Payment;type=payment;role=Buyer}}` |
 | `file` | File attachment | `{{Attachment;type=file;role=Buyer}}` |
 | `cells` | Multiple character cells | `{{Code;type=cells;role=Buyer}}` |
@@ -542,6 +543,7 @@ When a DOCX template with `{{...}}` tags is submitted, DocuSeal uses a sophistic
 | `required` | `true`/`false` | Field is mandatory |
 | `readonly` | `true`/`false` | Field cannot be edited |
 | `default` | Any value | Default field value |
+| `position` | `background`/`foreground` | Stamp layer: `background` = behind content, `foreground` = on top (default) |
 
 ---
 
@@ -895,6 +897,56 @@ When consent is enabled, the audit trail records:
 - Timestamp when the submitter agreed to consent
 - The consent text that was displayed
 - The consent document URL that was linked
+
+---
+
+## Custom Branding
+
+You can customize the logo and company name displayed in the signing form, emails, and audit trail PDF. **No DOCX tag is needed** — branding is set via API parameters or the Settings UI.
+
+### API Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `logo_url` | string | URL to your company logo image (PNG, JPG, SVG) |
+| `company_name` | string | Your company name (replaces "DocuSeal" in the UI) |
+| `stamp_url` | string | URL to stamp image for `{{stamp}}` fields in signed PDFs (falls back to `logo_url`) |
+
+### API Example
+
+```json
+{
+  "template_id": 123,
+  "logo_url": "https://example.com/your-logo.png",
+  "company_name": "Your Company",
+  "submitters": [
+    { "role": "Signer", "email": "signer@example.com" }
+  ]
+}
+```
+
+### Settings UI
+
+Go to **Settings** → **Personalization** → **Company Logo** to set:
+- **Logo URL**: URL to your logo image
+- **Company Name**: Your brand name
+
+### Where Branding Appears
+
+| Location | What changes |
+|----------|-------------|
+| **Signing form** | Logo and name in the header banner |
+| **Start form** (share link) | Logo and name on the landing page |
+| **Admin navbar** | Logo and name in the top navigation |
+| **Audit trail PDF** | Logo and name in the audit log header |
+| **Emails** | Company name in email templates |
+
+### Important Notes
+
+- Branding is set at the **account level** — once set, it applies to all submissions
+- The API `logo_url` and `company_name` parameters **update account settings** (they persist)
+- If no custom branding is set, the default DocuSeal logo and name are used
+- The logo is NOT embedded in the signed document PDF — it only appears in the UI and audit trail
 
 ---
 

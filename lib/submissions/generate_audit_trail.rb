@@ -521,14 +521,35 @@ module Submissions
       !submission.source.in?(%w[embed api])
     end
 
-    def add_logo(column, _submission = nil)
-      column.image(PdfIcons.logo_io, width: 40, height: 40, position: :float)
+    def add_logo(column, submission = nil)
+      # Try to use custom logo from account settings
+      account = submission&.template&.account
+      custom_logo_url = account&.account_configs&.find_by(key: AccountConfig::COMPANY_LOGO_URL_KEY)&.value
+      custom_name = account&.account_configs&.find_by(key: AccountConfig::COMPANY_NAME_KEY)&.value
+      
+      if custom_logo_url.present?
+        begin
+          require 'net/http'
+          logo_data = Net::HTTP.get(URI(custom_logo_url))
+          column.image(StringIO.new(logo_data), width: 40, height: 40, position: :float)
+        rescue StandardError => e
+          Rails.logger.warn("Audit trail: Failed to load custom logo: #{e.message}")
+          column.image(PdfIcons.logo_io, width: 40, height: 40, position: :float)
+        end
+      else
+        column.image(PdfIcons.logo_io, width: 40, height: 40, position: :float)
+      end
 
-      column.formatted_text([{ text: 'DocuSeal',
-                               link: Docuseal::PRODUCT_EMAIL_URL }],
+      display_name = custom_name.presence || 'DocuSeal'
+      display_link = custom_name.present? ? nil : Docuseal::PRODUCT_EMAIL_URL
+
+      text_attrs = [{ text: display_name }]
+      text_attrs.first[:link] = display_link if display_link
+
+      column.formatted_text(text_attrs,
                             font_size: 20,
                             font: [FONT_NAME, { variant: :bold }],
-                            width: 100,
+                            width: [display_name.length * 12, 200].max,
                             padding: [5, 0, 0, 8],
                             position: :float, text_align: :left)
     end

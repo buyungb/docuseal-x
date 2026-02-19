@@ -211,6 +211,7 @@ module Templates
           type: attrs['type']&.downcase || 'text',
           role: attrs['role'],
           required: attrs['required'] != 'false',
+          position: attrs['position'],  # background/foreground for stamp layer control
           full_tag: full_tag,
           tag_content: tag_content,
           label: label,
@@ -537,13 +538,20 @@ module Templates
       field_type = normalize_type(tag_info[:type])
       return nil unless field_type
 
-      {
+      field = {
         name: tag_info[:name],
         type: field_type,
         role: tag_info[:role],
         required: tag_info[:required],
         tag_content: tag_info[:tag_content]
-      }.compact
+      }
+
+      # Add preferences (e.g., position=background for stamp behind content)
+      preferences = {}
+      preferences[:position] = tag_info[:position] if tag_info[:position].present?
+      field[:preferences] = preferences if preferences.any?
+
+      field.compact
     end
 
     def normalize_type(type)

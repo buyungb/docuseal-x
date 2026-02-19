@@ -1,1 +1,72 @@
-<%= render 'logo_placeholder' %>
+<% logo_url = current_account.account_configs.find_by(key: AccountConfig::COMPANY_LOGO_URL_KEY)&.value %>
+<% company_name = current_account.account_configs.find_by(key: AccountConfig::COMPANY_NAME_KEY)&.value %>
+<% stamp_url = current_account.account_configs.find_by(key: AccountConfig::STAMP_URL_KEY)&.value %>
+
+<div class="space-y-4 my-4">
+  <% if logo_url.present? %>
+    <div class="flex items-center space-x-4">
+      <img src="<%= logo_url %>" alt="Company Logo" class="w-16 h-16 object-contain rounded border p-1">
+      <span class="text-sm text-base-content/60"><%= t('current_logo') rescue 'Current logo' %></span>
+    </div>
+  <% end %>
+
+  <%= form_with url: settings_personalization_path, method: :post, class: 'space-y-3' do |f| %>
+    <input type="hidden" name="account_config[key]" value="<%= AccountConfig::COMPANY_LOGO_URL_KEY %>">
+    <div class="form-control">
+      <label class="label">
+        <span class="label-text font-medium"><%= t('logo_url') rescue 'Logo URL' %></span>
+      </label>
+      <input type="url" name="account_config[value]" value="<%= logo_url %>"
+             class="input input-bordered w-full"
+             placeholder="https://example.com/logo.png">
+      <label class="label">
+        <span class="label-text-alt"><%= t('enter_url_to_your_company_logo_image') rescue 'Enter URL to your company logo image (PNG, JPG, SVG)' %></span>
+      </label>
+    </div>
+    <button type="submit" class="btn btn-neutral btn-sm text-white">
+      <%= t('save') %>
+    </button>
+  <% end %>
+
+  <%= form_with url: settings_personalization_path, method: :post, class: 'space-y-3' do |f| %>
+    <input type="hidden" name="account_config[key]" value="<%= AccountConfig::COMPANY_NAME_KEY %>">
+    <div class="form-control">
+      <label class="label">
+        <span class="label-text font-medium"><%= t('company_name') rescue 'Company Name' %></span>
+      </label>
+      <input type="text" name="account_config[value]" value="<%= company_name %>"
+             class="input input-bordered w-full"
+             placeholder="Your Company Name">
+      <label class="label">
+        <span class="label-text-alt"><%= t('displayed_in_signing_form_and_emails') rescue 'Displayed in signing form and emails' %></span>
+      </label>
+    </div>
+    <button type="submit" class="btn btn-neutral btn-sm text-white">
+      <%= t('save') %>
+    </button>
+  <% end %>
+
+  <%= form_with url: settings_personalization_path, method: :post, class: 'space-y-3' do |f| %>
+    <input type="hidden" name="account_config[key]" value="<%= AccountConfig::STAMP_URL_KEY %>">
+    <div class="form-control">
+      <label class="label">
+        <span class="label-text font-medium">Stamp Image URL</span>
+      </label>
+      <% if stamp_url.present? %>
+        <div class="flex items-center space-x-4 mb-2">
+          <img src="<%= stamp_url %>" alt="Stamp" class="w-20 h-10 object-contain rounded border p-1">
+          <span class="text-sm text-base-content/60">Current stamp</span>
+        </div>
+      <% end %>
+      <input type="url" name="account_config[value]" value="<%= stamp_url %>"
+             class="input input-bordered w-full"
+             placeholder="https://example.com/stamp.png">
+      <label class="label">
+        <span class="label-text-alt">Image used in stamp fields on signed documents. Falls back to company logo if not set.</span>
+      </label>
+    </div>
+    <button type="submit" class="btn btn-neutral btn-sm text-white">
+      <%= t('save') %>
+    </button>
+  <% end %>
+</div>

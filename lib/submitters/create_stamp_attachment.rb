@@ -106,7 +106,23 @@ module Submitters
       end
     end
 
-    def load_logo(_submitter)
+    def load_logo(submitter)
+      account = submitter&.account || submitter&.submission&.account
+      
+      # Priority: 1. stamp_url (dedicated stamp image), 2. company_logo_url, 3. default
+      stamp_url = account&.account_configs&.find_by(key: AccountConfig::STAMP_URL_KEY)&.value
+      logo_url = stamp_url.presence || account&.account_configs&.find_by(key: AccountConfig::COMPANY_LOGO_URL_KEY)&.value
+
+      if logo_url.present?
+        begin
+          require 'net/http'
+          logo_data = Net::HTTP.get(URI(logo_url))
+          return StringIO.new(logo_data) if logo_data.present?
+        rescue StandardError => e
+          Rails.logger.warn("CreateStampAttachment: Failed to load stamp image from #{logo_url}: #{e.message}")
+        end
+      end
+
       PdfIcons.stamp_logo_io
     end
   end

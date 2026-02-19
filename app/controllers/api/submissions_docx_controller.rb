@@ -18,6 +18,31 @@ module Api
 
       variables = (params[:variables] || {}).to_unsafe_h
 
+      # Store custom logo/branding if provided via API
+      if params[:logo_url].present?
+        current_account.account_configs.find_or_initialize_by(key: AccountConfig::COMPANY_LOGO_URL_KEY).tap do |config|
+          config.value = params[:logo_url].to_s
+          config.save!
+        end
+        Rails.logger.info("DOCX Submission: Set custom logo URL: #{params[:logo_url]}")
+      end
+      
+      if params[:company_name].present?
+        current_account.account_configs.find_or_initialize_by(key: AccountConfig::COMPANY_NAME_KEY).tap do |config|
+          config.value = params[:company_name].to_s
+          config.save!
+        end
+        Rails.logger.info("DOCX Submission: Set company name: #{params[:company_name]}")
+      end
+      
+      if params[:stamp_url].present?
+        current_account.account_configs.find_or_initialize_by(key: AccountConfig::STAMP_URL_KEY).tap do |config|
+          config.value = params[:stamp_url].to_s
+          config.save!
+        end
+        Rails.logger.info("DOCX Submission: Set stamp URL: #{params[:stamp_url]}")
+      end
+
       # Create a temporary template
       template = current_account.templates.new(
         author: current_user,
@@ -402,6 +427,10 @@ module Api
         Rails.logger.info("DOCX Submission: Submission ID=#{sub.id}, submitters=#{sub.submitters.map { |s| { id: s.id, email: s.email, phone: s.phone, slug: s.slug } }}")
       end
 
+      # Pre-generate stamp attachments for all stamp fields so signers
+      # see the stamp already filled in (no upload required)
+      prefill_stamp_fields(submissions)
+
       # Always call send_signature_requests - it handles email AND phone webhooks
       # The send_email preference is already set at submitter level
       Rails.logger.info("DOCX Submission: Sending signature requests (email + phone webhook)...")
@@ -419,6 +448,46 @@ module Api
     end
 
     private
+    
+    # Pre-generate stamp attachments for all stamp fields.
+    # This fills stamp fields with the custom stamp image (from stamp_url or logo_url)
+    # so signers see it already filled in without needing to upload anything.
+    def prefill_stamp_fields(submissions)
+      submissions.each do |submission|
+        template = submission.template
+        next unless template
+        
+        fields = template.fields
+        next if fields.blank?
+        
+        stamp_fields = fields.select { |f| f['type'] == 'stamp' }
+        next if stamp_fields.empty?
+        
+        submission.submitters.each do |submitter|
+          submitter_stamp_fields = stamp_fields.select { |f| f['submitter_uuid'] == submitter.uuid }
+          next if submitter_stamp_fields.empty?
+          
+          submitter_stamp_fields.each do |field|
+            begin
+              attachment = Submitters::CreateStampAttachment.build_attachment(
+                submitter,
+                with_logo: field.dig('preferences', 'with_logo') != false
+              )
+              attachment.save! if attachment.new_record?
+              
+              submitter.values ||= {}
+              submitter.values[field['uuid']] = attachment.uuid
+              
+              Rails.logger.info("DOCX Submission: Pre-filled stamp '#{field['name']}' for #{submitter.email}")
+            rescue StandardError => e
+              Rails.logger.warn("DOCX Submission: Failed to pre-fill stamp: #{e.message}")
+            end
+          end
+          
+          submitter.save! if submitter.changed?
+        end
+      end
+    end
     
     # Use fallback positions when PDF tag detection fails
     def use_pdf_fallback(all_fields, docx_fields, first_doc, last_page)

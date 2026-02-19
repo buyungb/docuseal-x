@@ -828,6 +828,9 @@ module Templates
       field[:preferences][:align] = attrs['align'] if attrs['align'].present?
       field[:preferences][:valign] = attrs['valign'] if attrs['valign'].present?
 
+      # Add stamp position preference (background/foreground)
+      field[:preferences][:position] = attrs['position'] if attrs['position'].present?
+
       # Add font preferences
       field[:preferences][:font] = attrs['font'] if attrs['font'].present?
       field[:preferences][:font_size] = attrs['font_size'].to_i if attrs['font_size'].present?

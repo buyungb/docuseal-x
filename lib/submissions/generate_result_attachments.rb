@@ -279,10 +279,17 @@ module Submissions
             end
           end
 
-          canvas = page.canvas(type: :overlay)
-          canvas.font(FONT_NAME, size: font_size)
-
           field_type = field['type']
+
+          # Stamp fields can be configured to render behind document content
+          # via the "position" preference: "background" = underlay, "foreground" = overlay (default)
+          canvas_type = if field_type == 'stamp' && field.dig('preferences', 'position') == 'background'
+                          :underlay
+                        else
+                          :overlay
+                        end
+          canvas = page.canvas(type: canvas_type)
+          canvas.font(FONT_NAME, size: font_size)
           field_type = 'file' if field_type == 'image' &&
                                  !submitter.attachments.find { |a| a.uuid == value }.image?
 

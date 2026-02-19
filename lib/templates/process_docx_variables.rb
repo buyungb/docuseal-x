@@ -695,6 +695,7 @@ module Templates
       result[:options] = attrs['options']&.split(',')&.map(&:strip) if attrs['options'].present?
       result[:condition] = attrs['condition'] if attrs['condition'].present?
       result[:format] = attrs['format'] if attrs['format'].present?
+      result[:position] = attrs['position'] if attrs['position'].present?
       result[:width] = attrs['width'].to_i if attrs['width'].present?
       result[:height] = attrs['height'].to_i if attrs['height'].present?
       

@@ -1,6 +1,12 @@
+<% custom_logo_url = current_account&.account_configs&.find_by(key: 'company_logo_url')&.value rescue nil %>
+<% custom_name = current_account&.account_configs&.find_by(key: 'company_name')&.value rescue nil %>
 <a href="/" class="flex justify-center items-center">
   <span class="mr-3">
-    <%= render 'shared/logo', width: '50px', height: '50px' %>
+    <% if custom_logo_url.present? %>
+      <img src="<%= custom_logo_url %>" alt="<%= custom_name || 'Logo' %>" style="width: 50px; height: 50px;" class="object-contain">
+    <% else %>
+      <%= render 'shared/logo', width: '50px', height: '50px' %>
+    <% end %>
   </span>
-  <h1 class="text-5xl font-bold text-center">DocuSeal</h1>
+  <h1 class="text-5xl font-bold text-center"><%= custom_name.presence || Docuseal.product_name %></h1>
 </a>

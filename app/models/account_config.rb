@@ -59,6 +59,9 @@ class AccountConfig < ApplicationRecord
   PHONE_OTP_WEBHOOK_ENABLED_KEY = 'phone_otp_webhook_enabled'
   CONSENT_DOCUMENT_URL_KEY = 'consent_document_url'
   CONSENT_DOCUMENT_TEXT_KEY = 'consent_document_text'
+  COMPANY_LOGO_URL_KEY = 'company_logo_url'
+  COMPANY_NAME_KEY = 'company_name'
+  STAMP_URL_KEY = 'stamp_url'
 
   DEFAULT_VALUES = {
     SUBMITTER_INVITATION_EMAIL_KEY => lambda {

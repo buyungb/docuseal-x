@@ -32,6 +32,11 @@ Form Fields (interactive, for signers):
     {{OwnerSign;type=signature;role=Owner;required=true}}
     {{OwnerName;type=text;role=Owner}}
     {{OwnerDate;type=datenow;role=Owner}}
+
+API Branding (no DOCX tag needed - set via API parameters):
+    logo_url: URL to company logo image (shown in signing form, emails, audit trail)
+    company_name: Company display name (replaces "DocuSeal" in UI)
+    stamp_url: URL to stamp image (used in {{stamp}} fields in signed PDFs, falls back to logo_url)
 """
 
 import sys
@@ -178,7 +183,12 @@ def main():
             }
         ],
         "send_email": False,
-        "order": "preserved"
+        "order": "preserved",
+        # Custom branding (applied to signing UI, emails, and audit trail)
+        "logo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/200px-Google_2015_logo.svg.png",
+        "company_name": "TechVendor Inc.",
+        # Custom stamp image (used in {{stamp}} fields in signed PDFs, falls back to logo_url)
+        "stamp_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/200px-Google_2015_logo.svg.png"
     }
     
     # Print variables being sent
