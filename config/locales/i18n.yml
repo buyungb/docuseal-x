@@ -7664,259 +7664,1037 @@ id:
   upload_a_new_document: Unggah Dokumen Baru
   billing: Tagihan
   hi_there: Hai
+  templates_that_require_email_or_phone_2fa_cannot_be_used_via_a_shared_link: Templat yang memerlukan email atau telepon 2FA tidak dapat digunakan melalui tautan bersama.
   pro: Pro
   thanks: Terima kasih
   private: Pribadi
+  make_all_newly_created_templates_private_to_their_creator_and_admins_by_default: Jadikan semua templat baru pribadi untuk pembuatnya dan admin secara default.
+  create_templates_with_admin_access_by_default: Buat templat dengan akses admin secara default
+  require_email_2fa: Wajib email 2FA
+  when_checked_each_signer_must_verify_their_email_with_a_one_time_code_before_accessing_the_document: Jika dicentang, setiap penandatangan harus memverifikasi email mereka dengan kode sekali pakai sebelum mengakses dokumen.
+  require_phone_2fa: Wajib telepon 2FA
+  when_checked_each_signer_must_verify_their_phone_with_a_one_time_code_before_accessing_the_document: Jika dicentang, setiap penandatangan harus memverifikasi telepon mereka dengan kode sekali pakai sebelum mengakses dokumen.
   select: Pilih
   enabled: Aktif
   disabled: Nonaktif
   party: Pihak
   make_owner: Jadikan Pemilik
+  use_direct_file_attachment_links_in_the_documents: Gunakan tautan lampiran file langsung di dokumen
+  click_here_to_send_a_reset_password_email_html: '<label class="link" for="resend_password_button">Klik di sini</label> untuk mengirim email atur ulang kata sandi.'
   edit_order: Ubah Urutan
+  expirable_file_download_links: Tautan unduh file kedaluwarsa
+  invite_form_fields: Kolom formulir undangan
+  default_parties: Pihak default
+  authenticate_embedded_form_preview_with_token: Autentikasi pratinjau formulir tersemat dengan token
+  stripe_integration: Integrasi Stripe
+  require_all_recipients: Wajibkan semua penerima
+  stripe_account_has_been_connected: Akun Stripe telah terhubung.
+  re_connect_stripe: Hubungkan ulang Stripe
+  bcc_recipients: Penerima BCC
+  resend_pending: Kirim ulang tertunda
+  always_enforce_signing_order: Selalu terapkan urutan penandatanganan
+  create_templates_with_private_access_by_default: Buat templat dengan akses pribadi secara default
+  ensure_unique_recipients: Pastikan penerima unik
+  edit_per_party: Ubah per pihak
+  reply_to: Balas ke
+  pending_by_me: Menunggu oleh saya
+  partially_completed: Sebagian selesai
+  require_phone_2fa_to_open: Wajib verifikasi telepon 2FA untuk membuka
+  the_sender_has_requested_a_two_factor_authentication_via_one_time_password_sent_to_your_html: Pengirim meminta autentikasi dua faktor melalui kata sandi sekali pakai yang dikirim ke nomor telepon <b>%{phone}</b> Anda.
+  send_verification_code: Kirim kode verifikasi
+  code_has_been_resent: Kode telah dikirim ulang
+  invalid_code: Kode tidak valid
+  signed: Ditandatangani
+  first_party: 'Pihak Pertama'
+  remove_filter: Hapus filter
+  add: Tambah
+  adding: Menambahkan
   owner: Pemilik
   select_user: Pilih pengguna
   team_member_permissions: Izin anggota tim
   entire_team: Seluruh tim
   admin_only: Hanya admin
+  accessiable_by: Dapat diakses oleh
   team_access: Akses tim
-  add: Tambah
-  adding: Menambahkan
-  signed: Ditandatangani
-  first_party: 'Pihak Pertama'
-  remove_filter: Hapus filter
-  pending_by_me: Menunggu oleh saya
-  partially_completed: Sebagian selesai
-  send_verification_code: Kirim kode verifikasi
-  code_has_been_resent: Kode telah dikirim ulang
-  invalid_code: Kode tidak valid
-  require_phone_2fa_to_open: Wajib verifikasi telepon 2FA untuk membuka
-  the_sender_has_requested_a_two_factor_authentication_via_one_time_password_sent_to_your_html: Pengirim meminta autentikasi dua faktor melalui kata sandi sekali pakai yang dikirim ke <b>%{phone}</b>.
-  require_email_2fa: Wajib email 2FA
-  require_phone_2fa: Wajib telepon 2FA
-  awaiting_completion_by_the_other_party: Menunggu penyelesaian oleh pihak lain
-  view: Lihat
-  download: Unduh
-  templates: Templat
-  template: Templat
-  templates_not_found: Templat tidak ditemukan
-  document_templates_html: Templat Dokumen
-  submissions: Pengajuan
-  submission: Pengajuan
-  submitters: Penandatangan
-  submitter: Penandatangan
-  documents: Dokumen
-  document: Dokumen
-  create: Buat
-  edit: Ubah
-  delete: Hapus
-  archive: Arsipkan
-  restore: Pulihkan
-  save: Simpan
-  cancel: Batal
-  close: Tutup
-  back: Kembali
-  send: Kirim
-  search: Cari
-  share: Bagikan
-  clone: Duplikat
-  move: Pindahkan
-  actions: Tindakan
-  settings: Pengaturan
-  profile: Profil
-  sign_in: Masuk
-  sign_out: Keluar
-  sign_up: Daftar
-  create_free_account: Buat Akun Gratis
-  email: Email
-  name: Nama
-  phone: Telepon
-  role: Peran
-  status: Status
-  date: Tanggal
-  time: Waktu
-  type: Jenis
-  title: Judul
-  description: Deskripsi
-  value: Nilai
-  default: Bawaan
-  custom: Kustom
-  required: Wajib
-  optional: Opsional
-  yes: Ya
-  no: Tidak
-  or: atau
-  and: dan
-  all: Semua
-  none: Tidak ada
-  other: Lainnya
-  submit: Kirim
-  confirm: Konfirmasi
-  upload: Unggah
-  uploading: Mengunggah
-  processing: Memproses
-  loading: Memuat
-  sending: Mengirim
-  completed: Selesai
-  pending: Menunggu
-  expired: Kedaluwarsa
-  declined: Ditolak
-  sent: Terkirim
-  opened: Dibuka
-  viewed: Dilihat
-  signed_at: Ditandatangani pada
-  completed_at: Selesai pada
-  created_at: Dibuat pada
-  updated_at: Diperbarui pada
-  expires_at: Kedaluwarsa pada
-  from: Dari
-  to: Kepada
-  subject: Subjek
-  message: Pesan
-  body: Isi
-  preview: Pratinjau
-  copy: Salin
-  copied: Tersalin
-  link: Tautan
-  url: URL
-  api_and_embedding: API dan Penyematan
-  api: API
-  webhooks: Webhook
-  notifications: Notifikasi
-  users: Pengguna
-  user: Pengguna
-  account: Akun
-  accounts: Akun
-  password: Kata sandi
-  password_confirmation: Konfirmasi kata sandi
-  current_password: Kata sandi saat ini
-  new_password: Kata sandi baru
-  forgot_password: Lupa kata sandi?
-  reset_password: Atur ulang kata sandi
-  change_password: Ubah kata sandi
-  remember_me: Ingat saya
-  welcome: Selamat datang
-  welcome_to_docuseal: Selamat datang di SealRoute
-  start_tour: Mulai tur
-  skip: Lewati
-  start_a_quick_tour_to_learn_how_to_create_an_send_your_first_document: Mulai tur singkat untuk belajar cara membuat dan mengirim dokumen pertama Anda
-  send_email: Kirim email
-  send_sms: Kirim SMS
-  send_copy: Kirim salinan
-  resend: Kirim ulang
-  resend_email: Kirim ulang email
-  recipients: Penerima
-  add_recipient: Tambah penerima
-  signature: Tanda tangan
-  initials: Inisial
-  checkbox: Kotak centang
-  text_field: Kolom teks
-  date_field: Kolom tanggal
-  image: Gambar
-  file: Berkas
-  stamp: Stempel
-  number: Nomor
-  radio: Radio
-  multiple: Pilihan ganda
-  payment: Pembayaran
-  cells: Sel
-  draw: Gambar
-  clear: Hapus
-  undo: Urungkan
-  redo: Ulangi
-  fields: Kolom
-  field: Kolom
-  page: Halaman
-  pages: Halaman
-  form: Formulir
-  preferences: Preferensi
-  appearance: Tampilan
-  general: Umum
-  advanced: Lanjutan
-  details: Detail
-  summary: Ringkasan
-  total: Total
-  subtotal: Subtotal
-  shared: Dibagikan
-  shared_with: Dibagikan dengan
-  share_with_users: Bagikan dengan pengguna
-  shared_link: Tautan bersama
-  view_archived: Lihat arsip
-  powered_by: Didukung oleh
-  open_source_documents_software: platform tanda tangan dokumen
-  learn_more: Pelajari lebih lanjut
-  unlock_with_docuseal_pro: Butuh fitur khusus? Hubungi support@sealroute.com
-  activate_with_docuseal_pro: Butuh fitur khusus? Hubungi support@sealroute.com
-  send_signature_request_emails_without_limits_with_docuseal_pro: Butuh email tanpa batas? Hubungi support@sealroute.com
-  unlock_more_user_roles_with_docuseal_pro: Butuh lebih banyak peran? Hubungi support@sealroute.com
-  sign_up_in_docuseal_console_to_upgrade_on_premises_app_is_completely_standalone_console_is_used_only_to_manage_your_license: Daftar di konsol SealRoute untuk upgrade. Aplikasi lokal sepenuhnya mandiri, konsol hanya digunakan untuk mengelola lisensi Anda.
-  connect_salesforce_account_to_integrate_with_docuseal: Hubungkan akun Salesforce untuk integrasi dengan SealRoute
+  document_download_filename_format: Format nama file unduhan dokumen
   docuseal_trusted_signature: Tanda Tangan Terpercaya SealRoute
-  docuseal_support: Dukungan SealRoute
+  hello_name: Hai %{name}
+  you_are_invited_to_product_name: 'Anda diundang ke %{product_name}'
+  you_have_been_invited_to_account_name_product_name_please_sign_up_using_the_link_below_: 'Anda telah diundang ke %{account_name} %{product_name}. Silakan daftar menggunakan tautan di bawah ini:'
+  sent_using_product_name_in_testing_mode_html: 'Dikirim menggunakan <a href="%{product_url}">%{product_name}</a> dalam mode uji'
+  sent_using_product_name_free_document_signing_html: 'Dikirim menggunakan <a href="%{product_url}">%{product_name}</a> - platform tanda tangan dokumen'
   sent_with_docuseal_pro_html: 'Dikirim dengan <a href="%{product_url}">SealRoute</a>'
   show_send_with_docuseal_pro_attribution_in_emails_html: Tampilkan atribusi "Dikirim dengan <span class="link">SealRoute</span>" di email
   sign_documents_with_trusted_certificate_provided_by_docu_seal_your_documents_and_data_are_never_shared_with_docu_seal_p_d_f_checksum_is_provided_to_generate_a_trusted_signature: Tanda tangani dokumen dengan sertifikat terpercaya dari SealRoute. Dokumen dan data Anda tidak pernah dibagikan dengan SealRoute. Checksum PDF disediakan untuk menghasilkan tanda tangan terpercaya.
-  on_a_scale_of_1_to_10_how_satisfied_are_you_with_the_docuseal_product_: 'Pada skala 1 hingga 10, seberapa puas Anda dengan produk SealRoute?'
-  your_pro_plan_has_been_suspended_due_to_unpaid_invoices_you_can_update_your_payment_details_to_settle_the_invoice_and_continue_using_docuseal_or_cancel_your_subscription: Paket Pro Anda telah ditangguhkan karena tagihan belum dibayar. Anda dapat memperbarui detail pembayaran untuk melunasi tagihan dan melanjutkan penggunaan SealRoute atau membatalkan langganan.
-  bulk_send_from_excel_xlsx_or_csv: Kirim massal dari Excel (XLSX) atau CSV
-  single_sign_on_with_saml_2_0: Single Sign-On dengan SAML 2.0
-  send_signature_requests_via_sms: Kirim permintaan tanda tangan via SMS
-  display_your_company_name_and_logo_when_signing_documents: Tampilkan nama dan logo perusahaan Anda saat menandatangani dokumen
-  send_automatic_email_reminders_to_your_recipients: Kirim pengingat email otomatis ke penerima Anda
+  you_have_been_invited_to_submit_the_name_form: 'Anda telah diundang untuk mengisi formulir "%{name}".'
+  you_have_been_invited_to_sign_the_name: 'Anda telah diundang untuk menandatangani "%{name}".'
+  alternatively_you_can_review_and_download_your_copy_using_the_link_below: "Atau, Anda dapat meninjau dan mengunduh salinan Anda menggunakan tautan di bawah ini:"
+  please_check_the_copy_of_your_name_in_the_email_attachments: 'Silakan periksa salinan "%{name}" Anda di lampiran email.'
+  awaiting_completion_by_the_other_party: "Menunggu penyelesaian oleh pihak lain"
+  review_and_sign: Tinjau dan Tanda Tangani
+  review_and_submit: Tinjau dan Kirim
+  please_contact_us_by_replying_to_this_email_if_you_have_any_questions: "Silakan hubungi kami dengan membalas email ini jika Anda memiliki pertanyaan."
+  submitter_invitation_sms_body_sign: '{account.name} mengundang Anda untuk menandatangani dokumen: {submitter.link}'
+  verification_code_sms_body: 'Kode verifikasi: {code}'
+  you_are_invited_to_submit_a_form: 'Anda diundang untuk mengisi formulir'
+  you_are_invited_to_sign_a_document: 'Anda diundang untuk menandatangani dokumen'
+  you_are_invited_to_sign_documents: 'Anda diundang untuk menandatangani dokumen'
+  your_document_copy: 'Salinan dokumen Anda'
+  name_has_been_completed_by_submitters: '"%{name}" telah diselesaikan oleh %{submitters}.'
+  template_name_has_been_completed_by_submitters: '{template.name} telah diselesaikan oleh {submission.submitters}'
+  submitter_invitation_email_sign_body: |
+    Hai,
+
+    Anda telah diundang untuk menandatangani "{template.name}".
+
+    [Tinjau dan Tanda Tangani]({submitter.link})
+
+    Silakan hubungi kami dengan membalas email ini jika Anda memiliki pertanyaan.
+
+    Terima kasih,
+    {account.name}
+  submitter_completed_email_body: |
+    Hai,
+
+    "{template.name}" telah diselesaikan oleh {submission.submitters}
+
+    {submission.link}
+  submitter_documents_copy_email_body: |
+    Hai,
+
+    Silakan periksa salinan "{template.name}" Anda di lampiran email.
+    Atau, Anda dapat meninjau dan mengunduh salinan Anda menggunakan tautan di bawah ini:
+
+    [{template.name}]({documents.link})
+
+    Terima kasih,
+    {account.name}
+  view: Lihat
+  email: Email
+  form_expired_at_html: 'Formulir kedaluwarsa pada <span class="font-semibold">%{time}</span>'
+  verification_code_code: 'Kode verifikasi: %{code}'
+  digitally_signed_by: Ditandatangani secara digital oleh
+  role: Peran
+  reason: Alasan
+  provide_your_email_to_start: Masukkan email Anda untuk memulai
+  provide_your_email: Masukkan email Anda
+  provide_your_name_to_start: Masukkan nama Anda untuk memulai
+  provide_your_name: Masukkan nama Anda
+  provide_your_phone_in_international_format_to_start: Masukkan telepon Anda dalam format internasional untuk memulai
+  provide_your_phone_in_international_format: Masukkan telepon Anda dalam format internasional
+  start: Mulai
+  enforce_recipients_order: Terapkan urutan penerima
+  starting: Memulai
+  invited_by_html: 'Diundang oleh <span class="font-semibold">%{name}</span>'
+  you_have_been_invited_to_submit_a_form: Anda telah diundang untuk mengisi formulir
+  signed_on_time: 'Ditandatangani pada %{time}'
+  completed_on_time: 'Diselesaikan pada %{time}'
+  document_has_been_signed_already: Dokumen sudah ditandatangani
+  form_has_been_submitted_already: Formulir sudah dikirim
+  send_copy_to_email: Kirim salinan ke Email
+  sending: Mengirim
+  resubmit: Kirim ulang
+  form_has_been_deleted_by_html: 'Formulir telah dihapus oleh <span class="font-semibold">%{name}</span>.'
+  or: atau
+  download_documents: Unduh dokumen
+  downloading: Mengunduh
+  download: Unduh
+  decline: Tolak
+  declined: Ditolak
+  decline_reason: Alasan penolakan
+  provide_a_reason: Berikan alasan
+  notify_the_sender_with_the_reason_you_declined: Beritahu pengirim dengan alasan Anda menolak
+  form_has_been_declined_on_html: 'Formulir ditolak pada <span class="font-semibold">%{time}</span>'
+  name_declined_by_submitter: '"%{name}" ditolak oleh %{submitter}'
+  name_declined_by_submitter_with_the_following_reason: '"%{name}" telah ditolak oleh %{submitter} dengan alasan berikut:'
+  completed_successfully: Berhasil Diselesaikan
+  password: Kata sandi
+  sign_in: Masuk
+  signing_in: Sedang masuk
+  sign_in_with_microsoft: Masuk dengan Microsoft
+  sign_in_with_google: Masuk dengan Google
+  forgot_your_password_: Lupa kata sandi?
+  create_free_account: Buat akun gratis
+  already_have_an_account: Sudah punya akun?
+  first_name: Nama depan
+  last_name: Nama belakang
+  sign_up: Daftar
+  signing_up: Sedang mendaftar
+  profile_details: Detail Profil
+  sign_up_with_google: Daftar dengan Google
+  sign_up_with_microsoft: Daftar dengan Microsoft
+  by_creating_an_account_you_agree_to_our_html: 'Dengan membuat akun, Anda menyetujui <a target="_blank" href="https://www.sealroute.com/privacy">Kebijakan Privasi</a> dan <a target="_blank" href="https://www.sealroute.com/terms">Ketentuan Layanan</a> kami.'
+  enter_email_to_continue: Masukkan email untuk melanjutkan
+  account: Akun
+  preferences: Preferensi
+  company_name: Nama perusahaan
+  time_zone: Zona waktu
+  language: Bahasa
+  app_url: URL Aplikasi
+  update: Perbarui
+  updating: Memperbarui
+  force_2fa_with_authenticator_app: Wajibkan 2FA dengan Aplikasi Autentikator
+  add_signature_id_to_the_documents: Tambahkan ID tanda tangan ke dokumen
+  require_signing_reason: Wajibkan alasan penandatanganan
+  allow_typed_text_signatures: Izinkan tanda tangan teks ketik
+  allow_to_resubmit_completed_forms: Izinkan pengiriman ulang formulir yang selesai
+  allow_to_decline_documents: Izinkan penolakan dokumen
+  remember_and_pre_fill_signatures: Ingat dan isi otomatis tanda tangan
+  require_authentication_for_file_download_links: Wajibkan autentikasi untuk tautan unduh file
+  combine_completed_documents_and_audit_log: Gabungkan dokumen selesai dan Log Audit
+  salesforce_integration: Integrasi Salesforce
+  salesforce_has_been_connected: Salesforce telah terhubung.
+  connect_salesforce_account_to_integrate_with_docuseal: Hubungkan akun Salesforce untuk integrasi dengan SealRoute
+  re_connect_salesforce: Hubungkan ulang Salesforce
+  connect_salesforce: Hubungkan Salesforce
+  danger_zone: Zona Bahaya
+  delete_my_account: Hapus akun saya
+  you_are_scheduling_your_account_for_deletion_after_deletion_your_data_will_be_permanently_removed_and_cannot_be_recovered_click_ok_if_you_would_like_to_continue: "Anda menjadwalkan penghapusan akun. Setelah dihapus, data Anda akan dihapus secara permanen dan tidak dapat dipulihkan.\n\nKlik OK jika Anda ingin melanjutkan."
+  account_information_has_been_updated: Informasi akun telah diperbarui.
+  should_be_a_valid_url: harus berupa URL yang valid
+  your_account_removal_request_will_be_processed_within_2_months_please_contact_us_if_you_want_to_keep_your_account: Permintaan penghapusan akun Anda akan diproses dalam 2 bulan. Hubungi kami jika Anda ingin mempertahankan akun Anda.
+  test_mode: Mode uji
+  copy: Salin
+  copied: Tersalin
+  rotate: Putar
+  remove_existing_api_token_and_generated_a_new_one_are_you_sure_: Hapus token API yang ada dan buat yang baru. Apakah Anda yakin?
+  request_signature_multiple_submitters_with_default_values: Minta tanda tangan, beberapa penandatangan dengan nilai default
+  request_signature_single_submitter: Minta tanda tangan, satu penandatangan
+  template_details: Detail templat
+  open_full_api_reference: Buka Referensi API Lengkap
+  api_token_has_been_updated: Token API telah diperbarui.
+  change_your_password: Ubah kata sandi Anda
+  new_password: Kata sandi baru
+  minimum_password_length_characters_minimum: 'Minimal %{minimum_password_length} karakter'
+  confirm_new_password: Konfirmasi kata sandi baru
+  change_my_password: Ubah kata sandi saya
+  changing_password: Mengubah kata sandi
+  reset_password: Atur ulang kata sandi
+  resetting_password: Mengatur ulang kata sandi
+  sign_in_with_name_account: 'Masuk dengan akun %{name}'
+  two_factor_code_from_authenticator_app: Kode Dua Faktor dari Aplikasi Autentikator
+  sign_up_in_docuseal_console_to_upgrade_on_premises_app_is_completely_standalone_console_is_used_only_to_manage_your_license: Daftar di konsol SealRoute untuk upgrade. Aplikasi lokal sepenuhnya mandiri, konsol hanya digunakan untuk mengelola lisensi Anda.
+  send_from_email: Kirim dari Email
+  optional: opsional
+  save: Simpan
+  saving: Menyimpan
+  changes_have_been_saved: Perubahan telah disimpan.
+  unlock_with_docuseal_pro: Butuh fitur khusus? Hubungi support@sealroute.com
+  use_your_own_certificates_to_sign_and_verify_pdf_files: Gunakan sertifikat Anda sendiri untuk menandatangani dan memverifikasi file PDF.
+  upload_certificate: Unggah Sertifikat
+  name: Nama
+  file: Berkas
+  use_a_valid_der_p12_or_pfx_file: Gunakan file .der, .p12 atau .pfx yang valid.
+  submit: Kirim
+  submitting: Mengirim
+  pdf_signature: Tanda Tangan PDF
+  upload_signed_pdf_file_to_validate_its_signature_: 'Unggah file PDF yang telah ditandatangani untuk memvalidasi tanda tangannya:'
+  analyzing: Menganalisis
+  verify_signed_pdf: Verifikasi PDF Bertandatangan
+  click_to_upload_or_drag_and_drop_html: 'Klik untuk mengunggah atau seret dan lepas'
+  click_to_upload_or_drag_and_drop_files_html: '<span class="font-medium">Klik untuk mengunggah</span> atau seret dan lepas file'
+  signing_certificates: Sertifikat Penandatanganan
+  upload_cert: Unggah Sertifikat
+  valid_to: Berlaku Hingga
+  status: Status
+  make_default: Jadikan Bawaan
+  remove: Hapus
+  removing: Menghapus
+  delete: Hapus
+  default: Bawaan
+  are_you_sure_: Apakah Anda yakin?
+  timestamp_server: Server Cap Waktu
+  timeserver_url: URL Server Waktu
+  url_of_the_trusted_rfc_3161_timeserver_to_be_used_to_generate_timestamp_signatures: URL server waktu terpercaya RFC 3161 yang digunakan untuk menghasilkan tanda tangan cap waktu.
+  apply_multiple_pdf_digital_signatures_in_the_document_per_each_signer: Terapkan beberapa tanda tangan digital PDF di dokumen per setiap penandatangan
+  remove_pdf_form_fillable_fields_from_the_signed_pdf_flatten_form: Hapus kolom yang dapat diisi dari PDF yang ditandatangani (ratakan formulir)
+  certificate_has_been_successfully_added: Sertifikat berhasil ditambahkan.
+  default_certificate_has_been_selected: Sertifikat default telah dipilih.
+  certificate_has_been_removed: Sertifikat telah dihapus.
+  already_exists: sudah ada.
+  welcome_to_product_name: 'Selamat datang di %{product_name}'
+  set_password: Atur kata sandi
+  confirm_password: Konfirmasi kata sandi baru
+  save_password_and_sign_in: Simpan kata sandi dan Masuk
+  use_an_authenticator_mobile_app_like_google_authenticator_or_1password_to_scan_the_qr_code_below: Gunakan aplikasi autentikator di ponsel seperti Google Authenticator atau 1Password untuk memindai kode QR di bawah ini.
+  remove_2fa: Hapus 2FA
+  setup_2fa: Atur 2FA
+  2fa_has_been_configured: 2FA telah dikonfigurasi.
+  code_is_invalid: Kode tidak valid
+  2fa_has_been_removed: 2FA telah dihapus.
+  2fa_has_been_set_up_already: 2FA sudah diatur sebelumnya.
+  developer_newsletters: Buletin Pengembang
+  skip: Lewati
+  email_notifications: Notifikasi Email
+  receive_notification_emails_on_completed_submission: Terima email notifikasi saat pengajuan selesai
+  completed_documents_notification_bcc_address: Alamat BCC notifikasi dokumen selesai
+  sign_request_email_reminders: Pengingat Email Permintaan Tanda Tangan
+  send_automatic_email_reminders_to_your_recipients: Kirim pengingat email otomatis ke penerima Anda.
+  first_reminder_in: Pengingat pertama dalam
+  second_reminder_in: Pengingat kedua dalam
+  third_reminder_in: Pengingat ketiga dalam
+  learn_more: Pelajari Lebih Lanjut
+  unable_to_save: Tidak dapat menyimpan.
+  invalid_timeserver: Server Waktu Tidak Valid
+  email_templates: Templat Email
+  signature_request_email: Email permintaan tanda tangan
+  signature_request_reminder_email: Email pengingat permintaan tanda tangan
+  signature_request_sms: SMS Permintaan Tanda Tangan
+  verification_code_sms: SMS Kode Verifikasi
+  completed_notification_email: Email notifikasi selesai
+  company_logo: Logo Perusahaan
+  submission_form: Formulir Pengajuan
+  completed_form_message: Pesan Formulir Selesai
+  completed_form_redirect_button: Tombol Redirect Formulir Selesai
+  documents_copy_email: Email salinan dokumen
+  form_custom_css: CSS Kustom Formulir
+  subject: Subjek
+  body: Isi
+  text_message: Pesan teks
+  title: Judul
+  button_title: Judul tombol
+  button_url: URL Tombol
+  upload_logo: Unggah Logo
+  show_confetti_on_successful_completion: Tampilkan konfeti saat berhasil diselesaikan
+  attach_audit_log_pdf: Lampirkan PDF log audit
+  attach_documents: Lampirkan dokumen
+  settings_have_been_saved: Pengaturan telah disimpan.
+  display_your_company_name_and_logo_when_signing_documents: Tampilkan nama dan logo perusahaan Anda saat menandatangani dokumen.
+  profile: Profil
+  signature: Tanda tangan
+  update_signature: Perbarui Tanda Tangan
+  unable_to_save_signature: Tidak dapat menyimpan tanda tangan.
+  signature_has_been_saved: Tanda tangan telah disimpan.
+  signature_has_been_removed: Tanda tangan telah dihapus.
+  initials: Inisial
+  update_initials: Perbarui Inisial
+  unable_to_save_initials: Tidak dapat menyimpan inisial.
+  initials_has_been_saved: Inisial telah disimpan.
+  initials_has_been_removed: Inisial telah dihapus.
+  change_password: Ubah Kata Sandi
+  two_factor_authentication: Autentikasi Dua Faktor
+  2fa_is_not_configured: 2FA belum dikonfigurasi
+  set_up_2fa: Atur 2FA
+  contact_information_has_been_update: Informasi kontak telah diperbarui.
+  password_has_been_changed: Kata sandi telah diubah.
+  email_integration: Integrasi Email
+  send_via_connected_email: Kirim via email terhubung
+  activate_with_docuseal_pro: Butuh fitur khusus? Hubungi support@sealroute.com
+  send_signature_request_to_your_recipients_directly_from_your_email: Kirim permintaan tanda tangan ke penerima Anda langsung dari email Anda
+  connect_gmail: Hubungkan Gmail
+  re_connect_gmail: Hubungkan ulang Gmail
+  connect_microsoft: Hubungkan Microsoft
+  re_connect_microsoft: Hubungkan ulang Microsoft
+  gmail_has_been_connected: Gmail telah terhubung.
+  microsoft_account_has_been_connected: Akun Microsoft telah terhubung.
+  but_not_activated: tapi belum diaktifkan
+  email_has_been_sent: Email telah dikirim.
+  email_has_been_sent_already: Email sudah dikirim sebelumnya.
+  initial_setup: Pengaturan Awal
+  demo_environment: Lingkungan Demo
+  close: Tutup
+  upgrade: Upgrade
+  settings: Pengaturan
   console: Konsol
   verify_pdf: Verifikasi PDF
+  sign_out: Keluar
+  page_number: 'Halaman %{number}'
+  powered_by: Didukung oleh
+  count_documents_signed_with_html: '<b>%{count}</b> dokumen ditandatangani dengan'
+  storage: Penyimpanan
+  notifications: Notifikasi
+  e_signature: Tanda Tangan Elektronik
+  personalization: Personalisasi
+  users: Pengguna
+  plans: Paket
+  new: Baru
+  embedding: Penyematan
+  background_jobs: Pekerjaan Latar Belakang
+  need_help_ask_a_question_: 'Butuh bantuan? Ajukan pertanyaan:'
+  exit: Keluar
+  leave: Tinggalkan
+  impersonated_as: Menyamar sebagai
   ask_ai: Tanya AI
-  test_mode: Mode uji
-  you_are_invited_to_product_name: 'Anda diundang ke %{product_name}'
-  click_to_upload_or_drag_and_drop_html: '<span class="font-medium">Klik untuk mengunggah</span> atau seret dan lepas'
-  make_default: Jadikan bawaan
-  manage_users: Kelola pengguna
-  add_user: Tambah pengguna
-  invite_user: Undang pengguna
-  remove_user: Hapus pengguna
+  ai_assistant: Asisten AI
+  discord_community: Komunitas Discord
+  integrations: Integrasi
+  teams: Tim
+  tenants: Penyewa
+  send_signature_requests_via_sms: Kirim permintaan tanda tangan via SMS
+  twilio_settings: Pengaturan Twilio
+  webhook_settings: Pengaturan Webhook
+  sending_sms: Mengirim SMS
+  from: Dari
+  account_sid: Account SID
+  send_sms_via_webhook: Kirim SMS via webhook
+  webhook_integration_allows_to_send_sms_using_any_provider: Integrasi webhook memungkinkan pengiriman SMS menggunakan penyedia apa pun
+  test: Uji
+  single_sign_on_with_saml_2_0: Single Sign-On dengan SAML 2.0
+  force_sso_disable_login_with_email_and_password: Wajibkan SSO (nonaktifkan login dengan email dan kata sandi)
+  for_aws_s3_compatible_apis_like_minio: Untuk API yang kompatibel dengan AWS S3 seperti Minio.
+  store_all_files_on_disk: Simpan semua file di disk
+  no_configs_are_needed_but_make_sure_your_disk_is_persistent: Tidak perlu konfigurasi tetapi pastikan disk Anda persisten
+  not_suitable_for_heroku_and_other_paas: Tidak cocok untuk Heroku dan PaaS lainnya
+  bulk_send_from_excel_xlsx_or_csv: Kirim massal dari Excel XLSX atau CSV
+  add_new: Tambah Baru
+  add_recipients: Tambah Penerima
+  add_new_recipients: Tambah Penerima Baru
+  add_recipients_html: <span>Tambah <span class="hidden md:inline">Penerima</span></span>
+  type_emails_here: Ketik email di sini
+  or_embed_on_your_website: Atau sematkan di situs web Anda
+  phone: Telepon
+  send_emails: Kirim email
+  edit_message: Ubah pesan
+  smtp_not_configured: SMTP Belum Dikonfigurasi
+  configure_smtp_settings_in_order_to_send_emails_: 'Konfigurasi pengaturan SMTP untuk mengirim email:'
+  go_to_smtp_settings: Buka pengaturan SMTP
+  save_as_default_template_message: Simpan sebagai pesan templat default
+  re_send_sms: Kirim ulang SMS
+  send_sms: Kirim SMS
+  preserve_order: Pertahankan urutan
+  when_checked_notifications_will_be_sent_to_the_second_party_once_the_form_is_completed_by_the_previous_party_uncheck_this_option_to_send_notifications_to_all_parties_simultaneously_right_away: Jika dicentang, notifikasi akan dikirim ke pihak kedua setelah formulir diselesaikan oleh pihak sebelumnya. Hapus centang untuk mengirim notifikasi ke semua pihak secara bersamaan.
+  upgrade_to_send_unlimited_signature_requests: Upgrade untuk mengirim permintaan tanda tangan tanpa batas
+  add_without_sending: Tambah tanpa mengirim
+  upgade_now: Upgrade Sekarang
+  send_signature_request_emails_without_limits_with_docuseal_pro: Butuh email tanpa batas? Hubungi support@sealroute.com
+  count_emails_used: '%{count} email digunakan'
+  has_been_connected: telah terhubung
+  sms_not_configured: SMS Belum Dikonfigurasi
+  configure_sms_settings_in_order_to_send_text_messages_: 'Konfigurasi pengaturan SMS untuk mengirim pesan teks:'
+  go_to_sms_settings: Buka pengaturan SMS
+  back_to_active: Kembali ke Aktif
+  submissions: Pengajuan
+  templates: Templat
+  document_templates_html: <span class="hidden md:inline">Dokumen</span> Templat
+  archived: Diarsipkan
+  search: Cari
+  submissions_not_found: Pengajuan Tidak Ditemukan
+  create: Buat
+  view_archived: Lihat Arsip
+  all: Semua
+  pending: Menunggu
+  completed: Selesai
+  primarily_opened_with_microsoft_excel_other_options_include_google_sheets_libreoffice_calc_and_openoffice_calc: Biasanya dibuka dengan Microsoft Excel. Pilihan lain termasuk Google Sheets, LibreOffice Calc, dan OpenOffice Calc.
+  can_be_opened_with_microsoft_excel_google_sheets_or_any_text_editor_like_notepad: Dapat dibuka dengan Microsoft Excel, Google Sheets, atau editor teks apa pun seperti Notepad.
+  draw_signature: Gambar Tanda Tangan
+  clear: Hapus
+  signature_uploaded: Tanda Tangan Diunggah
+  submission_deletion_is_irreversible_and_will_permanently_remove_all_associated_signed_documents_with_it_are_you_sure_: 'Penghapusan pengajuan tidak dapat dibatalkan dan akan menghapus secara permanen semua dokumen yang telah ditandatangani. Apakah Anda yakin?'
+  return_back_to_your_desktop_device_to_complete_the_form_or_continue_on_mobile_html: 'Kembali ke perangkat desktop Anda untuk menyelesaikan formulir atau <a class="link" href="%{link}">lanjutkan di ponsel</a>'
+  template_deletion_is_irreversible_and_will_permanently_remove_all_associated_signed_documents_with_it_are_you_sure_: Penghapusan templat tidak dapat dibatalkan dan akan menghapus secara permanen semua dokumen yang telah ditandatangani. Apakah Anda yakin?
+  rename_folder: Ubah Nama Folder
+  folder_name: Nama Folder
+  rename: Ubah Nama
+  home: Beranda
+  templates_not_found: Templat Tidak Ditemukan
+  upload_new_document: Unggah Dokumen Baru
+  uploading: Mengunggah
+  expired: Kedaluwarsa
+  sign_now: Tanda tangani sekarang
+  archive: Arsipkan
+  archiving: Mengarsipkan
+  restore: Pulihkan
+  restoring: Memulihkan
+  clone: Duplikat
+  edit: Ubah
+  move: Pindahkan
+  moving: memindahkan
+  preview: Pratinjau
+  upload: Unggah
+  clone_template: Duplikat Templat
+  new_document_template: Templat Dokumen Baru
+  document_name: Nama Dokumen
+  change_folder: Ubah Folder
+  shared: dibagikan
+  export: Ekspor
+  there_are_no_submissions: Tidak ada Pengajuan
+  send_an_invitation_to_fill_and_complete_the_form: Kirim undangan untuk mengisi dan menyelesaikan formulir
+  send_to_recipients: Kirim ke Penerima
+  sign_it_yourself: Tanda Tangani Sendiri
+  api_and_embedding: API dan Penyematan
+  template_id: ID Templat
+  embedding_url: URL Penyematan
+  share_template_with_test_mode: Bagikan templat dengan Mode uji
+  share_template_with_all_tenants: Bagikan templat dengan semua Penyewa
+  use_following_placeholders_text_: 'Gunakan teks placeholder berikut:'
+  users_count_total_users_count_pro_users_limit_was_reached_to_invite_additional_users_please_purchase_more_pro_user_seats_via_the_manage_plan_button: 'Batas %{users_count}/%{total_users_count} pengguna Pro telah tercapai. Untuk mengundang pengguna tambahan, silakan beli lebih banyak kursi pengguna Pro melalui tombol "Kelola paket".'
+  move_into_folder: Pindahkan ke Folder
+  new_folder_name: Nama Folder Baru
+  new_subfolder_name: Nama Subfolder Baru
+  change_parent_folder: Ubah Folder Induk
+  folder: Folder
+  create_a_new_folder: Buat Folder Baru
+  exit_preview: Keluar Pratinjau
+  general: Umum
+  recipients: Penerima
+  form_preferences: Preferensi formulir
+  redirect_on_completion_url: URL redirect saat selesai
+  completion_message: Pesan penyelesaian
+  email_subject: Subjek email
+  email_body: Isi email
+  attach_audit_log_pdf_to_the_email: Lampirkan PDF Log Audit ke email
+  send_emails_automatically_on_completion: Kirim email otomatis saat selesai
+  attach_documents_to_the_email: Lampirkan dokumen ke email
+  not_specified: Tidak ditentukan
+  submission_requester: Peminta pengajuan
+  specified_email: Email yang ditentukan
+  invite_by_name: 'Undang oleh %{name}'
+  same_as_name: 'Sama dengan %{name}'
+  default_email: Email Default
+  processing: Memproses
+  upload_initials: Unggah Inisial
+  draw: Gambar
+  upload_signature: Unggah Tanda Tangan
+  integration: Integrasi
   admin: Admin
+  tenant_admin: Admin Penyewa
   editor: Editor
   viewer: Pengamat
+  full_access_to_all_resources: Akses penuh ke semua sumber daya
+  can_manage_own_templates_and_submissions: Dapat mengelola templat dan pengajuan sendiri
+  read_only_access: Akses hanya baca
+  member: Anggota
+  agent: Agen
+  superadmin: Superadmin
+  edit_user: Ubah Pengguna
+  new_user: Pengguna Baru
+  unarchive: Batalkan Arsip
+  last_session: Sesi terakhir
+  unlock_more_user_roles_with_docuseal_pro: Butuh lebih banyak peran? Hubungi support@sealroute.com
+  view_active: Lihat Aktif
+  team_account: Akun tim
+  team_accounts: Akun Tim
+  tenant_account: Akun penyewa
+  tenant_accounts: Akun Penyewa
+  impersonate: Menyamar
+  loading: Memuat
+  documents: Dokumen
+  accounts: Akun
+  edit_account: Ubah Akun
+  new_team: Tim Baru
+  new_tenant: Penyewa Baru
+  remove_team: Hapus Tim
+  remove_tenant: Hapus Penyewa
+  replace: Ganti
+  allow_tenant_admins_to_invite_new_users: Izinkan admin penyewa mengundang pengguna baru
+  manage_multiple_teams: Kelola Beberapa Tim
   api_key: Kunci API
-  generate_new_key: Buat kunci baru
+  logo: Logo
+  back: Kembali
+  add_secret: Tambah Rahasia
+  edit_secret: Ubah Rahasia
+  submission_example_payload: Contoh payload pengajuan
+  there_are_no_signatures: Tidak ada tanda tangan
+  signed_with_trusted_certificate: Ditandatangani dengan sertifikat terpercaya
+  signed_with_external_certificate: Ditandatangani dengan sertifikat eksternal
+  setup_2fa_to_continue: Atur 2FA untuk melanjutkan.
+  create_a_new_account: Buat akun baru.
+  you_are_already_signed_in: Anda sudah masuk.
+  please_sign_in: Silakan masuk.
+  not_found: Tidak ditemukan
+  new_recipients_have_been_added: Penerima baru telah ditambahkan.
+  submission_has_been_removed: Pengajuan telah dihapus.
+  submission_has_been_archived: Pengajuan telah diarsipkan.
+  form_has_been_completed_already: Formulir sudah diselesaikan sebelumnya.
+  form_has_been_archived: Formulir telah diarsipkan.
+  form_has_been_expired: Formulir telah kedaluwarsa.
+  form_has_been_declined: Formulir telah ditolak.
+  file_is_missing: File tidak ditemukan
+  folder_name_has_been_updated: Nama folder telah diperbarui.
+  unable_to_rename_folder: Tidak dapat mengubah nama folder.
+  template_has_been_removed: Templat telah dihapus.
+  template_has_been_archived: Templat telah diarsipkan.
+  template_has_been_cloned: Templat telah diduplikat.
+  document_template_has_been_moved: Templat dokumen telah dipindahkan.
+  unable_to_move_template_into_folder: Tidak dapat memindahkan templat ke folder.
+  template_has_been_unarchived: Templat telah dipulihkan dari arsip.
+  submission_has_been_unarchived: Pengajuan telah dipulihkan dari arsip.
+  unable_to_update_file: Tidak dapat mengunggah file.
+  user_has_been_invited: Pengguna telah diundang.
+  unable_to_update_user: Tidak dapat memperbarui pengguna.
+  user_has_been_updated: Pengguna telah diperbarui.
+  unable_to_remove_user: Tidak dapat menghapus pengguna.
+  user_has_been_removed: Pengguna telah dihapus.
+  invalid_pdf: PDF Tidak Valid
+  webhook_secret_has_been_saved: Rahasia Webhook telah disimpan.
+  webhook_url_has_been_saved: URL Webhook telah disimpan.
+  webhook_request_has_been_sent: Permintaan webhook telah dikirim.
+  webhook_url_has_been_updated: URL Webhook telah diperbarui.
+  webhook_url_has_been_deleted: URL Webhook telah dihapus.
+  unable_to_resend_webhook_request: Tidak dapat mengirim ulang permintaan webhook.
+  new_webhook: Webhook Baru
+  delete_webhook: Hapus webhook
+  count_submissions_have_been_created: '%{count} pengajuan telah dibuat.'
+  sms_length_cant_be_longer_than_120_bytes: Panjang SMS tidak boleh lebih dari 120 byte
+  connected_successfully: Berhasil terhubung.
+  user_nameid_not_found: 'Pengguna %{nameid} tidak ditemukan.'
+  sso_settings_have_been_updated: Pengaturan SSO telah diperbarui.
+  sms_has_been_sent: SMS telah dikirim.
+  sms_has_been_sent_already: SMS sudah dikirim sebelumnya.
+  phone_number_is_required: Nomor telepon wajib diisi.
+  send_sms_invitation: Kirim undangan SMS
+  account_has_been_created: Akun telah dibuat.
+  account_has_been_updated: Akun telah diperbarui.
+  account_has_been_removed: Akun telah dihapus.
+  logo_has_been_uploaded: Logo telah diunggah.
+  invalid_file_type: Jenis file tidak valid
+  upload_file: Unggah file
+  upgrade_your_plan_to_invite_more_users_contact_email: 'Upgrade paket Anda untuk mengundang lebih banyak pengguna (hubungi %{email}).'
+  contact_your_admin_email_to_invite_more_users: 'Hubungi admin Anda %{email} untuk mengundang lebih banyak pengguna.'
+  contact_your_administrator_to_add_new_users: Hubungi administrator Anda untuk menambahkan pengguna baru
+  one_hour: 1 jam
+  two_hours: 2 jam
+  four_hours: 4 jam
+  eight_hours: 8 jam
+  twelve_hours: 12 jam
+  twenty_four_hours: 24 jam
+  two_days: 2 hari
+  four_days: 4 hari
+  eight_days: 8 hari
+  fifteen_days: 15 hari
+  twenty_one_days: 21 hari
+  thirty_days: 30 hari
+  free: Gratis
+  unlimited_documents_storage: Penyimpanan dokumen tanpa batas
+  users_management: Manajemen pengguna
+  ten_filed_types: 10 jenis kolom
+  multiple_signers: Beberapa penandatangan
+  automatic_esignature: Tanda tangan elektronik otomatis
+  ten_signature_request_emails_per_month: 10 email permintaan tanda tangan per bulan
+  unlimited_sign_yourself: Tanda tangan sendiri tanpa batas
+  free_developer_testing_sandbox: Sandbox pengujian pengembang gratis
+  continue_with_free_basic: Lanjutkan dengan Gratis Dasar
+  unlimited_signature_request_emails: Email permintaan tanda tangan tanpa batas
+  your_company_logo: Logo perusahaan Anda
+  connect_own_email_address: Hubungkan alamat email sendiri
+  personalize_email_content: Personalisasi konten email
+  automated_reminders: Pengingat otomatis
+  bulk_send_from_spreadsheet: Kirim massal dari spreadsheet
+  identify_verification_via_sms: Verifikasi identitas via SMS
+  start_with_pro: Mulai dengan Pro
+  user_month: pengguna / bulan
+  developer_sandbox: Sandbox Pengembang.
+  upgrade_to_start_using_in_production_html: '<a href="%{url}" target="_blank" class="link font-semibold">Upgrade</a> untuk mulai menggunakan di Produksi.'
+  download_combined_pdf: Unduh PDF gabungan
+  audit_log: Log Audit
+  signers: Penandatangan
+  not_invited_yet: Belum diundang
+  not_completed_yet: Belum selesai
+  declined_on_time: 'Ditolak pada %{time}'
+  expire_on_time: 'Kedaluwarsa pada %{time}'
+  sign_in_person: Tanda Tangan Langsung
+  create_a_new_template_document_form_or_submit_the_existing_one_html: <a href="%{new_template_link}" data-turbo-frame="modal" class="inline underline font-medium">Buat templat baru</a> formulir dokumen atau <a href="%{start_form_link}" target="_blank" class="inline underline font-medium">kirim yang sudah ada</a>
+  send_email_copy_with_completed_documents_to_a_specified_bcc_address: Kirim salinan email dengan dokumen selesai ke alamat BCC yang ditentukan.
+  re_send_email: Kirim Ulang Email
+  send_email: Kirim Email
+  copy_share_link: Salin Tautan Bersama
+  copied_to_clipboard: Tersalin ke Papan Klip
+  link: Tautan
+  via_email: via Email
+  via_phone: via Telepon
+  detailed: Detail
+  upload_list: Unggah Daftar
+  creating: Membuat
+  open_source_documents_software: platform tanda tangan dokumen
+  copy_link: Salin Tautan
+  opened: Dibuka
+  sent: Terkirim
+  awaiting: Menunggu
+  document_id: ID Dokumen
+  envelope_id: ID Amplop
+  event_log: Log Peristiwa
+  verify: Verifikasi
+  testing_log_not_for_production_use: Log Pengujian - Bukan untuk Penggunaan Produksi
+  original_sha256: SHA256 Asli
+  result_sha256: SHA256 Hasil
+  generated_at: Dibuat pada
+  email_verification: Verifikasi email
+  phone_verification: Verifikasi telepon
+  session_id: ID Sesi
+  option: Opsi
+  text_field: Kolom Teks
+  signature_field: Kolom Tanda Tangan
+  initials_field: Kolom Inisial
+  date_field: Kolom Tanggal
+  number_field: Kolom Nomor
+  image_field: Kolom Gambar
+  file_field: Kolom File
+  select_field: Kolom Pilihan
+  checkbox_field: Kolom Kotak Centang
+  multiple_field: Kolom Pilihan Ganda
+  radio_field: Kolom Grup Radio
+  cells_field: Kolom Sel
+  stamp_field: Kolom Stempel
+  payment_field: Kolom Pembayaran
+  phone_field: Kolom Telepon
+  verification_field: Verifikasi Identitas
+  knowledge_based_authentication: Autentikasi Berbasis Pengetahuan
+  kba_field: KBA
+  passed: Lulus
+  identity_verification: Verifikasi identitas
+  paid_price: 'Dibayar %{price}'
+  verified: Terverifikasi
+  unverified: Belum Terverifikasi
+  document: Dokumen
+  completed_at: Selesai pada
+  edit_recipient: Ubah Penerima
+  update_recipient: Perbarui Penerima
+  use_international_format_1xxx_: 'Gunakan format internasional: +62xxx...'
+  submitter_cannot_be_updated: Penandatangan tidak dapat diperbarui.
+  at_least_one_field_must_be_filled: Setidaknya satu kolom harus diisi.
+  archived_users: Pengguna Diarsipkan
+  embedding_users: Pengguna Penyematan
+  view_embedding_users: Lihat Pengguna Penyematan
+  key: Kunci
+  value: Nilai
+  webhook_secret: Rahasia Webhook
+  author: Pembuat
+  to: Kepada
+  created_at: Dibuat pada
+  apply: Terapkan
+  applying: Menerapkan
+  today: Hari ini
+  yesterday: Kemarin
+  this_week: Minggu ini
+  last_week: Minggu lalu
+  this_month: Bulan ini
+  last_month: Bulan lalu
+  this_year: Tahun ini
+  policy_links: Tautan Kebijakan
+  markdown_content_e_g: Konten markdown, contoh
+  privacy_policy: Kebijakan Privasi
+  the_code_has_been_sent_to_your_email: Kode telah dikirim ke email Anda.
+  enter_the_verification_code_from_your_email: Masukkan kode verifikasi dari email Anda.
+  too_many_attempts: Terlalu banyak percobaan.
+  verification_code: Kode Verifikasi
+  resend_code: Kirim Ulang Kode
+  verify_new_sign_in: Verifikasi login baru
+  use_otp_code_to_sign_in_or_click_the_link_below_html: 'Gunakan kode <b>%{code}</b> untuk masuk atau klik tautan di bawah ini:'
+  complete_sign_in: Selesaikan Login
+  please_reply_to_this_email_if_you_dont_recognize_this_sign_in_attempt: Silakan balas email ini jika Anda tidak mengenali percobaan login ini.
+  docuseal_support: Dukungan SealRoute
+  use_the_edit_form_to_move_it_to_another_team: Gunakan formulir ubah untuk memindahkan ke tim lain.
+  too_many_sms_attempts_try_again_in_a_few_seconds: Terlalu banyak percobaan SMS. Coba lagi dalam beberapa detik.
+  number_phone_number_is_invalid: "Nomor telepon +%{number} tidak valid"
+  make_com_integration: Integrasi Make.com
+  zapier_integration: Integrasi Zapier
+  seamlessly_automate_your_document_signing_process_with_make_com: Otomatiskan proses penandatanganan dokumen Anda dengan Make.com secara mulus.
+  find_suitable_zapier_templates_to_automate_your_workflow: Temukan templat Zapier yang sesuai untuk mengotomatiskan alur kerja Anda.
+  get_started: Mulai
+  click_here_to_learn_more_about_user_roles_and_permissions_html: '<a href="https://www.sealroute.com/resources/manage-users-and-roles" class="link" rel="noopener noreferrer nofollow" target="_blank">Klik di sini</a> untuk mempelajari lebih lanjut tentang peran dan izin pengguna.'
+  count_10_signature_request_emails_sent_this_month_upgrade_to_pro_to_send_unlimited_signature_request_email: '%{count} / 10 email permintaan tanda tangan terkirim bulan ini. Upgrade ke Pro untuk mengirim email permintaan tanda tangan tanpa batas.'
+  test_mode_emails_limit_will_be_reset_within_24_hours: Batas email mode uji akan direset dalam 24 jam.
+  on_a_scale_of_1_to_10_how_satisfied_are_you_with_the_docuseal_product_: 'Pada skala 1 hingga 10, seberapa puas Anda dengan produk SealRoute?'
+  tell_us_more_about_your_experience: Ceritakan lebih lanjut tentang pengalaman Anda
+  extremely_dissatisfied: Sangat Tidak Puas
+  extremely_satisfied: Sangat Puas
+  your_pro_plan_payment_is_overdue: Pembayaran paket Pro Anda sudah jatuh tempo.
+  click_here_to_update_your_payment_details_and_clear_the_invoice_to_ensure_uninterrupted_service_html: <a href="%{url}" class="link">Klik di sini</a> untuk memperbarui detail pembayaran Anda dan melunasi tagihan untuk memastikan layanan tanpa gangguan.
+  overdue_payment: Pembayaran Jatuh Tempo
+  your_pro_plan_has_been_suspended_due_to_unpaid_invoices_you_can_update_your_payment_details_to_settle_the_invoice_and_continue_using_docuseal_or_cancel_your_subscription: Paket Pro Anda telah ditangguhkan karena tagihan belum dibayar. Anda dapat memperbarui detail pembayaran untuk melunasi tagihan dan melanjutkan penggunaan SealRoute atau membatalkan langganan.
+  manage_subscription: Kelola Langganan
+  submission_created_by_email_html: '<b>Pengajuan dibuat</b> oleh %{email}'
+  submission_created_by_email_via_source_html: '<b>Pengajuan dibuat</b> oleh %{email} via %{source}'
+  submission_created_via_source_html: '<b>Pengajuan dibuat</b> via %{source}'
+  pro_user_seats_used: Kursi pengguna Pro digunakan
+  manage_plan: Kelola paket
+  this_submission_has_multiple_signers_which_prevents_the_use_of_a_sharing_link_html: Pengajuan ini memiliki beberapa penandatangan, yang mencegah penggunaan tautan bersama karena tidak jelas penandatangan mana yang bertanggung jawab atas kolom tertentu. Untuk mengatasi ini, ikuti <a href="https://www.sealroute.com/resources/pre-filling-recipients" class="link font-bold" rel="noopener noreferrer nofollow" target="_blank">panduan</a> ini untuk menentukan detail penandatangan default.
+  welcome_to_docuseal: Selamat datang di SealRoute
+  start_a_quick_tour_to_learn_how_to_create_an_send_your_first_document: Mulai tur singkat untuk belajar cara membuat dan mengirim dokumen pertama Anda
+  start_tour: Mulai Tur
+  name_a_z: Nama A-Z
+  recently_used: Terakhir digunakan
+  newest_first: Terbaru dulu
+  none: Tidak ada
+  default_expiration: Kedaluwarsa default
+  specified_date: Tanggal tertentu
+  one_day: 1 hari
+  two_days: 2 hari
+  three_days: 3 hari
+  four_days: 4 hari
+  five_days: 5 hari
+  six_days: 6 hari
+  seven_days: 7 hari
+  eight_days: 8 hari
+  nine_days: 9 hari
+  ten_days: 10 hari
+  two_weeks: 2 minggu
+  three_weeks: 3 minggu
+  four_weeks: 4 minggu
+  one_month: 1 bulan
+  two_months: 2 bulan
+  three_months: 3 bulan
+  eu_data_residency: Residensi data UE
+  please_enter_your_email_address_associated_with_the_completed_submission: Silakan masukkan alamat email Anda yang terkait dengan pengajuan yang telah selesai.
+  esignature_disclosure: Pengungkapan eTandaTangan
+  share_link: Tautan bersama
+  enable_shared_link: Aktifkan tautan bersama
+  share_link_is_currently_disabled: Tautan bersama saat ini dinonaktifkan
+  share_template: Bagikan Templat
+  share_this_template_with_other_users_in_your_account: Bagikan templat ini dengan pengguna lain di akun Anda.
+  select_users_to_share_with: Pilih pengguna untuk dibagikan...
+  share: Bagikan
+  shared_with: Dibagikan dengan
+  this_template_is_not_shared_with_anyone: Templat ini tidak dibagikan dengan siapa pun.
+  no_users_available_to_share_with: Tidak ada pengguna yang tersedia untuk dibagikan.
+  template_shared_successfully: Templat berhasil dibagikan.
+  access_removed_successfully: Akses berhasil dihapus.
+  unknown_user: Pengguna tidak dikenal
+  share_with_users: Bagikan dengan pengguna
+  share_folder: Bagikan Folder
+  share_this_folder_with_other_users_in_your_account: Bagikan folder ini dengan pengguna lain di akun Anda.
+  this_folder_is_not_shared_with_anyone: Folder ini tidak dibagikan dengan siapa pun.
+  folder_shared_successfully: Folder berhasil dibagikan.
+  users: Pengguna
+  phone_otp: Webhook 2FA
+  phone_otp_webhook: Webhook Verifikasi 2FA
+  configure_webhook_to_receive_phone_otp_codes_for_user_verification: Konfigurasi webhook untuk mengirim kode verifikasi OTP via SMS, WhatsApp, email, atau layanan pesan apa pun untuk 2FA sebelum penandatanganan.
   webhook_url: URL Webhook
-  event: Peristiwa
-  events: Peristiwa
-  active: Aktif
-  inactive: Nonaktif
-  test: Uji
-  company: Perusahaan
-  company_name: Nama perusahaan
-  company_logo: Logo perusahaan
-  language: Bahasa
-  timezone: Zona waktu
-  email_settings: Pengaturan email
-  storage: Penyimpanan
-  smtp: SMTP
-  host: Host
-  port: Port
-  username: Nama pengguna
-  domain: Domain
-  encryption: Enkripsi
-  authentication: Autentikasi
-  test_email: Email uji
-  send_test_email: Kirim email uji
-  appearance_settings: Pengaturan tampilan
-  e_signature: Tanda tangan elektronik
-  folder: Folder
-  folders: Folder
-  new_folder: Folder baru
-  all_templates: Semua templat
-  recent: Terbaru
-  configure: Konfigurasi
-  count_documents_signed_with_html:
-    one: '%{count} dokumen ditandatangani dengan'
-    other: '%{count} dokumen ditandatangani dengan'
-  sent_using_product_name_in_testing_mode_html: 'Dikirim menggunakan <a href="%{product_url}">%{product_name}</a> dalam mode uji'
-  sent_using_product_name_free_document_signing_html: 'Dikirim menggunakan <a href="%{product_url}">%{product_name}</a> - platform tanda tangan dokumen'
-  date:
-    formats:
-      short: "%d %b %Y"
-      default: "%d/%m/%Y"
+  the_otp_will_be_sent_to_this_url_via_post_request: Kode verifikasi dan undangan akan dikirim ke URL ini melalui permintaan POST.
+  bearer_token: Token Bearer
+  your_api_key_or_bearer_token: Kunci API atau token bearer Anda
+  optional_bearer_token_for_authorization_header: Opsional. Token bearer untuk header Authorization.
+  webhook_payload_format: Format Payload Webhook
+  headers_include_content_type_application_json_and_authorization_bearer_your_token: 'Header mencakup: Content-Type: application/json dan Authorization: Bearer <token-anda>'
+  consent_document: Dokumen Persetujuan
+  configure_a_consent_document_that_signers_must_acknowledge_before_signing: Konfigurasi dokumen persetujuan yang harus diakui penandatangan sebelum menandatangani.
+  document_url: URL Dokumen
+  url_to_the_document_signers_must_view_before_signing: URL ke dokumen yang harus dilihat penandatangan sebelum menandatangani.
+  consent_text: Teks Persetujuan
+  text_displayed_next_to_the_consent_checkbox: Teks yang ditampilkan di samping kotak centang persetujuan.
+  i_have_read_and_agree_to_the_terms_and_conditions: Saya telah membaca dan menyetujui syarat dan ketentuan
+  when_configured_signers_will_see_a_checkbox_with_a_link_to_the_document_they_must_check_before_signing: Jika dikonfigurasi, penandatangan akan melihat kotak centang dengan tautan ke dokumen yang harus mereka centang sebelum menandatangani.
+  consent_required: Persetujuan Diperlukan
+  before_proceeding_please_review_and_accept_the_terms: Sebelum melanjutkan, silakan tinjau dan terima ketentuan.
+  view_document: Lihat Dokumen
+  require_consent_before_signing: Wajibkan persetujuan sebelum menandatangani
+  consent_document_url: URL Dokumen Persetujuan
+  leave_empty_to_use_account_default: Kosongkan untuk menggunakan default akun
+  leave_empty_to_use_default: Kosongkan untuk menggunakan default
+  per_role_consent_overrides: Override Persetujuan Per Peran
+  override_consent_settings_for_specific_roles_leave_empty_to_use_the_default_above: Override pengaturan persetujuan untuk peran tertentu. Kosongkan untuk menggunakan default di atas.
+  enable_consent_for_this_role: Aktifkan persetujuan untuk peran ini
+  the_sender_has_requested_phone_verification_via_otp_sent_to_your_phone_html: Pengirim meminta verifikasi telepon. Kode OTP akan dikirim ke nomor telepon Anda yang berakhir <strong>%{phone}</strong>.
+  resend_code: Kirim Ulang Kode
+  send_via_phone_webhook: Kirim via webhook telepon
+  invitation_sent_via_phone_webhook: Undangan dikirim via webhook telepon
+  select_data_residency: Pilih residensi data
+  account_name_has_invited_you_to_fill_and_sign_documents_online_effortlessly_with_a_secure_fast_and_user_friendly_digital_document_signing_solution: '%{account_name} telah mengundang Anda untuk mengisi dan menandatangani dokumen secara online dengan mudah menggunakan solusi tanda tangan dokumen digital yang aman, cepat, dan ramah pengguna.'
+  review_or_download_completed_documents_fill_and_sign_documents_online_effortlessly_with_a_secure_fast_and_user_friendly_digital_document_signing_solution: Tinjau atau unduh dokumen yang telah selesai. Isi dan tanda tangani dokumen secara online dengan mudah menggunakan solusi tanda tangan dokumen digital yang aman, cepat, dan ramah pengguna.
+  link_form_fields: Tautkan kolom formulir
+  at_least_one_field_must_be_displayed_in_the_form: Setidaknya satu kolom harus ditampilkan dalam formulir.
+  this_template_has_multiple_parties_which_prevents_the_use_of_a_sharing_link: Templat ini memiliki beberapa pihak, yang mencegah penggunaan tautan bersama karena tidak jelas pihak mana yang bertanggung jawab atas kolom tertentu. Untuk mengatasi ini, tentukan detail pihak default.
+  events_log: Log Peristiwa
+  succeeded: Berhasil
+  failed: Gagal
+  there_are_no_events: Tidak ada peristiwa
+  resend: Kirim ulang
+  next_attempt_in_time_in_words: Percobaan berikutnya dalam %{time_in_words}
+  request_email_otp_verification_with_shared_link: Minta verifikasi OTP email dengan tautan bersama
+  sms_rate_limit_exceeded: Batas kirim SMS terlampaui
+  invalid_phone_number: Nomor telepon tidak valid
+  please_contact_the_requester_to_specify_your_phone_number_for_two_factor_authentication: Silakan hubungi peminta untuk menentukan nomor telepon Anda untuk autentikasi dua faktor.
+  we_sent_a_one_time_verification_code_to_your_email_address_please_enter_the_code_below_to_continue: Kami telah mengirim kode verifikasi sekali pakai ke alamat email Anda. Silakan masukkan kode di bawah ini untuk melanjutkan.
+  re_send_code: Kirim Ulang Kode
+  email_verification: Verifikasi email
+  your_verification_code_to_access_the_name: 'Kode verifikasi Anda untuk mengakses "%{name}":'
+  please_reply_to_this_email_if_you_didnt_request_this: Silakan balas email ini jika Anda tidak meminta ini.
+  advanced_settings: Pengaturan lanjutan
+  text: Teks
+  code: Kode
+  custom_html_emails: Email HTML kustom
+  connect_your_email_to_send_html_emails: Hubungkan email Anda untuk mengirim email HTML
+  connect_your_email_or_outlook_account_or_add_smtp_settings_to_send_custom_html_emails: Hubungkan akun Gmail atau Outlook Anda atau tambahkan pengaturan SMTP untuk mengirim email HTML kustom.
+  connect_gmail_or_outlook: Hubungkan Gmail atau Outlook
+  connect_your_email_to_bulk_send: Hubungkan email Anda untuk kirim massal
+  connect_your_email_or_outlook_account_or_add_smtp_settings_to_bulk_send: Hubungkan akun Gmail atau Outlook Anda atau tambahkan pengaturan SMTP untuk kirim massal.
+  are_you_sure_you_want_to_add_recipients_without_sending_to_send_emails_it_requires_to_connect_gmail_or_outlook: Apakah Anda yakin ingin menambah penerima tanpa mengirim? Untuk mengirim email diperlukan koneksi Gmail atau Outlook.
+  template_name_has_been_completed_by_submitters_html: '"<strong>{template.name}</strong>" telah diselesaikan oleh <strong>{submission.submitters}</strong>'
+  please_check_the_copy_of_your_template_name_in_the_email_attachments_html: 'Silakan periksa salinan "<strong>{template.name}</strong>" Anda di lampiran email.'
+  you_have_been_invited_to_sign_the_template_name_html: 'Anda telah diundang untuk menandatangani "<strong>{template.name}</strong>".'
+  reveal_api_key: Tampilkan Kunci API
+  enter_your_password_to_reveal_the_api_key: Masukkan kata sandi Anda untuk menampilkan kunci API
+  wrong_password: Kata sandi salah.
+  current_password: Kata sandi saat ini
+  dont_remember_your_current_password_click_here_to_reset_it_html: 'Tidak ingat kata sandi saat ini? <label class="link" for="resend_password_button">Klik di sini</label> untuk mengatur ulang.'
+  an_email_with_password_reset_instructions_has_been_sent: Email berisi instruksi pengaturan ulang kata sandi telah dikirim.
+  api_key_access_code: Kode akses kunci API
+  use_otp_code_to_access_the_api_key_html: Gunakan kode <b>%{code}</b> untuk mengakses kunci API.
+  please_reply_to_this_email_if_you_dont_recognize_this_request: Silakan balas email ini jika Anda tidak mengenali permintaan ini.
+  your_user_account_has_been_archived_contact_your_administrator_to_restore_access_to_your_account: Akun pengguna Anda telah diarsipkan. Hubungi administrator Anda untuk memulihkan akses ke akun Anda.
+  your_email_could_not_be_reached_this_may_happen_if_there_was_a_typo_in_your_address_or_if_your_mailbox_is_not_available_please_contact_support_email_to_log_in: Email Anda tidak dapat dihubungi. Ini mungkin terjadi jika ada kesalahan ketik pada alamat Anda atau jika kotak surat Anda tidak tersedia. Silakan hubungi support@sealroute.com untuk masuk.
+  efficient_search_with_search_index: Pencarian efisien dengan indeks pencarian
+  reindex: Indeks ulang
+  build_search_index: Bangun Indeks Pencarian
+  require_two_factor_authentication_2fa_with_an_authenticator_app_e_g_google_authenticator_authy_all_users_signing_documents_must_pass_the_second_factor_verification_using_a_secure_code_in_addition_to_their_password: Wajibkan autentikasi dua faktor (2FA) dengan aplikasi autentikator (contoh Google Authenticator, Authy). Semua pengguna yang menandatangani dokumen harus melewati verifikasi faktor kedua menggunakan kode aman selain kata sandi mereka.
+  add_a_unique_signature_id_and_timestamp_to_each_signature_for_audit_and_traceability_purposes_along_with_the_timestamp_part_of_docuseals_21_cfr_part_11_compliance_settings: "Tambahkan ID tanda tangan dan cap waktu unik ke setiap tanda tangan untuk keperluan audit dan keterlacakan beserta cap waktu. Bagian dari pengaturan kepatuhan 21 CFR Part 11 SealRoute."
+  require_signer_to_provide_a_reason_for_signing_before_completing_their_signature_e_g_approvals_certifications_part_of_docuseals_21_cfr_part_11_compliance_settings: "Wajibkan penandatangan untuk memberikan alasan penandatanganan sebelum menyelesaikan tanda tangan mereka (contoh persetujuan, sertifikasi). Bagian dari pengaturan kepatuhan 21 CFR Part 11 SealRoute."
+  allow_signers_to_create_signatures_by_typing_their_name_instead_of_drawing_or_uploading_one: Izinkan penandatangan membuat tanda tangan dengan mengetik nama mereka alih-alih menggambar atau mengunggahnya.
+  allow_signers_to_resubmit_forms_after_completion_useful_when_corrections_or_multiple_submissions_are_needed: Izinkan penandatangan mengirim ulang formulir setelah selesai, berguna saat diperlukan koreksi atau pengiriman ganda.
+  allow_recipients_to_decline_signing_a_document_the_decline_reason_notification_will_be_sent_to_the_signature_requester: Izinkan penerima menolak menandatangani dokumen. Notifikasi alasan penolakan akan dikirim ke peminta tanda tangan.
+  save_a_users_signature_and_automatically_pre_fill_it_in_future_signing_sessions: "Simpan tanda tangan pengguna dan isi otomatis di sesi penandatanganan berikutnya."
+  make_document_download_links_expire_after_40_minutes_to_prevent_long_term_access_and_enhance_security: Jadikan tautan unduh dokumen kedaluwarsa setelah 40 menit untuk mencegah akses jangka panjang dan meningkatkan keamanan.
+  require_authentication_with_user_login_or_api_key_to_access_the_document_download_links: Wajibkan autentikasi dengan login pengguna atau kunci API untuk mengakses tautan unduh dokumen.
+  combine_signed_documents_and_the_audit_log_into_a_single_pdf_file_for_easier_recordkeeping_and_compliance: Gabungkan dokumen yang ditandatangani dan Log Audit menjadi satu file PDF untuk pencatatan dan kepatuhan yang lebih mudah.
+  require_a_jwt_authorization_to_preview_embedded_forms_ensuring_only_authorized_users_can_view_them: Wajibkan otorisasi JWT untuk pratinjau formulir tersemat, memastikan hanya pengguna yang berwenang yang dapat melihatnya.
+  make_all_newly_created_templates_private_to_their_creator_by_default: Jadikan semua templat baru pribadi untuk pembuatnya secara default.
+  make_the_recipients_signing_order_always_enforced_so_that_the_second_signer_can_start_signing_their_part_only_after_the_first_signer_has_completed_signing: Jadikan urutan penandatanganan penerima selalu diterapkan, sehingga penandatangan kedua baru dapat mulai menandatangani bagian mereka setelah penandatangan pertama selesai.
+  the_file_is_missing_make_sure_you_have_access_to_it_on_google_drive: File tidak ditemukan. Pastikan Anda memiliki akses ke file tersebut di Google Drive.
+  connect_google_drive: Hubungkan Google Drive
+  google_drive_has_been_connected: Google Drive telah terhubung
+  unable_to_identify_reset_your_password_to_sign_in: Tidak dapat mengidentifikasi. Atur ulang kata sandi Anda untuk masuk.
+  desktop: Desktop
+  mobile: Ponsel
+  tablet: Tablet
+  reset_default: Atur ulang default
+  send_signature_request_email: Kirim email permintaan tanda tangan
+  last_3_months: 3 bulan terakhir
+  last_6_months: 6 bulan terakhir
+  last_year: Tahun lalu
+  all_time: Sepanjang waktu
+  everyone: Semua orang
+  daily: Harian
+  weekly: Mingguan
+  monthly: Bulanan
+  api: API
+  embed: Semat
+  bulk: Massal
+  invite: Undang
+  api_and_embed: API dan Semat
+  period: Periode
+  reports: Laporan
+  completed_submissions: Pengajuan selesai
+  sms: SMS
+  require_email_2fa_to_open: Wajib email 2FA untuk membuka
+  verification_required_refresh_the_page_and_pass_2fa: Verifikasi diperlukan, muat ulang halaman dan lewati 2FA.
+  the_sender_has_requested_a_two_factor_authentication_via_one_time_password_sent_to_your_email_html: Pengirim meminta autentikasi dua faktor melalui kata sandi sekali pakai yang dikirim ke email <b>%{email}</b> Anda.
+  please_contact_the_requester_to_specify_your_email_for_two_factor_authentication: Silakan hubungi peminta untuk menentukan email Anda untuk autentikasi dua faktor.
+  rate_limit_exceeded: Batas pengiriman terlampaui
+  a_confirmation_email_has_been_sent_to_the_new_email_address: Email konfirmasi telah dikirim ke alamat email baru.
+  email_address_is_awaiting_confirmation_follow_the_link_in_the_email_to_confirm: "Alamat email %{email} menunggu konfirmasi. Ikuti tautan di email untuk mengonfirmasi."
+  please_confirm_your_email_address_using_the_link_below_: 'Silakan konfirmasi alamat email Anda menggunakan tautan di bawah ini:'
+  confirm_email: Konfirmasi email
+  unconfirmed: Belum dikonfirmasi
+  you_requested_to_reset_your_password_use_the_link_below_to_continue: Anda meminta untuk mengatur ulang kata sandi Anda. Gunakan tautan di bawah ini untuk melanjutkan
+  if_you_didnt_request_this_you_can_ignore_this_email: "Jika Anda tidak meminta ini, silakan abaikan email ini."
+  your_password_wont_change_until_you_open_the_link_above_and_set_a_new_one: "Kata sandi Anda tidak akan berubah sampai Anda membuka tautan di atas dan mengatur yang baru."
+  too_many_requests_try_again_later: Terlalu banyak permintaan, coba lagi nanti.
+  devise:
+    confirmations:
+      confirmed: Alamat email Anda telah berhasil dikonfirmasi.
+    failure:
+      unconfirmed: Anda harus mengonfirmasi alamat email Anda sebelum melanjutkan.
+    mailer:
+      confirmation_instructions:
+        subject: Konfirmasi alamat email Anda
+  submission_sources:
+    api: API
+    bulk: Kirim Massal
+    embed: Penyematan
+    invite: Undangan
+    link: Tautan
+  submission_event_names:
+    send_email_to_html: '<b>Email dikirim</b> ke %{submitter_name}'
+    bounce_email_html: '<b>Email terpental</b> %{submitter_name}'
+    complaint_email_html: '<b>Keluhan spam</b> %{submitter_name}'
+    send_reminder_email_to_html: '<b>Email pengingat dikirim</b> ke %{submitter_name}'
+    send_sms_to_html: '<b>SMS dikirim</b> ke %{submitter_name}'
+    send_2fa_sms_to_html: '<b>SMS verifikasi dikirim</b> ke %{submitter_name}'
+    send_2fa_email_to_html: '<b>Email verifikasi dikirim</b> ke %{submitter_name}'
+    open_email_by_html: '<b>Email dibuka</b> oleh %{submitter_name}'
+    click_email_by_html: '<b>Tautan email diklik</b> oleh %{submitter_name}'
+    click_sms_by_html: '<b>Tautan SMS diklik</b> oleh %{submitter_name}'
+    phone_verified_by_html: '<b>Telepon terverifikasi</b> oleh %{submitter_name}'
+    email_verified_by_html: '<b>Email terverifikasi</b> oleh %{submitter_name}'
+    start_form_by_html: '<b>Pengajuan dimulai</b> oleh %{submitter_name}'
+    view_form_by_html: '<b>Formulir dilihat</b> oleh %{submitter_name}'
+    invite_party_by_html: '<b>Mengundang</b> %{invited_submitter_name} oleh %{submitter_name}'
+    complete_form_by_html: '<b>Pengajuan diselesaikan</b> oleh %{submitter_name}'
+    start_verification_by_html: '<b>Verifikasi identitas dimulai</b> oleh %{submitter_name}'
+    complete_verification_by_html: '<b>Verifikasi identitas diselesaikan</b> oleh %{submitter_name} dengan %{provider}'
+    start_kba_by_html: '<b>KBA dimulai</b> oleh %{submitter_name}'
+    complete_kba_by_html: '<b>KBA diselesaikan</b> oleh %{submitter_name}'
+    fail_kba_by_html: '<b>KBA gagal</b> oleh %{submitter_name}'
+    api_complete_form_by_html: '<b>Pengajuan diselesaikan via API</b> oleh %{submitter_name}'
+  import_list:
+    select_worksheet: Pilih Lembar Kerja
+    open: Buka
+    remove: Hapus
+    recipient_field: Kolom penerima
+    spreadsheet_column: Kolom spreadsheet
+    select_field: Pilih Kolom
+    select_column: Pilih Kolom
+    new_field_mapping: Pemetaan Kolom Baru
+    total_entries: Total entri
+    upload_csv_or_xlsx_spreadsheet: Unggah Spreadsheet CSV atau XLSX
+    click_to_upload: Klik untuk Mengunggah
+    or_drag_and_drop_files: atau seret dan lepas file.
+    or: Atau
+    download: unduh
+    a_sample_spreadsheet_to_fill_and_import: spreadsheet contoh untuk diisi dan diimpor
+  app_tour:
+    start: Mulai
+    previous: Sebelumnya
+    next: Berikutnya
+    template_and_submissions: 'Templat dan Pengajuan'
+    template_and_submissions_description: "Anda dapat memilih tampilan yang paling sesuai dengan alur kerja Anda. Pilih tampilan 'Templat' untuk membuat templat dokumen yang dapat digunakan kembali, atau tampilan 'Pengajuan' untuk menandatangani dokumen individual atau meninjau status setiap permintaan tanda tangan."
+    upload_a_pdf_file: 'Unggah file PDF'
+    upload_a_pdf_file_description: 'Unggah dokumen PDF untuk membuat templat formulir penandatanganan.'
+    select_a_signer_party: 'Pilih pihak penandatangan'
+    select_a_signer_party_description: 'Dropdown ini memungkinkan Anda memilih peran pihak penandatangan atau menambahkan pihak baru ke dokumen jika memerlukan 2 atau lebih tanda tangan.'
+    available_parties: 'Pihak yang tersedia'
+    available_parties_description: 'Daftar ini berisi semua pihak yang tersedia dengan nama peran mereka. Setelah dipilih, Anda dapat menambahkan dan mengonfigurasi kolom untuk pihak penandatangan.'
+    available_field_types: 'Jenis kolom yang tersedia'
+    available_field_types_description: 'Bagian ini berisi semua jenis kolom yang tersedia yang dapat ditambahkan ke dokumen untuk input data atau pengumpulan tanda tangan.'
+    text_input_field: 'Kolom input teks'
+    text_input_field_description: 'Kolom ini memungkinkan pengguna memasukkan informasi berbasis teks, seperti nama atau email.'
+    signature_field: 'Kolom tanda tangan'
+    signature_field_description: 'Kolom ini digunakan untuk mengumpulkan tanda tangan dari penandatangan.'
+    added_fields: 'Kolom yang ditambahkan'
+    added_fields_description: 'Daftar ini menampilkan semua kolom yang ditambahkan ke dokumen. Anda dapat mengatur ulang urutan, mengedit, atau menghapusnya.'
+    open_field_settings: 'Buka pengaturan kolom'
+    open_field_settings_description: 'Di sebelah kanan, di samping nama kolom, terdapat ikon pengaturan yang membuka pengaturan kolom.'
+    field_settings: 'Pengaturan kolom'
+    field_settings_description: 'Setiap kolom dapat disesuaikan melalui pengaturan untuk memenuhi kebutuhan Anda, seperti menyesuaikan ukuran font, menjadikan kolom wajib, atau menambahkan deskripsi.'
+    send_document: 'Kirim dokumen untuk ditandatangani'
+    send_document_description: 'Sebelum mengirim dokumen untuk ditandatangani, Anda dapat mengonfigurasi penerima, menambahkan alamat email atau nomor telepon mereka, dan menyesuaikan konten email.'
+    sign_yourself: 'Tanda tangani dokumen sendiri'
+    sign_yourself_description: 'Tombol ini memungkinkan Anda menambahkan tanda tangan Anda ke dokumen yang memerlukan tanda tangan Anda.'
+    copy_and_share_link: 'Salin & bagikan tautan'
+    copy_and_share_link_description: 'Salin tautan ini untuk membagikan dokumen. Siapa pun yang memiliki tautan dapat menandatanganinya setelah memasukkan email mereka.'
+    sign_the_document: 'Tanda tangani dokumen'
+    sign_the_document_description: 'Jika Anda adalah salah satu penandatangan, tombol ini memungkinkan Anda menandatangani dokumen.'
+    send_for_signing: 'Kirim untuk ditandatangani'
+    add_recipients: 'Tambah penerima'
+    add_recipients_description: 'Tambahkan penerima baru agar dokumen ditandatangani dengan memasukkan alamat email atau nomor telepon mereka.'
+    settings: 'Pengaturan'
+    settings_account_description: 'Dengan pengaturan akun yang lengkap, Anda dapat menyesuaikan pengalaman eTandaTangan dan mengundang lebih banyak pengguna.'
+    support: 'Dukungan'
+    support_description: 'Anda dapat menggunakan asisten AI layanan mandiri kami atau email kami di support@sealroute.com jika Anda memiliki pertanyaan.'
+    settings_template_description: 'Gunakan tombol ini untuk mengakses halaman pengaturan akun Anda.'
+  doorkeeper:
+    scopes:
+      write: Perbarui data Anda
+      read: Baca data Anda
+  pagination:
+    submissions:
+      range_with_total: "%{from}-%{to} dari %{count} pengajuan"
+      range_without_total: "%{from}-%{to} pengajuan"
+    templates:
+      range_with_total: "%{from}-%{to} dari %{count} templat"
+      range_without_total: "%{from}-%{to} templat"
+    template_folders:
+      range_with_total: "%{from}-%{to} dari %{count} folder"
+      range_without_total: "%{from}-%{to} folder"
+    users:
+      range_with_total: "%{from}-%{to} dari %{count} pengguna"
+      range_without_total: "%{from}-%{to} pengguna"
+    items:
+      range_with_total: "%{from}-%{to} dari %{count} item"
+      range_without_total: "%{from}-%{to} item"
+    events:
+      range_with_total: "%{from}-%{to} dari %{count} peristiwa"
+      range_without_total: "%{from}-%{to} peristiwa"
 
 en-US:
   <<: *en
