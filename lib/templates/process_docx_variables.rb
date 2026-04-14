@@ -643,7 +643,7 @@ module Templates
     end
     
     # Parse a field tag like "BuyerSign;type=signature;role=Buyer;required=true"
-    # Official DocuSeal attributes:
+    # Official SealRoute attributes:
     # - name: Name of the field
     # - type: text, signature, initials, date, datenow, image, file, payment, stamp, 
     #         select, checkbox, multiple, radio, phone, verification, kba
@@ -702,7 +702,7 @@ module Templates
       result.compact
     end
     
-    # Normalize field type aliases to official DocuSeal types
+    # Normalize field type aliases to official SealRoute types
     # Official types: text, signature, initials, date, datenow, image, file, 
     # payment, stamp, select, checkbox, multiple, radio, phone, verification, kba, number
     def normalize_field_type(type)

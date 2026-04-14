@@ -64,7 +64,7 @@ module Templates
       fields
     end
     
-    # Extract tags using Pdfium - this is DocuSeal's standard approach
+    # Extract tags using Pdfium - this is SealRoute's standard approach
     # Pdfium properly handles font decoding which is essential for LibreOffice PDFs
     def extract_tags_using_pdfium(pdf_data)
       all_tags = []

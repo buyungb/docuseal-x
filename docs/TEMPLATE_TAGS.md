@@ -1,10 +1,10 @@
-# DocuSeal Template Tags Documentation
+# SealRoute Template Tags Documentation
 
-This document describes the templating tag system used in DocuSeal for creating dynamic documents with form fields and data placeholders.
+This document describes the templating tag system used in SealRoute for creating dynamic documents with form fields and data placeholders.
 
 ## Overview
 
-DocuSeal supports two types of tags:
+SealRoute supports two types of tags:
 
 | Tag Type | Syntax | Purpose | When Processed |
 |----------|--------|---------|----------------|
@@ -141,7 +141,7 @@ Quantity: [[item.quantity]]
 
 ### Loops `[[for:items]]...[[end]]`
 
-Repeat content for each item in a collection. DocuSeal supports two types of loops:
+Repeat content for each item in a collection. SealRoute supports two types of loops:
 
 #### 1. Paragraph Loops (Regular Text)
 
@@ -452,7 +452,7 @@ When submitting documents via API, the submitters' roles must match the roles de
 
 ## How Tag Processing Works (Two-PDF Approach)
 
-When a DOCX template with `{{...}}` tags is submitted, DocuSeal uses a sophisticated two-PDF approach:
+When a DOCX template with `{{...}}` tags is submitted, SealRoute uses a sophisticated two-PDF approach:
 
 ### Processing Flow
 
@@ -584,7 +584,7 @@ When creating submissions via API, these parameters are available for each submi
 
 When `require_phone_2fa: true`:
 1. The submitter must have a valid `phone` number
-2. DocuSeal sends an OTP code via:
+2. SealRoute sends an OTP code via:
    - **Phone OTP Webhook** (if configured) - You send SMS via your provider
    - **Built-in SMS** (if no webhook configured and SMS is enabled)
 3. Submitter enters the 6-digit code to access the form
@@ -594,11 +594,11 @@ When `require_phone_2fa: true`:
 
 When `require_email_2fa: true`:
 1. The submitter must have a valid `email` address
-2. DocuSeal sends an OTP code via email automatically
+2. SealRoute sends an OTP code via email automatically
 3. Submitter enters the 6-digit code to access the form
 4. OTP codes are valid for **5 minutes**
 
-> **Note**: Email 2FA does not have a webhook option - emails are always sent by DocuSeal. Only Phone 2FA supports custom webhook delivery.
+> **Note**: Email 2FA does not have a webhook option - emails are always sent by SealRoute. Only Phone 2FA supports custom webhook delivery.
 
 #### Example with 2FA
 
@@ -636,7 +636,7 @@ When `require_email_2fa: true`:
 
 ### Workflow & Signing Order
 
-DocuSeal supports two levels of signing order control:
+SealRoute supports two levels of signing order control:
 
 #### Submission-Level Order (Top-Level Parameter)
 
@@ -909,7 +909,7 @@ You can customize the logo and company name displayed in the signing form, email
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `logo_url` | string | URL to your company logo image (PNG, JPG, SVG) |
-| `company_name` | string | Your company name (replaces "DocuSeal" in the UI) |
+| `company_name` | string | Your company name (replaces "SealRoute" in the UI) |
 | `stamp_url` | string | URL to stamp image for `{{stamp}}` fields in signed PDFs (falls back to `logo_url`) |
 
 ### API Example
@@ -945,7 +945,7 @@ Go to **Settings** → **Personalization** → **Company Logo** to set:
 
 - Branding is set at the **account level** — once set, it applies to all submissions
 - The API `logo_url` and `company_name` parameters **update account settings** (they persist)
-- If no custom branding is set, the default DocuSeal logo and name are used
+- If no custom branding is set, the default SealRoute logo and name are used
 - The logo is NOT embedded in the signed document PDF — it only appears in the UI and audit trail
 
 ---

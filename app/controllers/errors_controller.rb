@@ -2,7 +2,7 @@
 
 class ErrorsController < ActionController::Base
   ENTERPRISE_FEATURE_MESSAGE =
-    'This feature is available in Pro Edition: https://www.docuseal.com/pricing'
+    'Need this feature? Contact support@sealroute.com'
 
   ENTERPRISE_PATHS = [
     '/submissions/html',

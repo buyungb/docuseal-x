@@ -1,79 +1,133 @@
-<section class="flex items-center justify-center">
-  <div class="py-10 mx-auto max-w-7xl">
-    <div class="max-w-xl mx-auto">
-      <div class="text-center">
-        <div class="relative flex flex-col items-center">
-          <%= render 'shared/logo', width: '100', height: '100' %>
-          <h1 class="text-6xl font-bold mt-4 mb-4">
-            DocuSeal
-          </h1>
-          <% if Docuseal.version.present? %>
-            <a href="https://github.com/docusealco/docuseal/releases" target="_blank" class="badge badge-outline badge-lg block mx-auto">
-              v<%= Docuseal.version %>
-            </a>
-          <% end %>
+<section class="flex flex-col items-center justify-center min-h-[70vh] text-center px-4">
+  <div class="max-w-3xl mx-auto">
+    <div class="flex justify-center mb-6">
+      <%= render 'shared/logo', width: '72', height: '72', class: 'rounded-2xl shadow-glow' %>
+    </div>
+    <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight mb-4">
+      Send. Sign. <span class="text-accent">Seal.</span>
+    </h1>
+    <p class="text-lg md:text-xl text-base-content/70 max-w-2xl mx-auto mb-10">
+      SealRoute transforms your document workflows. Create PDF forms, send signing requests, and track completions — all from one platform.
+    </p>
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+      <%= link_to new_user_session_path, class: 'btn btn-primary btn-lg px-8 shadow-primary-glow' do %>
+        <%= svg_icon('login', class: 'w-5 h-5 mr-1') %>
+        Get Started
+      <% end %>
+      <% if Docuseal.multitenant? %>
+        <%= link_to registration_path, class: 'btn btn-outline btn-lg px-8' do %>
+          Create Free Account
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+</section>
+
+<section class="py-16">
+  <div class="text-center mb-14">
+    <h2 class="text-3xl md:text-4xl font-bold mb-3">Everything You Need</h2>
+    <p class="text-base-content/60 text-lg max-w-xl mx-auto">Powerful features to handle your entire document signing workflow.</p>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="card bg-base-100 border border-base-300 shadow-soft hover:shadow-medium transition-all duration-200">
+      <div class="card-body items-center text-center">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-accent flex items-center justify-center mb-3 shadow-glow">
+          <%= svg_icon('file_text', class: 'w-7 h-7 text-white') %>
         </div>
-        <h2 class="mt-4 mb-16 text-lg text-center text-gray-600">
-          A self-hosted and open-source web platform that provides secure and efficient digital document signing and processing.
-        </h2>
+        <h3 class="card-title text-lg">Template Builder</h3>
+        <p class="text-base-content/60 text-sm">Create fillable PDF forms with a drag-and-drop builder. 12 field types including signatures, dates, and checkboxes.</p>
       </div>
     </div>
-    <div class="grid grid-cols-1 gap-12 md:gap-10 md:grid-cols-2">
-      <div class="card bg-base-200">
-        <div class="card-body">
-          <div class="text-center transition-all">
-            <div class="inline-block p-4 mb-4 -mt-16 bg-base-content rounded-full">
-              <%= svg_icon('brand_docker', class: 'w-10 h-10 text-base-100 stroke-1') %>
-            </div>
-            <h3 class="mb-4 text-2xl font-semibold">Easy to Start</h3>
-            <p class="text-base text-gray-500">
-              Run on your own host using Docker container, or deploy on  your favorite managed PaaS with a single <a href="https://www.docuseal.com/install" class="link link-neutral font-bold">click</a>.
-            </p>
-          </div>
+    <div class="card bg-base-100 border border-base-300 shadow-soft hover:shadow-medium transition-all duration-200">
+      <div class="card-body items-center text-center">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-accent flex items-center justify-center mb-3 shadow-glow">
+          <%= svg_icon('send', class: 'w-7 h-7 text-white') %>
         </div>
+        <h3 class="card-title text-lg">Send & Track</h3>
+        <p class="text-base-content/60 text-sm">Send signing requests via email, track progress in real-time, and get notified when documents are completed.</p>
       </div>
-      <div class="card bg-base-200">
-        <div class="card-body">
-          <div class="text-center transition-all">
-            <div class="inline-block p-4 mb-4 -mt-16 bg-base-content rounded-full">
-              <%= svg_icon('devices', class: 'w-10 h-10 text-base-100') %>
-            </div>
-            <h3 class="mb-4 text-2xl font-semibold">Mobile Optimized</h3>
-            <p class="text-base text-gray-500">
-              Review and sign digital documents online from any device.
-              Docuseal document forms are optimized for screens of all sizes.
-            </p>
-          </div>
+    </div>
+    <div class="card bg-base-100 border border-base-300 shadow-soft hover:shadow-medium transition-all duration-200">
+      <div class="card-body items-center text-center">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-accent flex items-center justify-center mb-3 shadow-glow">
+          <%= svg_icon('devices', class: 'w-7 h-7 text-white') %>
         </div>
+        <h3 class="card-title text-lg">Sign Anywhere</h3>
+        <p class="text-base-content/60 text-sm">Mobile-optimized signing forms that work beautifully on any device. No app downloads required.</p>
       </div>
-      <div class="card bg-base-200">
-        <div class="card-body">
-          <div class="text-center transition-all">
-            <div class="inline-block p-4 mb-4 -mt-16 bg-base-content rounded-full">
-              <%= svg_icon('shield_check', class: 'w-10 h-10 text-base-100') %>
-            </div>
-            <h3 class="mb-4 text-2xl font-semibold">Secure</h3>
-            <p class="text-base text-gray-500">
-              Host it on your hardware under a VPN to ensure that important documents can be accesses only within your organization.
-            </p>
-          </div>
+    </div>
+    <div class="card bg-base-100 border border-base-300 shadow-soft hover:shadow-medium transition-all duration-200">
+      <div class="card-body items-center text-center">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-accent flex items-center justify-center mb-3 shadow-glow">
+          <%= svg_icon('shield_check', class: 'w-7 h-7 text-white') %>
         </div>
+        <h3 class="card-title text-lg">Secure & Compliant</h3>
+        <p class="text-base-content/60 text-sm">PDF eSignatures with verification, audit trails, and trusted certificates. Your data stays on your infrastructure.</p>
       </div>
-      <div class="card bg-base-200">
-        <div class="card-body">
-          <div class="text-center transition-all">
-            <div class="inline-block p-4 mb-4 -mt-16 bg-base-content rounded-full">
-              <%= svg_icon('brand_github', class: 'w-10 h-10 text-base-100') %>
-            </div>
-            <h3 class="mb-4 text-2xl font-semibold">Open Source</h3>
-            <p class="text-base text-gray-500">
-              Source code is available under <a href="<%= Docuseal::GITHUB_URL %>" class="link link-neutral font-bold" target="_blank">github.com/docusealco</a>.<br>
-              Open-source contributors are always ready to help!
-            </p>
-          </div>
+    </div>
+    <div class="card bg-base-100 border border-base-300 shadow-soft hover:shadow-medium transition-all duration-200">
+      <div class="card-body items-center text-center">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-accent flex items-center justify-center mb-3 shadow-glow">
+          <%= svg_icon('api', class: 'w-7 h-7 text-white') %>
         </div>
+        <h3 class="card-title text-lg">API & Webhooks</h3>
+        <p class="text-base-content/60 text-sm">Full REST API for automation. Create templates, send documents, and process signatures programmatically.</p>
+      </div>
+    </div>
+    <div class="card bg-base-100 border border-base-300 shadow-soft hover:shadow-medium transition-all duration-200">
+      <div class="card-body items-center text-center">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-accent flex items-center justify-center mb-3 shadow-glow">
+          <%= svg_icon('users', class: 'w-7 h-7 text-white') %>
+        </div>
+        <h3 class="card-title text-lg">Team Management</h3>
+        <p class="text-base-content/60 text-sm">Role-based access control with Admin, Editor, and Viewer roles. Share templates and collaborate seamlessly.</p>
       </div>
     </div>
   </div>
 </section>
-<%= render 'shared/attribution', with_counter: true %>
+
+<section class="py-16">
+  <div class="text-center mb-14">
+    <h2 class="text-3xl md:text-4xl font-bold mb-3">How It Works</h2>
+    <p class="text-base-content/60 text-lg">Get documents signed in three simple steps.</p>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+    <div class="card bg-base-100 border border-base-300 shadow-soft">
+      <div class="card-body items-center text-center">
+        <div class="w-16 h-16 rounded-full bg-gradient-primary text-white flex items-center justify-center text-2xl font-bold shadow-primary-glow">1</div>
+        <h3 class="text-xl font-semibold mt-2">Upload Template</h3>
+        <p class="text-base-content/60">Upload your PDF and add signature fields, text inputs, dates, and more with the visual form builder.</p>
+      </div>
+    </div>
+    <div class="card bg-base-100 border border-base-300 shadow-soft">
+      <div class="card-body items-center text-center">
+        <div class="w-16 h-16 rounded-full bg-gradient-primary text-white flex items-center justify-center text-2xl font-bold shadow-primary-glow">2</div>
+        <h3 class="text-xl font-semibold mt-2">Send for Signing</h3>
+        <p class="text-base-content/60">Add recipients and send signing requests via email. Signers receive a secure link to complete the form.</p>
+      </div>
+    </div>
+    <div class="card bg-base-100 border border-base-300 shadow-soft">
+      <div class="card-body items-center text-center">
+        <div class="w-16 h-16 rounded-full bg-gradient-primary text-white flex items-center justify-center text-2xl font-bold shadow-primary-glow">3</div>
+        <h3 class="text-xl font-semibold mt-2">Download & Archive</h3>
+        <p class="text-base-content/60">Completed documents are automatically signed, verified, and ready to download with a full audit trail.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="py-16">
+  <div class="card-hero shadow-xl">
+    <div class="card-body items-center text-center py-14 px-8">
+      <h2 class="text-3xl md:text-4xl font-bold mb-3">Ready to Streamline Your Workflow?</h2>
+      <p class="text-white/80 text-lg max-w-xl mb-8">Start sending documents for signature today. Fast setup, no complexity.</p>
+      <%= link_to new_user_session_path, class: 'btn btn-accent btn-lg px-10 shadow-glow' do %>
+        Get Started Now
+      <% end %>
+    </div>
+  </div>
+</section>
+
+<div class="text-center text-base-content/40 text-sm py-6">
+  &copy; <%= Date.current.year %> <%= Docuseal.product_name %>. All rights reserved.
+</div>

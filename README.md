@@ -1,10 +1,10 @@
 <h1 align="center" style="border-bottom: none">
   <div>
-    <a href="https://www.docuseal.com">
-      <img  alt="DocuSeal" src="https://github.com/docusealco/docuseal/assets/5418788/c12cd051-81cd-4402-bc3a-92f2cfdc1b06" width="80" />
+    <a href="https://www.sealroute.com">
+      <img  alt="SealRoute" src="/public/logo.png" width="80" />
       <br>
     </a>
-    DocuSeal
+    SealRoute
   </div>
 </h1>
 <h3 align="center">
@@ -22,12 +22,12 @@
   </a>
 </p>
 <p>
-DocuSeal is an open source platform that provides secure and efficient digital document signing and processing. Create PDF forms to have them filled and signed online on any device with an easy-to-use, mobile-optimized web tool.
+SealRoute is an open source platform that provides secure and efficient digital document signing and processing. Create PDF forms to have them filled and signed online on any device with an easy-to-use, mobile-optimized web tool.
 </p>
 <h2 align="center">
   <a href="https://demo.docuseal.tech">✨ Live Demo</a>
   <span>|</span>
-  <a href="https://docuseal.com/sign_up">☁️ Try in Cloud</a>
+  <a href="https://sealroute.com/sign_up">☁️ Try in Cloud</a>
 </h2>
 
 [![Demo](https://github.com/docusealco/docuseal/assets/5418788/d8703ea3-361a-423f-8bfe-eff1bd9dbe14)](https://demo.docuseal.tech)
@@ -52,17 +52,17 @@ DocuSeal is an open source platform that provides secure and efficient digital d
 - API and Webhooks for integrations
 - Easy to deploy in minutes
 
-## Pro Features (Official DocuSeal Pro)
+## Pro Features (Official SealRoute Pro)
 - Company logo and white-label
 - User roles
 - Automated reminders (fully managed)
 - Bulk send with CSV, XLSX spreadsheet import
 - SSO / SAML
-- Template creation with HTML API ([Guide](https://www.docuseal.com/guides/create-pdf-document-fillable-form-with-html-api))
-- Template creation with PDF or DOCX and field tags API ([Guide](https://www.docuseal.com/guides/use-embedded-text-field-tags-in-the-pdf-to-create-a-fillable-form))
-- Embedded signing form ([React](https://github.com/docusealco/docuseal-react), [Vue](https://github.com/docusealco/docuseal-vue), [Angular](https://github.com/docusealco/docuseal-angular) or [JavaScript](https://www.docuseal.com/docs/embedded))
-- Embedded document form builder ([React](https://github.com/docusealco/docuseal-react), [Vue](https://github.com/docusealco/docuseal-vue), [Angular](https://github.com/docusealco/docuseal-angular) or [JavaScript](https://www.docuseal.com/docs/embedded))
-- [Learn more](https://www.docuseal.com/pricing)
+- Template creation with HTML API ([Guide](https://www.sealroute.com/guides/create-pdf-document-fillable-form-with-html-api))
+- Template creation with PDF or DOCX and field tags API ([Guide](https://www.sealroute.com/guides/use-embedded-text-field-tags-in-the-pdf-to-create-a-fillable-form))
+- Embedded signing form ([React](https://github.com/docusealco/docuseal-react), [Vue](https://github.com/docusealco/docuseal-vue), [Angular](https://github.com/docusealco/docuseal-angular) or [JavaScript](https://www.sealroute.com/docs/embedded))
+- Embedded document form builder ([React](https://github.com/docusealco/docuseal-react), [Vue](https://github.com/docusealco/docuseal-vue), [Angular](https://github.com/docusealco/docuseal-angular) or [JavaScript](https://www.sealroute.com/docs/embedded))
+- [Learn more](https://www.sealroute.com/pricing)
 
 ## Deploy
 
@@ -78,7 +78,7 @@ DocuSeal is an open source platform that provides secure and efficient digital d
 docker run --name docuseal -p 3000:3000 -v.:/data docuseal/docuseal
 ```
 
-By default DocuSeal docker container uses an SQLite database to store data and configurations. Alternatively, it is possible use PostgreSQL or MySQL databases by specifying the `DATABASE_URL` env variable.
+By default SealRoute docker container uses an SQLite database to store data and configurations. Alternatively, it is possible use PostgreSQL or MySQL databases by specifying the `DATABASE_URL` env variable.
 
 #### Docker Compose
 
@@ -302,19 +302,19 @@ const response = await fetch('/api/submissions/pdf', {
 ```
 
 ## For Businesses
-### Integrate seamless document signing into your web or mobile apps with DocuSeal
+### Integrate seamless document signing into your web or mobile apps with SealRoute
 
-At DocuSeal we have expertise and technologies to make documents creation, filling, signing and processing seamlessly integrated with your product. We specialize in working with various industries, including **Banking, Healthcare, Transport, Real Estate, eCommerce, KYC, CRM, and other software products** that require bulk document signing. By leveraging DocuSeal, we can assist in reducing the overall cost of developing and processing electronic documents while ensuring security and compliance with local electronic document laws.
+At SealRoute we have expertise and technologies to make documents creation, filling, signing and processing seamlessly integrated with your product. We specialize in working with various industries, including **Banking, Healthcare, Transport, Real Estate, eCommerce, KYC, CRM, and other software products** that require bulk document signing. By leveraging SealRoute, we can assist in reducing the overall cost of developing and processing electronic documents while ensuring security and compliance with local electronic document laws.
 
-[Book a Meeting](https://www.docuseal.com/contact)
+[Book a Meeting](https://www.sealroute.com/contact)
 
 ## License
 
 Distributed under the AGPLv3 License. See [LICENSE](https://github.com/docusealco/docuseal/blob/master/LICENSE) for more information.
-Unless otherwise noted, all files © 2023 DocuSeal LLC.
+Unless otherwise noted, all files © 2023 SealRoute.
 
 ## Tools
 
-- [Signature Maker](https://www.docuseal.com/online-signature)
-- [Sign Document Online](https://www.docuseal.com/sign-documents-online)
-- [Fill PDF Online](https://www.docuseal.com/fill-pdf)
+- [Signature Maker](https://www.sealroute.com/online-signature)
+- [Sign Document Online](https://www.sealroute.com/sign-documents-online)
+- [Fill PDF Online](https://www.sealroute.com/fill-pdf)

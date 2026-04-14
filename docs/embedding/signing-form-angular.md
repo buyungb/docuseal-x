@@ -13,7 +13,7 @@ import { DocusealFormComponent } from '@docuseal/angular';
   template: `
     <div class="app">
       <docuseal-form
-        [src]="'https://docuseal.com/d/{{template_slug}}'"
+        [src]="'https://sealroute.com/d/{{template_slug}}'"
         [email]="'{{signer_email}}'">
       </docuseal-form>
     </div>
@@ -162,7 +162,7 @@ export class AppComponent {}
     "type": "string",
     "required": false,
     "description": "URL to redirect to after the submission completion.",
-    "example": "https://docuseal.com/success"
+    "example": "https://sealroute.com/success"
   },
   "completedMessage": {
     "type": "object",

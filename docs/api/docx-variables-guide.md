@@ -4,7 +4,7 @@ This guide explains how to create personalized documents using DOCX dynamic cont
 
 ## Overview
 
-DocuSeal supports two types of document templating:
+SealRoute supports two types of document templating:
 
 | Syntax | Purpose | When Filled | Example |
 |--------|---------|-------------|---------|
@@ -186,7 +186,7 @@ Initials: {{BuyerInit;type=initials;role=Buyer}} {{SellerInit;type=initials;role
 # First, base64 encode your DOCX file
 DOCX_BASE64=$(base64 -i sales_contract.docx)
 
-curl -X POST "https://your-docuseal.com/api/submissions/docx" \
+curl -X POST "https://your-sealroute.com/api/submissions/docx" \
   -H "X-Auth-Token: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -265,7 +265,7 @@ async function createSalesContract() {
   const docxFile = fs.readFileSync('./sales_contract.docx');
   const base64Docx = docxFile.toString('base64');
 
-  const response = await fetch('https://your-docuseal.com/api/submissions/docx', {
+  const response = await fetch('https://your-sealroute.com/api/submissions/docx', {
     method: 'POST',
     headers: {
       'X-Auth-Token': 'YOUR_API_KEY',
@@ -345,7 +345,7 @@ async function createSalesContract() {
   console.log('Contract created:', result);
   
   // Returns array of submitter objects with signing URLs
-  // result[0].embed_src = "https://your-docuseal.com/s/abc123"
+  // result[0].embed_src = "https://your-sealroute.com/s/abc123"
 }
 
 createSalesContract();
@@ -364,7 +364,7 @@ def create_sales_contract():
         docx_base64 = base64.b64encode(f.read()).decode('utf-8')
     
     response = requests.post(
-        'https://your-docuseal.com/api/submissions/docx',
+        'https://your-sealroute.com/api/submissions/docx',
         headers={
             'X-Auth-Token': 'YOUR_API_KEY',
             'Content-Type': 'application/json'
@@ -456,7 +456,7 @@ The API returns an array of submitter objects:
     "name": "John Doe",
     "role": "Buyer",
     "status": "pending",
-    "embed_src": "https://your-docuseal.com/s/abc123xyz",
+    "embed_src": "https://your-sealroute.com/s/abc123xyz",
     "preferences": {}
   },
   {
@@ -467,7 +467,7 @@ The API returns an array of submitter objects:
     "name": "Jane Smith",
     "role": "Seller",
     "status": "awaiting",
-    "embed_src": "https://your-docuseal.com/s/def456xyz",
+    "embed_src": "https://your-sealroute.com/s/def456xyz",
     "preferences": {}
   }
 ]
@@ -500,7 +500,7 @@ The API returns an array of submitter objects:
             │    - Submitters (signers)
             ▼
      ┌──────────────────────────────────────┐
-     │           DocuSeal API               │
+     │           SealRoute API               │
      │                                      │
      │  ┌────────────────────────────────┐  │
      │  │ 3. Process DOCX Variables      │  │
@@ -574,7 +574,7 @@ The API returns an array of submitter objects:
 For PDF documents with embedded text tags, use the `/api/submissions/pdf` endpoint:
 
 ```bash
-curl -X POST "https://your-docuseal.com/api/submissions/pdf" \
+curl -X POST "https://your-sealroute.com/api/submissions/pdf" \
   -H "X-Auth-Token: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{

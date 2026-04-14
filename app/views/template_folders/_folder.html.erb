@@ -1,11 +1,11 @@
 <% is_long = folder.name.size > 32 %>
 <div class="h-full relative group">
-  <a href="<%= folder_path(folder) %>" class="flex h-full flex-col justify-between rounded-2xl py-5 px-6 w-full bg-base-200 before:border-2 before:border-base-300 before:border-dashed before:absolute before:left-0 before:right-0 before:top-0 before:bottom-0 before:hidden before:rounded-2xl relative" data-targets="dashboard-dropzone.folderCards" data-full-name="<%= folder.full_name %>">
+  <a href="<%= folder_path(folder) %>" class="flex h-full flex-col justify-between rounded-2xl py-5 px-6 w-full bg-base-100 border border-base-300 shadow-soft hover:shadow-medium transition-all duration-200 before:border-2 before:border-accent/30 before:border-dashed before:absolute before:left-0 before:right-0 before:top-0 before:bottom-0 before:hidden before:rounded-2xl relative" data-targets="dashboard-dropzone.folderCards" data-full-name="<%= folder.full_name %>">
     <div class="flex items-center justify-between">
       <% if !is_long %>
         <%= svg_icon('folder', class: 'w-6 h-6') %>
       <% end %>
-      <% if folder.folder_accesses.loaded? ? folder.folder_accesses.any? : (defined?(folder.folder_accesses) && folder.folder_accesses.exists?) rescue false %>
+      <% if begin; folder.folder_accesses.loaded? ? folder.folder_accesses.any? : folder.folder_accesses.exists?; rescue; false; end %>
         <span class="tooltip tooltip-bottom" data-tip="<%= t('shared_with') %> <%= folder.folder_accesses.size %> <%= t('users').downcase %>">
           <%= svg_icon('users', class: 'w-4 h-4 text-primary') %>
         </span>
@@ -21,7 +21,7 @@
   <% if can?(:manage, FolderAccess.new(template_folder: folder)) && !folder.default? %>
     <div class="absolute top-2 right-2 hidden md:group-hover:block">
       <span class="tooltip tooltip-left" data-tip="<%= t('share_with_users') %>">
-        <a href="<%= folder_accesses_path(folder) %>" data-turbo-frame="modal" class="btn btn-xs hover:btn-outline bg-base-200 btn-circle">
+        <a href="<%= folder_accesses_path(folder) %>" data-turbo-frame="modal" class="btn btn-xs hover:btn-outline bg-base-100 border-base-300 btn-circle">
           <%= svg_icon('users', class: 'w-4 h-4') %>
         </a>
       </span>

@@ -1,6 +1,6 @@
 # Phone OTP Webhook (2FA SMS Verification)
 
-This webhook enables you to send phone-based two-factor authentication (2FA) OTP codes via your own SMS provider. When a submitter with `require_phone_2fa: true` tries to access the signing form, DocuSeal will call your webhook endpoint with the OTP code instead of sending it directly.
+This webhook enables you to send phone-based two-factor authentication (2FA) OTP codes via your own SMS provider. When a submitter with `require_phone_2fa: true` tries to access the signing form, SealRoute will call your webhook endpoint with the OTP code instead of sending it directly.
 
 ## Use Cases
 
@@ -31,7 +31,7 @@ The webhook is stored in `EncryptedConfig` with key `phone_otp_webhook`:
 
 ## Webhook Payload
 
-When a submitter needs phone verification, DocuSeal sends a POST request:
+When a submitter needs phone verification, SealRoute sends a POST request:
 
 ```json
 {
@@ -81,7 +81,7 @@ Content-Type: application/json
 {"status": "sent"}
 ```
 
-If your webhook returns a non-2xx status, DocuSeal will log the failure and the OTP will not be considered delivered.
+If your webhook returns a non-2xx status, SealRoute will log the failure and the OTP will not be considered delivered.
 
 ## OTP Validity
 
@@ -97,7 +97,7 @@ To require phone verification for a submitter, use the `require_phone_2fa` param
 ### Create Submission with Phone 2FA
 
 ```bash
-curl -X POST "https://api.docuseal.com/submissions" \
+curl -X POST "https://api.sealroute.com/submissions" \
   -H "X-Auth-Token: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -116,7 +116,7 @@ curl -X POST "https://api.docuseal.com/submissions" \
 ### Using /api/submissions/docx
 
 ```bash
-curl -X POST "https://api.docuseal.com/api/submissions/docx" \
+curl -X POST "https://api.sealroute.com/api/submissions/docx" \
   -H "X-Auth-Token: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{

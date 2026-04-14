@@ -10,10 +10,10 @@ module Docuseal
   DEFAULT_APP_URL = ENV.fetch('APP_URL', 'http://localhost:3000')
   GITHUB_URL = 'https://github.com/docusealco/docuseal'
   DISCORD_URL = 'https://discord.gg/qygYCDGck9'
-  TWITTER_URL = 'https://twitter.com/docusealco'
-  TWITTER_HANDLE = '@docusealco'
+  TWITTER_URL = 'https://twitter.com/sealroute'
+  TWITTER_HANDLE = '@sealroute'
   CHATGPT_URL = "#{PRODUCT_URL}/chat".freeze
-  SUPPORT_EMAIL = 'support@docuseal.com'
+  SUPPORT_EMAIL = 'support@sealroute.com'
   HOST = ENV.fetch('HOST', 'localhost')
   AATL_CERT_NAME = 'docuseal_aatl'
   CONSOLE_URL = if Rails.env.development?
@@ -21,19 +21,19 @@ module Docuseal
                 elsif ENV['MULTITENANT'] == 'true'
                   "https://console.#{HOST}"
                 else
-                  'https://console.docuseal.com'
+                  'https://console.sealroute.com'
                 end
   CLOUD_URL = if Rails.env.development?
                 'http://localhost:3000'
               else
-                'https://docuseal.com'
+                'https://sealroute.com'
               end
   CDN_URL = if Rails.env.development?
               'http://localhost:3000'
             elsif ENV['MULTITENANT'] == 'true'
               "https://cdn.#{HOST}"
             else
-              'https://cdn.docuseal.com'
+              'https://cdn.sealroute.com'
             end
 
   CERTS = JSON.parse(ENV.fetch('CERTS', '{}'))

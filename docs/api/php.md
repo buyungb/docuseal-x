@@ -3,7 +3,7 @@
 The API endpoint provides the ability to retrieve a list of available submissions.
 
 ```php
-$docuseal = new \Docuseal\Api('API_KEY', 'https://api.docuseal.com');
+$docuseal = new \Docuseal\Api('API_KEY', 'https://api.sealroute.com');
 
 $docuseal->listSubmissions(['limit' => 10]);
 ```
@@ -118,7 +118,7 @@ $docuseal->listSubmissions(['limit' => 10]);
 The API endpoint provides the functionality to retrieve information about a submission.
 
 ```php
-$docuseal = new \Docuseal\Api('API_KEY', 'https://api.docuseal.com');
+$docuseal = new \Docuseal\Api('API_KEY', 'https://api.sealroute.com');
 
 $docuseal->getSubmission(1001);
 ```
@@ -155,7 +155,7 @@ $docuseal->getSubmission(1001);
 This endpoint returns a list of partially filled documents for a submission. If the submission has been completed, the final signed documents are returned.
 
 ```php
-$docuseal = new \Docuseal\Api('API_KEY', 'https://api.docuseal.com');
+$docuseal = new \Docuseal\Api('API_KEY', 'https://api.sealroute.com');
 
 $docuseal->getSubmissionDocuments(1001);
 ```
@@ -189,10 +189,10 @@ $docuseal->getSubmissionDocuments(1001);
 
 ### Create a submission
 
-This API endpoint allows you to create signature requests (submissions) for a document template and send them to the specified submitters (signers).<br><b>Related Guides</b><br><a href="https://www.docuseal.com/guides/send-documents-for-signature-via-api" class="link">Send documents for signature via API</a><br><a href="https://www.docuseal.com/guides/pre-fill-pdf-document-form-fields-with-api" class="link">Pre-fill PDF document form fields with API</a>
+This API endpoint allows you to create signature requests (submissions) for a document template and send them to the specified submitters (signers).<br><b>Related Guides</b><br><a href="https://www.sealroute.com/guides/send-documents-for-signature-via-api" class="link">Send documents for signature via API</a><br><a href="https://www.sealroute.com/guides/pre-fill-pdf-document-form-fields-with-api" class="link">Pre-fill PDF document form fields with API</a>
 
 ```php
-$docuseal = new \Docuseal\Api('API_KEY', 'https://api.docuseal.com');
+$docuseal = new \Docuseal\Api('API_KEY', 'https://api.sealroute.com');
 
 $docuseal->createSubmission([
   'template_id' => 1000001,
@@ -232,7 +232,7 @@ $docuseal->createSubmission([
           "properties": {
             "template_id": {
               "type": "integer",
-              "description": "The unique identifier of the template. Document template forms can be created via the Web UI, <a href=\"https://www.docuseal.com/guides/use-embedded-text-field-tags-in-the-pdf-to-create-a-fillable-form\" class=\"link\">PDF and DOCX API</a>, or <a href=\"https://www.docuseal.com/guides/create-pdf-document-fillable-form-with-html-api\" class=\"link\">HTML API</a>.",
+              "description": "The unique identifier of the template. Document template forms can be created via the Web UI, <a href=\"https://www.sealroute.com/guides/use-embedded-text-field-tags-in-the-pdf-to-create-a-fillable-form\" class=\"link\">PDF and DOCX API</a>, or <a href=\"https://www.sealroute.com/guides/create-pdf-document-fillable-form-with-html-api\" class=\"link\">HTML API</a>.",
               "example": 1000001
             },
             "send_email": {
@@ -608,11 +608,11 @@ $docuseal->createSubmission([
 
 ### Create a submission from PDF
 
-The API endpoint provides the functionality to create one-off submission request from a PDF. Use <code>{{Field Name;role=Signer1;type=date}}</code> text tags to define fillable fields in the document. See <a href="https://www.docuseal.com/examples/fieldtags.pdf" target="_blank" class="link font-bold">https://www.docuseal.com/examples/fieldtags.pdf</a> for more text tag formats. Or specify the exact pixel coordinates of the document fields using `fields` param.<br><b>Related Guides</b><br><a href="https://www.docuseal.com/guides/use-embedded-text-field-tags-in-the-pdf-to-create-a-fillable-form" class="link">Use embedded text field tags to create a fillable form</a>
+The API endpoint provides the functionality to create one-off submission request from a PDF. Use <code>{{Field Name;role=Signer1;type=date}}</code> text tags to define fillable fields in the document. See <a href="https://www.sealroute.com/examples/fieldtags.pdf" target="_blank" class="link font-bold">https://www.sealroute.com/examples/fieldtags.pdf</a> for more text tag formats. Or specify the exact pixel coordinates of the document fields using `fields` param.<br><b>Related Guides</b><br><a href="https://www.sealroute.com/guides/use-embedded-text-field-tags-in-the-pdf-to-create-a-fillable-form" class="link">Use embedded text field tags to create a fillable form</a>
 
 
 ```php
-$docuseal = new \Docuseal\Api('API_KEY', 'https://api.docuseal.com');
+$docuseal = new \Docuseal\Api('API_KEY', 'https://api.sealroute.com');
 
 $docuseal->createSubmissionFromPdf([
   'name' => 'Test Submission Document',
@@ -1191,10 +1191,10 @@ $docuseal->createSubmissionFromPdf([
 
 ### Create a submission from DOCX
 
-The API endpoint provides functionality to create a one-off submission request from a DOCX file with dynamic content variables. Use <code>[[variable_name]]</code> text tags to define dynamic content variables in the document. See <a href="https://www.docuseal.com/examples/demo_template.docx" target="_blank" class="link font-bold">https://www.docuseal.com/examples/demo_template.docx</a> for the specific text variable syntax, including dynamic content tables and list. You can also use the <code>{{signature}}</code> field syntax to define fillable fields, as in a PDF.<br><b>Related Guides</b><br><a href="https://www.docuseal.com/guides/use-dynamic-content-variables-in-docx-to-create-personalized-documents" class="link">Use dynamic content variables in DOCX to create personalized documents</a>
+The API endpoint provides functionality to create a one-off submission request from a DOCX file with dynamic content variables. Use <code>[[variable_name]]</code> text tags to define dynamic content variables in the document. See <a href="https://www.sealroute.com/examples/demo_template.docx" target="_blank" class="link font-bold">https://www.sealroute.com/examples/demo_template.docx</a> for the specific text variable syntax, including dynamic content tables and list. You can also use the <code>{{signature}}</code> field syntax to define fillable fields, as in a PDF.<br><b>Related Guides</b><br><a href="https://www.sealroute.com/guides/use-dynamic-content-variables-in-docx-to-create-personalized-documents" class="link">Use dynamic content variables in DOCX to create personalized documents</a>
 
 ```php
-$docuseal = new \Docuseal\Api('API_KEY', 'https://api.docuseal.com');
+$docuseal = new \Docuseal\Api('API_KEY', 'https://api.sealroute.com');
 
 $docuseal->createSubmissionFromDocx([
   'name' => 'Test Submission Document',
@@ -1660,10 +1660,10 @@ $docuseal->createSubmissionFromDocx([
 
 ### Create a submission from HTML
 
-This API endpoint allows you to create a one-off submission request document using the provided HTML content, with special field tags rendered as a fillable and signable form.<br><b>Related Guides</b><br><a href="https://www.docuseal.com/guides/create-pdf-document-fillable-form-with-html-api" class="link">Create PDF document fillable form with HTML</a>
+This API endpoint allows you to create a one-off submission request document using the provided HTML content, with special field tags rendered as a fillable and signable form.<br><b>Related Guides</b><br><a href="https://www.sealroute.com/guides/create-pdf-document-fillable-form-with-html-api" class="link">Create PDF document fillable form with HTML</a>
 
 ```php
-$docuseal = new \Docuseal\Api('API_KEY', 'https://api.docuseal.com');
+$docuseal = new \Docuseal\Api('API_KEY', 'https://api.sealroute.com');
 
 $docuseal->createSubmissionFromHtml([
   'name' => 'Test Submission Document',
@@ -2152,7 +2152,7 @@ and typesetting industry</p>
 The API endpoint allows you to archive a submission.
 
 ```php
-$docuseal = new \Docuseal\Api('API_KEY', 'https://api.docuseal.com');
+$docuseal = new \Docuseal\Api('API_KEY', 'https://api.sealroute.com');
 
 $docuseal->archiveSubmission(1001);
 ```
@@ -2189,7 +2189,7 @@ $docuseal->archiveSubmission(1001);
 The API endpoint provides the ability to retrieve a list of submitters.
 
 ```php
-$docuseal = new \Docuseal\Api('API_KEY', 'https://api.docuseal.com');
+$docuseal = new \Docuseal\Api('API_KEY', 'https://api.sealroute.com');
 
 $docuseal->listSubmitters(['limit' => 10]);
 ```
@@ -2302,7 +2302,7 @@ $docuseal->listSubmitters(['limit' => 10]);
 The API endpoint provides functionality to retrieve information about a submitter, along with the submitter documents and field values.
 
 ```php
-$docuseal = new \Docuseal\Api('API_KEY', 'https://api.docuseal.com');
+$docuseal = new \Docuseal\Api('API_KEY', 'https://api.sealroute.com');
 
 $docuseal->getSubmitter(500001);
 ```
@@ -2336,10 +2336,10 @@ $docuseal->getSubmitter(500001);
 
 ### Update a submitter
 
-The API endpoint allows you to update submitter details, pre-fill or update field values and re-send emails.<br><b>Related Guides</b><br><a href="https://www.docuseal.com/guides/pre-fill-pdf-document-form-fields-with-api#automatically_sign_documents_via_api" class="link">Automatically sign documents via API</a>
+The API endpoint allows you to update submitter details, pre-fill or update field values and re-send emails.<br><b>Related Guides</b><br><a href="https://www.sealroute.com/guides/pre-fill-pdf-document-form-fields-with-api#automatically_sign_documents_via_api" class="link">Automatically sign documents via API</a>
 
 ```php
-$docuseal = new \Docuseal\Api('API_KEY', 'https://api.docuseal.com');
+$docuseal = new \Docuseal\Api('API_KEY', 'https://api.sealroute.com');
 
 $docuseal->updateSubmitter(500001, [
   'email' => 'john.doe@example.com',
@@ -2668,7 +2668,7 @@ $docuseal->updateSubmitter(500001, [
 The API endpoint provides the ability to retrieve a list of available document templates.
 
 ```php
-$docuseal = new \Docuseal\Api('API_KEY', 'https://api.docuseal.com');
+$docuseal = new \Docuseal\Api('API_KEY', 'https://api.sealroute.com');
 
 $docuseal->listTemplates(['limit' => 10]);
 ```
@@ -2768,7 +2768,7 @@ $docuseal->listTemplates(['limit' => 10]);
 The API endpoint provides the functionality to retrieve information about a document template.
 
 ```php
-$docuseal = new \Docuseal\Api('API_KEY', 'https://api.docuseal.com');
+$docuseal = new \Docuseal\Api('API_KEY', 'https://api.sealroute.com');
 
 $docuseal->getTemplate(1000001);
 ```
@@ -2802,11 +2802,11 @@ $docuseal->getTemplate(1000001);
 
 ### Create a template from PDF
 
-The API endpoint provides the functionality to create a fillable document template for a PDF file. Use <code>{{Field Name;role=Signer1;type=date}}</code> text tags to define fillable fields in the document. See <a href="https://www.docuseal.com/examples/fieldtags.pdf" target="_blank" class="link font-bold">https://www.docuseal.com/examples/fieldtags.pdf</a> for more text tag formats. Or specify the exact pixel coordinates of the document fields using `fields` param.<br><b>Related Guides</b><br><a href="https://www.docuseal.com/guides/use-embedded-text-field-tags-in-the-pdf-to-create-a-fillable-form" class="link">Use embedded text field tags to create a fillable form</a>
+The API endpoint provides the functionality to create a fillable document template for a PDF file. Use <code>{{Field Name;role=Signer1;type=date}}</code> text tags to define fillable fields in the document. See <a href="https://www.sealroute.com/examples/fieldtags.pdf" target="_blank" class="link font-bold">https://www.sealroute.com/examples/fieldtags.pdf</a> for more text tag formats. Or specify the exact pixel coordinates of the document fields using `fields` param.<br><b>Related Guides</b><br><a href="https://www.sealroute.com/guides/use-embedded-text-field-tags-in-the-pdf-to-create-a-fillable-form" class="link">Use embedded text field tags to create a fillable form</a>
 
 
 ```php
-$docuseal = new \Docuseal\Api('API_KEY', 'https://api.docuseal.com');
+$docuseal = new \Docuseal\Api('API_KEY', 'https://api.sealroute.com');
 
 $docuseal->createTemplateFromPdf([
   'name' => 'Test PDF',
@@ -3169,11 +3169,11 @@ $docuseal->createTemplateFromPdf([
 
 ### Create a template from Word DOCX
 
-The API endpoint provides the functionality to create a fillable document template for existing Microsoft Word document. Use <code>{{Field Name;role=Signer1;type=date}}</code> text tags to define fillable fields in the document. See <a href="https://www.docuseal.com/examples/fieldtags.docx" target="_blank" class="link font-bold" >https://www.docuseal.com/examples/fieldtags.docx</a> for more text tag formats. Or specify the exact pixel coordinates of the document fields using `fields` param.<br><b>Related Guides</b><br><a href="https://www.docuseal.com/guides/use-embedded-text-field-tags-in-the-pdf-to-create-a-fillable-form" class="link">Use embedded text field tags to create a fillable form</a>
+The API endpoint provides the functionality to create a fillable document template for existing Microsoft Word document. Use <code>{{Field Name;role=Signer1;type=date}}</code> text tags to define fillable fields in the document. See <a href="https://www.sealroute.com/examples/fieldtags.docx" target="_blank" class="link font-bold" >https://www.sealroute.com/examples/fieldtags.docx</a> for more text tag formats. Or specify the exact pixel coordinates of the document fields using `fields` param.<br><b>Related Guides</b><br><a href="https://www.sealroute.com/guides/use-embedded-text-field-tags-in-the-pdf-to-create-a-fillable-form" class="link">Use embedded text field tags to create a fillable form</a>
 
 
 ```php
-$docuseal = new \Docuseal\Api('API_KEY', 'https://api.docuseal.com');
+$docuseal = new \Docuseal\Api('API_KEY', 'https://api.sealroute.com');
 
 $docuseal->createTemplateFromDocx([
   'name' => 'Test DOCX',
@@ -3504,10 +3504,10 @@ $docuseal->createTemplateFromDocx([
 
 ### Create a template from HTML
 
-The API endpoint provides the functionality to seamlessly generate a PDF document template by utilizing the provided HTML content while incorporating pre-defined fields.<br><b>Related Guides</b><br><a href="https://www.docuseal.com/guides/create-pdf-document-fillable-form-with-html-api" class="link">Create PDF document fillable form with HTML</a>
+The API endpoint provides the functionality to seamlessly generate a PDF document template by utilizing the provided HTML content while incorporating pre-defined fields.<br><b>Related Guides</b><br><a href="https://www.sealroute.com/guides/create-pdf-document-fillable-form-with-html-api" class="link">Create PDF document fillable form with HTML</a>
 
 ```php
-$docuseal = new \Docuseal\Api('API_KEY', 'https://api.docuseal.com');
+$docuseal = new \Docuseal\Api('API_KEY', 'https://api.sealroute.com');
 
 $docuseal->createTemplateFromHtml([
   'html' => '<p>Lorem Ipsum is simply dummy text of the
@@ -3632,7 +3632,7 @@ and typesetting industry</p>
 The API endpoint allows you to clone existing template into a new template.
 
 ```php
-$docuseal = new \Docuseal\Api('API_KEY', 'https://api.docuseal.com');
+$docuseal = new \Docuseal\Api('API_KEY', 'https://api.sealroute.com');
 
 $docuseal->cloneTemplate(1000001, [
   'name' => 'Cloned Template'
@@ -3696,7 +3696,7 @@ $docuseal->cloneTemplate(1000001, [
 The API endpoint allows you to merge multiple templates with documents and fields into a new combined template.
 
 ```php
-$docuseal = new \Docuseal\Api('API_KEY', 'https://api.docuseal.com');
+$docuseal = new \Docuseal\Api('API_KEY', 'https://api.sealroute.com');
 
 $docuseal->mergeTemplates([
   'template_ids' => [
@@ -3783,7 +3783,7 @@ $docuseal->mergeTemplates([
 The API endpoint provides the functionality to move a document template to a different folder and update the name of the template.
 
 ```php
-$docuseal = new \Docuseal\Api('API_KEY', 'https://api.docuseal.com');
+$docuseal = new \Docuseal\Api('API_KEY', 'https://api.sealroute.com');
 
 $docuseal->updateTemplate(1000001, [
   'name' => 'New Document Name',
@@ -3860,7 +3860,7 @@ $docuseal->updateTemplate(1000001, [
 The API endpoint allows you to add, remove or replace documents in the template with provided PDF/DOCX file or HTML content.
 
 ```php
-$docuseal = new \Docuseal\Api('API_KEY', 'https://api.docuseal.com');
+$docuseal = new \Docuseal\Api('API_KEY', 'https://api.sealroute.com');
 
 $docuseal->updateTemplateDocuments(1000001, [
   'documents' => [
@@ -3958,7 +3958,7 @@ $docuseal->updateTemplateDocuments(1000001, [
 The API endpoint allows you to archive a document template.
 
 ```php
-$docuseal = new \Docuseal\Api('API_KEY', 'https://api.docuseal.com');
+$docuseal = new \Docuseal\Api('API_KEY', 'https://api.sealroute.com');
 
 $docuseal->archiveTemplate(1000001);
 ```

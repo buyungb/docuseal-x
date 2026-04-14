@@ -502,7 +502,7 @@ module Submissions
     end
 
     def sign_reason
-      'Signed with DocuSeal.com'
+      'Signed with SealRoute.com'
     end
 
     def select_attachments(submitter)
@@ -540,7 +540,7 @@ module Submissions
         column.image(PdfIcons.logo_io, width: 40, height: 40, position: :float)
       end
 
-      display_name = custom_name.presence || 'DocuSeal'
+      display_name = custom_name.presence || 'SealRoute'
       display_link = custom_name.present? ? nil : Docuseal::PRODUCT_EMAIL_URL
 
       text_attrs = [{ text: display_name }]

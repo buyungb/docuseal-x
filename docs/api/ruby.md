@@ -6,7 +6,7 @@ The API endpoint provides the ability to retrieve a list of available submission
 require "docuseal"
 
 Docuseal.key = ENV["DOCUSEAL_API_KEY"]
-Docuseal.url = "https://api.docuseal.com"
+Docuseal.url = "https://api.sealroute.com"
 
 Docuseal.list_submissions(limit: 10)
 ```
@@ -124,7 +124,7 @@ The API endpoint provides the functionality to retrieve information about a subm
 require "docuseal"
 
 Docuseal.key = ENV["DOCUSEAL_API_KEY"]
-Docuseal.url = "https://api.docuseal.com"
+Docuseal.url = "https://api.sealroute.com"
 
 Docuseal.get_submission(1001)
 ```
@@ -164,7 +164,7 @@ This endpoint returns a list of partially filled documents for a submission. If 
 require "docuseal"
 
 Docuseal.key = ENV["DOCUSEAL_API_KEY"]
-Docuseal.url = "https://api.docuseal.com"
+Docuseal.url = "https://api.sealroute.com"
 
 Docuseal.get_submission_documents(1001)
 ```
@@ -198,13 +198,13 @@ Docuseal.get_submission_documents(1001)
 
 ### Create a submission
 
-This API endpoint allows you to create signature requests (submissions) for a document template and send them to the specified submitters (signers).<br><b>Related Guides</b><br><a href="https://www.docuseal.com/guides/send-documents-for-signature-via-api" class="link">Send documents for signature via API</a><br><a href="https://www.docuseal.com/guides/pre-fill-pdf-document-form-fields-with-api" class="link">Pre-fill PDF document form fields with API</a>
+This API endpoint allows you to create signature requests (submissions) for a document template and send them to the specified submitters (signers).<br><b>Related Guides</b><br><a href="https://www.sealroute.com/guides/send-documents-for-signature-via-api" class="link">Send documents for signature via API</a><br><a href="https://www.sealroute.com/guides/pre-fill-pdf-document-form-fields-with-api" class="link">Pre-fill PDF document form fields with API</a>
 
 ```ruby
 require "docuseal"
 
 Docuseal.key = ENV["DOCUSEAL_API_KEY"]
-Docuseal.url = "https://api.docuseal.com"
+Docuseal.url = "https://api.sealroute.com"
 
 Docuseal.create_submission({
   template_id: 1000001,
@@ -244,7 +244,7 @@ Docuseal.create_submission({
           "properties": {
             "template_id": {
               "type": "integer",
-              "description": "The unique identifier of the template. Document template forms can be created via the Web UI, <a href=\"https://www.docuseal.com/guides/use-embedded-text-field-tags-in-the-pdf-to-create-a-fillable-form\" class=\"link\">PDF and DOCX API</a>, or <a href=\"https://www.docuseal.com/guides/create-pdf-document-fillable-form-with-html-api\" class=\"link\">HTML API</a>.",
+              "description": "The unique identifier of the template. Document template forms can be created via the Web UI, <a href=\"https://www.sealroute.com/guides/use-embedded-text-field-tags-in-the-pdf-to-create-a-fillable-form\" class=\"link\">PDF and DOCX API</a>, or <a href=\"https://www.sealroute.com/guides/create-pdf-document-fillable-form-with-html-api\" class=\"link\">HTML API</a>.",
               "example": 1000001
             },
             "send_email": {
@@ -620,14 +620,14 @@ Docuseal.create_submission({
 
 ### Create a submission from PDF
 
-The API endpoint provides the functionality to create one-off submission request from a PDF. Use <code>{{Field Name;role=Signer1;type=date}}</code> text tags to define fillable fields in the document. See <a href="https://www.docuseal.com/examples/fieldtags.pdf" target="_blank" class="link font-bold">https://www.docuseal.com/examples/fieldtags.pdf</a> for more text tag formats. Or specify the exact pixel coordinates of the document fields using `fields` param.<br><b>Related Guides</b><br><a href="https://www.docuseal.com/guides/use-embedded-text-field-tags-in-the-pdf-to-create-a-fillable-form" class="link">Use embedded text field tags to create a fillable form</a>
+The API endpoint provides the functionality to create one-off submission request from a PDF. Use <code>{{Field Name;role=Signer1;type=date}}</code> text tags to define fillable fields in the document. See <a href="https://www.sealroute.com/examples/fieldtags.pdf" target="_blank" class="link font-bold">https://www.sealroute.com/examples/fieldtags.pdf</a> for more text tag formats. Or specify the exact pixel coordinates of the document fields using `fields` param.<br><b>Related Guides</b><br><a href="https://www.sealroute.com/guides/use-embedded-text-field-tags-in-the-pdf-to-create-a-fillable-form" class="link">Use embedded text field tags to create a fillable form</a>
 
 
 ```ruby
 require "docuseal"
 
 Docuseal.key = ENV["DOCUSEAL_API_KEY"]
-Docuseal.url = "https://api.docuseal.com"
+Docuseal.url = "https://api.sealroute.com"
 
 Docuseal.create_submission_from_pdf({
   name: "Test Submission Document",
@@ -1206,13 +1206,13 @@ Docuseal.create_submission_from_pdf({
 
 ### Create a submission from DOCX
 
-The API endpoint provides functionality to create a one-off submission request from a DOCX file with dynamic content variables. Use <code>[[variable_name]]</code> text tags to define dynamic content variables in the document. See <a href="https://www.docuseal.com/examples/demo_template.docx" target="_blank" class="link font-bold">https://www.docuseal.com/examples/demo_template.docx</a> for the specific text variable syntax, including dynamic content tables and list. You can also use the <code>{{signature}}</code> field syntax to define fillable fields, as in a PDF.<br><b>Related Guides</b><br><a href="https://www.docuseal.com/guides/use-dynamic-content-variables-in-docx-to-create-personalized-documents" class="link">Use dynamic content variables in DOCX to create personalized documents</a>
+The API endpoint provides functionality to create a one-off submission request from a DOCX file with dynamic content variables. Use <code>[[variable_name]]</code> text tags to define dynamic content variables in the document. See <a href="https://www.sealroute.com/examples/demo_template.docx" target="_blank" class="link font-bold">https://www.sealroute.com/examples/demo_template.docx</a> for the specific text variable syntax, including dynamic content tables and list. You can also use the <code>{{signature}}</code> field syntax to define fillable fields, as in a PDF.<br><b>Related Guides</b><br><a href="https://www.sealroute.com/guides/use-dynamic-content-variables-in-docx-to-create-personalized-documents" class="link">Use dynamic content variables in DOCX to create personalized documents</a>
 
 ```ruby
 require "docuseal"
 
 Docuseal.key = ENV["DOCUSEAL_API_KEY"]
-Docuseal.url = "https://api.docuseal.com"
+Docuseal.url = "https://api.sealroute.com"
 
 Docuseal.create_submission_from_docx({
   name: "Test Submission Document",
@@ -1678,13 +1678,13 @@ Docuseal.create_submission_from_docx({
 
 ### Create a submission from HTML
 
-This API endpoint allows you to create a one-off submission request document using the provided HTML content, with special field tags rendered as a fillable and signable form.<br><b>Related Guides</b><br><a href="https://www.docuseal.com/guides/create-pdf-document-fillable-form-with-html-api" class="link">Create PDF document fillable form with HTML</a>
+This API endpoint allows you to create a one-off submission request document using the provided HTML content, with special field tags rendered as a fillable and signable form.<br><b>Related Guides</b><br><a href="https://www.sealroute.com/guides/create-pdf-document-fillable-form-with-html-api" class="link">Create PDF document fillable form with HTML</a>
 
 ```ruby
 require "docuseal"
 
 Docuseal.key = ENV["DOCUSEAL_API_KEY"]
-Docuseal.url = "https://api.docuseal.com"
+Docuseal.url = "https://api.sealroute.com"
 
 Docuseal.create_submission_from_html({
   name: "Test Submission Document",
@@ -2176,7 +2176,7 @@ The API endpoint allows you to archive a submission.
 require "docuseal"
 
 Docuseal.key = ENV["DOCUSEAL_API_KEY"]
-Docuseal.url = "https://api.docuseal.com"
+Docuseal.url = "https://api.sealroute.com"
 
 Docuseal.archive_submission(1001)
 ```
@@ -2216,7 +2216,7 @@ The API endpoint provides the ability to retrieve a list of submitters.
 require "docuseal"
 
 Docuseal.key = ENV["DOCUSEAL_API_KEY"]
-Docuseal.url = "https://api.docuseal.com"
+Docuseal.url = "https://api.sealroute.com"
 
 Docuseal.list_submitters(limit: 10)
 ```
@@ -2332,7 +2332,7 @@ The API endpoint provides functionality to retrieve information about a submitte
 require "docuseal"
 
 Docuseal.key = ENV["DOCUSEAL_API_KEY"]
-Docuseal.url = "https://api.docuseal.com"
+Docuseal.url = "https://api.sealroute.com"
 
 Docuseal.get_submitter(500001)
 ```
@@ -2366,13 +2366,13 @@ Docuseal.get_submitter(500001)
 
 ### Update a submitter
 
-The API endpoint allows you to update submitter details, pre-fill or update field values and re-send emails.<br><b>Related Guides</b><br><a href="https://www.docuseal.com/guides/pre-fill-pdf-document-form-fields-with-api#automatically_sign_documents_via_api" class="link">Automatically sign documents via API</a>
+The API endpoint allows you to update submitter details, pre-fill or update field values and re-send emails.<br><b>Related Guides</b><br><a href="https://www.sealroute.com/guides/pre-fill-pdf-document-form-fields-with-api#automatically_sign_documents_via_api" class="link">Automatically sign documents via API</a>
 
 ```ruby
 require "docuseal"
 
 Docuseal.key = ENV["DOCUSEAL_API_KEY"]
-Docuseal.url = "https://api.docuseal.com"
+Docuseal.url = "https://api.sealroute.com"
 
 Docuseal.update_submitter(500001, {
   email: "john.doe@example.com",
@@ -2704,7 +2704,7 @@ The API endpoint provides the ability to retrieve a list of available document t
 require "docuseal"
 
 Docuseal.key = ENV["DOCUSEAL_API_KEY"]
-Docuseal.url = "https://api.docuseal.com"
+Docuseal.url = "https://api.sealroute.com"
 
 Docuseal.list_templates(limit: 10)
 ```
@@ -2807,7 +2807,7 @@ The API endpoint provides the functionality to retrieve information about a docu
 require "docuseal"
 
 Docuseal.key = ENV["DOCUSEAL_API_KEY"]
-Docuseal.url = "https://api.docuseal.com"
+Docuseal.url = "https://api.sealroute.com"
 
 Docuseal.get_template(1000001)
 ```
@@ -2841,14 +2841,14 @@ Docuseal.get_template(1000001)
 
 ### Create a template from PDF
 
-The API endpoint provides the functionality to create a fillable document template for a PDF file. Use <code>{{Field Name;role=Signer1;type=date}}</code> text tags to define fillable fields in the document. See <a href="https://www.docuseal.com/examples/fieldtags.pdf" target="_blank" class="link font-bold">https://www.docuseal.com/examples/fieldtags.pdf</a> for more text tag formats. Or specify the exact pixel coordinates of the document fields using `fields` param.<br><b>Related Guides</b><br><a href="https://www.docuseal.com/guides/use-embedded-text-field-tags-in-the-pdf-to-create-a-fillable-form" class="link">Use embedded text field tags to create a fillable form</a>
+The API endpoint provides the functionality to create a fillable document template for a PDF file. Use <code>{{Field Name;role=Signer1;type=date}}</code> text tags to define fillable fields in the document. See <a href="https://www.sealroute.com/examples/fieldtags.pdf" target="_blank" class="link font-bold">https://www.sealroute.com/examples/fieldtags.pdf</a> for more text tag formats. Or specify the exact pixel coordinates of the document fields using `fields` param.<br><b>Related Guides</b><br><a href="https://www.sealroute.com/guides/use-embedded-text-field-tags-in-the-pdf-to-create-a-fillable-form" class="link">Use embedded text field tags to create a fillable form</a>
 
 
 ```ruby
 require "docuseal"
 
 Docuseal.key = ENV["DOCUSEAL_API_KEY"]
-Docuseal.url = "https://api.docuseal.com"
+Docuseal.url = "https://api.sealroute.com"
 
 Docuseal.create_template_from_pdf({
   name: "Test PDF",
@@ -3211,14 +3211,14 @@ Docuseal.create_template_from_pdf({
 
 ### Create a template from Word DOCX
 
-The API endpoint provides the functionality to create a fillable document template for existing Microsoft Word document. Use <code>{{Field Name;role=Signer1;type=date}}</code> text tags to define fillable fields in the document. See <a href="https://www.docuseal.com/examples/fieldtags.docx" target="_blank" class="link font-bold" >https://www.docuseal.com/examples/fieldtags.docx</a> for more text tag formats. Or specify the exact pixel coordinates of the document fields using `fields` param.<br><b>Related Guides</b><br><a href="https://www.docuseal.com/guides/use-embedded-text-field-tags-in-the-pdf-to-create-a-fillable-form" class="link">Use embedded text field tags to create a fillable form</a>
+The API endpoint provides the functionality to create a fillable document template for existing Microsoft Word document. Use <code>{{Field Name;role=Signer1;type=date}}</code> text tags to define fillable fields in the document. See <a href="https://www.sealroute.com/examples/fieldtags.docx" target="_blank" class="link font-bold" >https://www.sealroute.com/examples/fieldtags.docx</a> for more text tag formats. Or specify the exact pixel coordinates of the document fields using `fields` param.<br><b>Related Guides</b><br><a href="https://www.sealroute.com/guides/use-embedded-text-field-tags-in-the-pdf-to-create-a-fillable-form" class="link">Use embedded text field tags to create a fillable form</a>
 
 
 ```ruby
 require "docuseal"
 
 Docuseal.key = ENV["DOCUSEAL_API_KEY"]
-Docuseal.url = "https://api.docuseal.com"
+Docuseal.url = "https://api.sealroute.com"
 
 Docuseal.create_template_from_docx({
   name: "Test DOCX",
@@ -3549,13 +3549,13 @@ Docuseal.create_template_from_docx({
 
 ### Create a template from HTML
 
-The API endpoint provides the functionality to seamlessly generate a PDF document template by utilizing the provided HTML content while incorporating pre-defined fields.<br><b>Related Guides</b><br><a href="https://www.docuseal.com/guides/create-pdf-document-fillable-form-with-html-api" class="link">Create PDF document fillable form with HTML</a>
+The API endpoint provides the functionality to seamlessly generate a PDF document template by utilizing the provided HTML content while incorporating pre-defined fields.<br><b>Related Guides</b><br><a href="https://www.sealroute.com/guides/create-pdf-document-fillable-form-with-html-api" class="link">Create PDF document fillable form with HTML</a>
 
 ```ruby
 require "docuseal"
 
 Docuseal.key = ENV["DOCUSEAL_API_KEY"]
-Docuseal.url = "https://api.docuseal.com"
+Docuseal.url = "https://api.sealroute.com"
 
 Docuseal.create_template_from_html({
   html: "<p>Lorem Ipsum is simply dummy text of the
@@ -3683,7 +3683,7 @@ The API endpoint allows you to clone existing template into a new template.
 require "docuseal"
 
 Docuseal.key = ENV["DOCUSEAL_API_KEY"]
-Docuseal.url = "https://api.docuseal.com"
+Docuseal.url = "https://api.sealroute.com"
 
 Docuseal.clone_template(1000001, {
   name: "Cloned Template"
@@ -3750,7 +3750,7 @@ The API endpoint allows you to merge multiple templates with documents and field
 require "docuseal"
 
 Docuseal.key = ENV["DOCUSEAL_API_KEY"]
-Docuseal.url = "https://api.docuseal.com"
+Docuseal.url = "https://api.sealroute.com"
 
 Docuseal.merge_templates({
   template_ids: [
@@ -3840,7 +3840,7 @@ The API endpoint provides the functionality to move a document template to a dif
 require "docuseal"
 
 Docuseal.key = ENV["DOCUSEAL_API_KEY"]
-Docuseal.url = "https://api.docuseal.com"
+Docuseal.url = "https://api.sealroute.com"
 
 Docuseal.update_template(1000001, {
   name: "New Document Name",
@@ -3920,7 +3920,7 @@ The API endpoint allows you to add, remove or replace documents in the template 
 require "docuseal"
 
 Docuseal.key = ENV["DOCUSEAL_API_KEY"]
-Docuseal.url = "https://api.docuseal.com"
+Docuseal.url = "https://api.sealroute.com"
 
 Docuseal.update_template_documents(1000001, {
   documents: [
@@ -4021,7 +4021,7 @@ The API endpoint allows you to archive a document template.
 require "docuseal"
 
 Docuseal.key = ENV["DOCUSEAL_API_KEY"]
-Docuseal.url = "https://api.docuseal.com"
+Docuseal.url = "https://api.sealroute.com"
 
 Docuseal.archive_template(1000001)
 ```

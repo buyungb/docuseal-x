@@ -4,7 +4,7 @@ This folder contains sample templates demonstrating DOCX variables and text tags
 
 ## Two-PDF Architecture
 
-DocuSeal uses a sophisticated **two-PDF approach** for accurate form field placement while keeping the final document clean:
+SealRoute uses a sophisticated **two-PDF approach** for accurate form field placement while keeping the final document clean:
 
 ### Architecture
 
@@ -192,7 +192,7 @@ Use double curly braces WITH `type=` option for fields that signers will fill ou
 DOCX_BASE64=$(base64 -i simple_contract.docx)
 
 # Create submission
-curl -X POST "https://your-docuseal.com/api/submissions/docx" \
+curl -X POST "https://your-sealroute.com/api/submissions/docx" \
   -H "X-Auth-Token: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{

@@ -4,6 +4,25 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+@layer components {
+  .card-elevated {
+    @apply bg-white border border-base-300 rounded-2xl;
+    box-shadow: 0 1px 3px 0 rgba(20, 28, 43, 0.06), 0 1px 2px -1px rgba(20, 28, 43, 0.06);
+  }
+  .card-elevated:hover {
+    box-shadow: 0 4px 6px -1px rgba(20, 28, 43, 0.08), 0 2px 4px -2px rgba(20, 28, 43, 0.06);
+  }
+  .card-accent {
+    @apply bg-white border rounded-2xl;
+    border-color: hsla(185, 75%, 45%, 0.2);
+    background: linear-gradient(135deg, hsla(185, 75%, 45%, 0.03) 0%, hsla(220, 65%, 28%, 0.03) 100%);
+  }
+  .card-hero {
+    background: linear-gradient(135deg, #193468 0%, #1a6a8f 50%, #1db8b8 100%);
+    @apply text-white rounded-2xl;
+  }
+}
+
 a[href],
 input[type='checkbox'],
 input[type='submit'],

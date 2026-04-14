@@ -323,7 +323,7 @@ module Api
           'areas' => field_areas
         }
         
-        # Add optional attributes from official DocuSeal spec
+        # Add optional attributes from official SealRoute spec
         assigned_field['default_value'] = field[:default_value] if field[:default_value].present?
         assigned_field['default'] = field[:default] if field[:default].present?
         assigned_field['preferences'] = field[:preferences] if field[:preferences].present?
