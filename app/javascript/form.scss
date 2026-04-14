@@ -31,20 +31,53 @@ button[disabled] .enabled, button.btn-disabled .enabled {
   display: none;
 }
 
+.input,
+.select,
+.textarea {
+  background-color: #f3f5f7;
+  border-color: #d1d9e2;
+  color: #141c2b;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: #626e7a;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  border-color: #1db8b8;
+  outline: none;
+  box-shadow: 0 0 0 3px hsla(185, 75%, 45%, 0.15);
+}
+
+.input[disabled],
+.select[disabled],
+.textarea[disabled] {
+  background-color: #e8ecf0;
+  border-color: #d1d9e2;
+  color: #626e7a;
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .input-bordered {
-  @apply border-base-content/20;
+  border-color: #d1d9e2;
 }
 
 .select-bordered {
-  @apply border-base-content/20;
+  border-color: #d1d9e2;
 }
 
 .textarea-bordered {
-  @apply border-base-content/20;
+  border-color: #d1d9e2;
 }
 
 .base-textarea {
-  @apply textarea textarea-bordered bg-white rounded-3xl;
+  @apply textarea textarea-bordered rounded-3xl;
+  background-color: #f3f5f7;
 }
 
 .btn {
@@ -52,7 +85,8 @@ button[disabled] .enabled, button.btn-disabled .enabled {
 }
 
 .base-input {
-  @apply input input-bordered bg-white;
+  @apply input input-bordered;
+  background-color: #f3f5f7;
 }
 
 .base-button {
@@ -65,10 +99,20 @@ button[disabled] .enabled, button.btn-disabled .enabled {
 
 .base-checkbox {
   @apply checkbox rounded bg-white checkbox-sm;
+  border-color: #d1d9e2;
+}
+
+.base-checkbox:checked {
+  @apply border-accent bg-accent;
 }
 
 .base-radio {
   @apply radio bg-white radio-sm;
+  border-color: #d1d9e2;
+}
+
+.base-radio:checked {
+  @apply border-accent bg-accent;
 }
 
 .font-times {
