@@ -25,6 +25,12 @@ Rails.application.routes.draw do
 
   namespace :api, defaults: { format: :json } do
     resource :user, only: %i[show]
+    resources :users, only: %i[index show create update destroy] do
+      member do
+        get :api_key, action: :show_api_key
+        post :api_key
+      end
+    end
     resources :attachments, only: %i[create]
     resources :submitter_email_clicks, only: %i[create]
     resources :submitter_form_views, only: %i[create]

@@ -2,11 +2,11 @@
 
 module Docuseal
   URL_CACHE = ActiveSupport::Cache::MemoryStore.new
-  PRODUCT_URL = 'https://www.docuseal.com'
+  PRODUCT_URL = 'https://www.sealroute.com'
   PRODUCT_EMAIL_URL = ENV.fetch('PRODUCT_EMAIL_URL', PRODUCT_URL)
   NEWSLETTER_URL = "#{PRODUCT_URL}/newsletters".freeze
   ENQUIRIES_URL = "#{PRODUCT_URL}/enquiries".freeze
-  PRODUCT_NAME = 'DocuSeal'
+  PRODUCT_NAME = 'SealRoute'
   DEFAULT_APP_URL = ENV.fetch('APP_URL', 'http://localhost:3000')
   GITHUB_URL = 'https://github.com/docusealco/docuseal'
   DISCORD_URL = 'https://discord.gg/qygYCDGck9'
