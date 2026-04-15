@@ -50,6 +50,9 @@ Rails.application.routes.draw do
       resources :clone, only: %i[create], controller: 'templates_clone'
       resources :submissions, only: %i[index create]
     end
+    resources :webhooks, only: %i[index show create update destroy] do
+      post :test, on: :member
+    end
     resources :tools, only: %i[] do
       post :merge, on: :collection
       post :verify, on: :collection

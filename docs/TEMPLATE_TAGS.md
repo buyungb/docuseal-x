@@ -47,7 +47,7 @@ Form field tags create interactive fields that signers can fill out. These tags 
 | `initials` | Initials field | `{{BuyerInit;type=initials;role=Buyer}}` |
 | `text` | Single-line text input | `{{CustomerName;type=text;role=Buyer}}` |
 | `date` | Date picker field | `{{SignDate;type=date;role=Buyer}}` |
-| `datenow` | Auto-filled current date | `{{BuyerDate;type=datenow;role=Buyer}}` |
+| `datenow` | Auto-filled current date (readonly) | `{{BuyerDate;type=datenow;role=Buyer}}` |
 | `checkbox` | Checkbox field | `{{AgreeTerms;type=checkbox;role=Buyer}}` |
 | `number` | Numeric input | `{{Quantity;type=number;role=Buyer}}` |
 | `phone` | Phone number input | `{{PhoneNumber;type=phone;role=Buyer}}` |
@@ -426,7 +426,153 @@ Phone: {{Phone;type=phone;role=Signer}}
 
 ---
 
+## Auto-Date (`datenow`) Behavior
+
+The `datenow` field type creates a **readonly date field** that is automatically filled with the current date when the signer completes the form.
+
+### How It Works
+
+1. In the DOCX template: `{{SignDate;type=datenow;role=Buyer}}`
+2. Internally converted to: `type=date`, `readonly=true`, `default_value={{date}}`
+3. When the signer submits, `{{date}}` resolves to the current date in the account's timezone
+4. The date is rendered on the final PDF using the field's format preference
+
+### Date Format
+
+By default, dates use `DD/MM/YYYY` (or `MM/DD/YYYY` for US locales). Override with `format`:
+
+```
+{{SignDate;type=datenow;role=Buyer;format=DD/MM/YYYY}}
+{{SignDate;type=datenow;role=Buyer;format=MMMM DD, YYYY}}
+```
+
+### Important Notes
+
+- `datenow` fields are **not** interactive — signers cannot change the date
+- The date is set at **completion time**, not at document creation time
+- If you need signers to pick a date, use `type=date` instead
+
+---
+
+## DOCX Formatting Inheritance
+
+When using DOCX templates, SealRoute reads paragraph formatting from the document and applies it to the rendered field values. This means the final PDF matches the visual style of your DOCX.
+
+### Automatic Alignment Detection
+
+If a field tag is placed in a **centered** or **right-aligned** paragraph in Word, the field is automatically positioned and aligned accordingly:
+
+```
+                    {{SignDate;type=datenow;role=Buyer}}        ← centered in Word
+                    {{BuyerSign;type=signature;role=Buyer}}     ← centered in Word
+                    [[Nama_Anggota]]                            ← centered in Word
+```
+
+The system reads `<w:jc w:val="center"/>` from the DOCX XML and:
+- **Positions** the field centered on the page content area
+- Sets `preferences.align = "center"` so the rendered value text is also centered
+
+### Automatic Font Detection
+
+The system reads the font family from `<w:rFonts>` in the DOCX XML and maps it:
+
+| DOCX Font | Mapped To |
+|-----------|-----------|
+| Times New Roman | `Times` |
+| Arial | `Helvetica` |
+| Courier New | `Courier` |
+
+Other fonts fall back to the system default (GoNotoKurrent or Helvetica).
+
+### Automatic Font Size Detection
+
+The system reads the font size from `<w:sz>` in the DOCX XML. DOCX stores sizes in half-points (e.g., `sz=24` = 12pt).
+
+**Resolution order** (first match wins):
+
+1. Explicit `font_size=N` attribute in the tag (e.g., `{{Date;type=date;font_size=14}}`)
+2. Run-level `<w:sz>` on the text run containing the tag
+3. Paragraph-level default `<w:pPr><w:rPr><w:sz>`
+4. Document default from `<w:docDefaults>` in `word/styles.xml`
+5. `Normal` style in `word/styles.xml`
+6. System default (11pt, scaled to page size)
+
+This means if your DOCX document uses 12pt font throughout, all field values (dates, text, etc.) will render at 12pt in the final PDF — without needing to specify `font_size` in each tag.
+
+### Explicit Overrides
+
+Tag attributes always override DOCX formatting:
+
+```
+{{SignDate;type=datenow;role=Buyer;align=left;font=Courier;font_size=10}}
+```
+
+This forces left alignment, Courier font, and 10pt size regardless of DOCX paragraph formatting.
+
+---
+
+## Signature Alignment
+
+By default, drawn signatures are aligned to the **left** within their field area. You can control this with the `align` attribute:
+
+```
+{{BuyerSign;type=signature;role=Buyer;align=left}}     ← default
+{{BuyerSign;type=signature;role=Buyer;align=center}}   ← centered
+{{BuyerSign;type=signature;role=Buyer;align=right}}    ← right-aligned
+```
+
+This affects both the signing UI (where the signature image is displayed) and the flattened PDF output.
+
+---
+
 ## API Integration
+
+### Variable Scoping (`[[...]]` vs `submitters[].values`)
+
+There are two ways to pass data, and they serve different purposes:
+
+| Mechanism | Syntax in DOCX | JSON Location | Purpose |
+|-----------|---------------|---------------|---------|
+| `variables` | `[[variable_name]]` | Top-level `variables` or `submitters[].variables` | Text replacement before PDF generation |
+| `values` | `{{FieldName;type=X}}` | `submitters[].values` | Pre-fill interactive form fields |
+
+**`[[...]]`** tags are replaced with content from the **`variables`** object. They become static text in the document.
+
+**`{{...;type=X}}`** tags become interactive form fields. Pre-fill them with **`submitters[].values`** (keyed by field name or UUID).
+
+### Role-Scoped Variables
+
+Variables for `[[...]]` tags can be provided at the top level or nested under each submitter. All are merged into a single map before substitution:
+
+```json
+{
+  "variables": {
+    "contract_number": "C-001",
+    "contract_date": "April 15, 2026"
+  },
+  "submitters": [
+    {
+      "role": "anggota",
+      "email": "member@example.com",
+      "variables": {
+        "Nama_Anggota": "Muhammad",
+        "NRP_Anggota": "1234567890"
+      }
+    },
+    {
+      "role": "Buyer",
+      "email": "buyer@example.com"
+    }
+  ]
+}
+```
+
+In this example:
+- `[[contract_number]]` and `[[contract_date]]` come from top-level `variables`
+- `[[Nama_Anggota]]` and `[[NRP_Anggota]]` come from the `anggota` submitter's `variables`
+- All are merged before substitution (later submitters override duplicate keys)
+
+### Submitter Roles
 
 When submitting documents via API, the submitters' roles must match the roles defined in the template:
 
@@ -450,9 +596,9 @@ When submitting documents via API, the submitters' roles must match the roles de
 
 ---
 
-## How Tag Processing Works (Two-PDF Approach)
+## How Tag Processing Works
 
-When a DOCX template with `{{...}}` tags is submitted, SealRoute uses a sophisticated two-PDF approach:
+When a DOCX template with `{{...}}` tags is submitted via the API, SealRoute processes it as follows:
 
 ### Processing Flow
 
@@ -461,30 +607,35 @@ When a DOCX template with `{{...}}` tags is submitted, SealRoute uses a sophisti
 │                        DOCX SUBMISSION FLOW                              │
 └─────────────────────────────────────────────────────────────────────────┘
 
-1. DOCX with Tags ──────┬──────────────────────────────────────────────────
-                        │
-                        ├──► [PDF 1: Tagged]     ──► Tag Position Detection
-                        │    (Contains {{tags}})     Using Pdfium to find
-                        │                            exact X,Y coordinates
-                        │
-                        └──► [PDF 2: Clean]      ──► Final Document
-                             (Tags Removed)          Form fields placed
-                                                     at detected positions
+1. DOCX with Tags
+   │
+   ├──► [[...]] variables replaced with data from "variables" object
+   │
+   ├──► {{...}} tags made invisible (white text, original text preserved)
+   │
+   ├──► DOCX paragraph formatting extracted (alignment, font family, font size)
+   │
+   ├──► Converted to PDF via Gotenberg (single PDF)
+   │
+   ├──► Pdfium scans the SAME PDF to find {{...}} tag positions
+   │    (white text is invisible to users but readable by Pdfium)
+   │
+   └──► Form fields placed at detected positions with inherited formatting
 ```
 
 ### Step-by-Step Process
 
-1. **Variable Substitution**: `[[...]]` placeholders are replaced with data values
-2. **Tagged PDF Generation**: DOCX (with `{{...}}` tags) is converted to PDF via Gotenberg
-3. **Tag Position Detection**: Pdfium parses the tagged PDF to find exact coordinates of each `{{...}}` tag
-4. **Clean PDF Generation**: Tags are removed from the DOCX, then converted to a clean PDF
-5. **Field Placement**: Form fields are placed on the clean PDF at positions detected from the tagged PDF
+1. **Variable Substitution**: `[[...]]` placeholders replaced with values from `variables`
+2. **DOCX Analysis**: Paragraph alignment (`center`/`right`), font family (`Times New Roman`, etc.), and font size extracted from DOCX XML — including document defaults from `styles.xml`
+3. **Tag Invisibility**: `{{...}}` tags made invisible (white font color) — text preserved for detection
+4. **PDF Conversion**: Single PDF generated via Gotenberg
+5. **Tag Position Detection**: Pdfium extracts tag positions from the same PDF (white text is still searchable)
+6. **Formatting Application**: Detected alignment, font, and font size carried into field preferences
+7. **Field Placement**: Interactive form fields placed at correct positions with matching typography
 
-### Why Two PDFs?
+### Single-PDF Approach
 
-- **Tagged PDF**: Used only for detecting where tags appear in the document
-- **Clean PDF**: The final document users see, with invisible form fields at correct positions
-- **Result**: Users see a professional document with form fields, not visible tag text
+Using the **same PDF** for both display and detection eliminates layout mismatches that could occur from separate conversions. Tags are invisible to users but remain extractable by Pdfium.
 
 ---
 
@@ -507,9 +658,12 @@ When a DOCX template with `{{...}}` tags is submitted, SealRoute uses a sophisti
 ### Field Position Issues
 
 1. **Tags may be hyphenated**: Word processors can split tags across lines
-2. **Use simple fonts**: Complex formatting can interfere with tag detection
+2. **Use standard fonts**: Use Times New Roman, Arial, or Courier New for best results
 3. **Keep tags on single line**: Avoid line breaks within a tag
 4. **Check PDF conversion**: Ensure Gotenberg service is running correctly
+5. **Centered tags**: Tags in centered paragraphs are automatically centered on the page
+6. **Font mismatch**: If the rendered date/text looks different from the document font, add `font=Times` to the tag or ensure the DOCX paragraph uses a recognized font family
+7. **Font size mismatch**: If the rendered text appears too small or too large, add `font_size=12` (or whichever point size matches your document) to the tag. The system auto-detects font size from the DOCX, but only recognizes `<w:sz>` at the run, paragraph, or `docDefaults` level
 
 ---
 
@@ -523,7 +677,7 @@ When a DOCX template with `{{...}}` tags is submitted, SealRoute uses a sophisti
 | `signature` | Drawing pad | Signature image |
 | `initials` | Small drawing pad | Initials image |
 | `date` | Date picker | Date string |
-| `datenow` | Auto-filled | Current date |
+| `datenow` | Auto-filled (readonly) | Current date at signing time |
 | `checkbox` | Checkbox | Boolean |
 | `number` | Number input | Numeric value |
 | `phone` | Phone input | Phone string |
@@ -544,6 +698,13 @@ When a DOCX template with `{{...}}` tags is submitted, SealRoute uses a sophisti
 | `readonly` | `true`/`false` | Field cannot be edited |
 | `default` | Any value | Default field value |
 | `position` | `background`/`foreground` | Stamp layer: `background` = behind content, `foreground` = on top (default) |
+| `align` | `left`/`center`/`right` | Horizontal text alignment for the rendered value |
+| `valign` | `top`/`center`/`bottom` | Vertical alignment within the field area |
+| `font` | `Times`/`Helvetica`/`Courier` | Font family for the rendered value |
+| `font_size` | Integer | Font size in points |
+| `font_type` | `bold`/`italic`/`bold_italic` | Font variant |
+| `color` | Hex color (e.g. `FF0000`) | Text color for the rendered value |
+| `format` | Date/number format string | Format pattern (e.g. `DD/MM/YYYY` for dates) |
 
 ---
 

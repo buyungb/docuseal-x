@@ -76,7 +76,8 @@
         style="min-height: 50%"
       >
         <img
-          class="object-contain mx-auto"
+          class="object-contain"
+          :class="signatureAlignClass"
           :src="signature.url"
         >
       </div>
@@ -101,7 +102,8 @@
     </div>
     <img
       v-else-if="field.type === 'initials' && initials"
-      class="object-contain mx-auto"
+      class="object-contain"
+      :class="signatureAlignClass"
       :src="initials.url"
     >
     <div
@@ -413,6 +415,12 @@ export default {
       } else {
         return this.withSignatureId
       }
+    },
+    signatureAlignClass () {
+      const align = this.field.preferences?.align
+      if (align === 'center') return 'mx-auto'
+      if (align === 'right') return 'ml-auto'
+      return 'mr-auto'
     },
     alignClasses () {
       if (!this.field.preferences) {

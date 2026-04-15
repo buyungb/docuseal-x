@@ -12,6 +12,10 @@ Example:
     python3 test_docx_python.py simple_contract.docx https://your-docuseal.com YOUR_TOKEN
 
 Template Variables (replaced by API):
+    Keys for [[...]] (and {{...}} without type) can be sent as top-level "variables" and/or
+    nested under each submitter as submitters[].variables (merged in order; later submitters
+    override duplicate keys). submitters[].values only pre-fills {{...;type=...}} form fields.
+
     [[contract_number]], [[contract_date]]
     [[company_name]], [[company_address]]
     [[customer_name]], [[customer_company]], [[customer_address]], [[customer_email]]
@@ -156,7 +160,7 @@ def main():
             
             # Signature section
             "prepared_by": "Sales Department",
-            "prepared_date": prepared_date
+            "prepared_date": prepared_date,
         },
         "documents": [{
             "name": docx_file,
@@ -164,6 +168,16 @@ def main():
         }],
         "submitters": [
             {
+                "role": "anggota",
+                "email": "muhammad@aplindo.tech",
+                "name": "Muhammad",
+                "phone": "+6282112517078",
+                # Role-scoped [[...]] keys (merged into substitution map by the API)
+                "variables": {
+                    "Nama_Anggota": "Muhammad",
+                    "NRP_Anggota": "1234567890",
+                },
+            }, {
                 "role": "Buyer",
                 "email": "buyung@aplindo.tech",
                 "name": "John Doe",
@@ -211,6 +225,16 @@ def main():
     json_data = json.dumps(payload).encode('utf-8')
     print()
     print(f"JSON payload size: {len(json_data)} bytes")
+
+    # Print the full payload (base64 file data truncated for readability)
+    print()
+    print("=== FULL PAYLOAD ===")
+    payload_preview = json.loads(json_data)
+    for doc in payload_preview.get("documents", []):
+        file_b64 = doc.get("file", "")
+        doc["file"] = f"{file_b64[:60]}...({len(file_b64)} chars)"
+    print(json.dumps(payload_preview, indent=2, default=str))
+    print("=== END PAYLOAD ===")
     
     # Make request
     print()

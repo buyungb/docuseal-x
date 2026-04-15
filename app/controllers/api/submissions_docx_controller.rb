@@ -16,7 +16,9 @@ module Api
 
       return render json: { error: 'No documents provided' }, status: :unprocessable_entity if documents_data.blank?
 
-      variables = (params[:variables] || {}).to_unsafe_h
+      # [[...]] / {{...}} substitution uses one flat map; merge top-level `variables` with each
+      # submitter's optional `variables` (request order; later submitters override duplicate keys).
+      variables = merge_docx_substitution_variables(params[:variables], params[:submitters])
 
       # Store custom logo/branding if provided via API
       if params[:logo_url].present?
@@ -106,9 +108,15 @@ module Api
       template.save!
 
       # Create attachments from processed documents
-      # For DOCX files, we create TWO PDFs:
-      # 1. PDF with tags - used for detecting tag positions
-      # 2. PDF without tags - the clean final document where form fields are placed
+      # SINGLE-PDF APPROACH:
+      # 1. Make tags invisible in DOCX (white font color, original text preserved)
+      # 2. Convert to PDF - this is the final document
+      # 3. Detect tag positions in THIS SAME PDF using Pdfium
+      #    (Pdfium extracts all text regardless of color, so white tags are still findable)
+      # 4. Place form fields at the detected positions
+      #
+      # Using the SAME PDF for detection and display eliminates any layout mismatch
+      # that could occur from two separate Gotenberg conversions.
       tagged_pdf_data = nil
       
       processed_documents.each do |doc|
@@ -116,32 +124,24 @@ module Api
         if doc[:content_type].include?('wordprocessingml') || doc[:name].to_s.end_with?('.docx')
           original_docx_data = doc[:data]
           
-          # Step 1: Convert DOCX (with tags) to PDF for position detection
-          Rails.logger.info("DOCX Submission: Converting DOCX with tags to PDF for position detection...")
-          tagged_pdf_data = convert_docx_to_pdf(original_docx_data, doc[:name])
+          # Make tags invisible in DOCX (white color) and convert to PDF
+          Rails.logger.info("DOCX Submission: Making tags invisible and converting to PDF...")
+          clean_docx_data = remove_tags_from_docx(original_docx_data)
+          clean_pdf_data = convert_docx_to_pdf(clean_docx_data, doc[:name])
           
-          if tagged_pdf_data.nil?
+          if clean_pdf_data.nil?
             return render json: { 
               error: 'DOCX to PDF conversion not available. Please upload a PDF file instead, or configure Gotenberg service.',
               hint: 'Set GOTENBERG_URL environment variable to enable DOCX conversion (e.g., http://gotenberg:3000)'
             }, status: :unprocessable_entity
           end
           
-          Rails.logger.info("DOCX Submission: Tagged PDF size: #{tagged_pdf_data.bytesize} bytes")
+          Rails.logger.info("DOCX Submission: Clean PDF size: #{clean_pdf_data.bytesize} bytes")
           
-          # Step 2: Remove tags from DOCX and convert to clean PDF
-          Rails.logger.info("DOCX Submission: Removing tags from DOCX and converting to clean PDF...")
-          clean_docx_data = remove_tags_from_docx(original_docx_data)
-          clean_pdf_data = convert_docx_to_pdf(clean_docx_data, doc[:name])
+          # Use the clean PDF for BOTH display AND position detection
+          # White tag text is invisible to users but still extractable by Pdfium
+          tagged_pdf_data = clean_pdf_data
           
-          if clean_pdf_data.nil?
-            Rails.logger.warn("DOCX Submission: Clean PDF conversion failed, using tagged PDF")
-            clean_pdf_data = tagged_pdf_data
-          else
-            Rails.logger.info("DOCX Submission: Clean PDF size: #{clean_pdf_data.bytesize} bytes")
-          end
-          
-          # Use the clean PDF (without tags) as the final document
           doc[:data] = clean_pdf_data
           doc[:name] = doc[:name].to_s.sub(/\.docx$/i, '.pdf')
           doc[:content_type] = 'application/pdf'
@@ -175,12 +175,9 @@ module Api
       template.reload
       Rails.logger.info("DOCX Submission: Template has #{template.documents.count} documents")
 
-      # Field detection strategy (TWO-PDF APPROACH):
-      # 1. Use the TAGGED PDF (tagged_pdf_data) to detect tag positions
-      # 2. The final document (first_doc) is the CLEAN PDF without tags
-      # 3. Place form fields on the clean PDF using positions from tagged PDF
-      #
-      # This avoids complex tag removal - tags are removed at DOCX level before conversion
+      # Field detection: detect tag positions in the SAME PDF that users will see.
+      # Tags are invisible (white) but Pdfium can still extract them, so positions
+      # are guaranteed to match the final document layout exactly.
       
       all_fields = []
       first_doc = template.documents.first
@@ -189,8 +186,8 @@ module Api
         begin
           require_relative '../../../lib/templates/extract_docx_field_positions'
           
-          # NEW APPROACH: Use docx gem to parse DOCX structure + Pdfium to find positions
-          # This correctly handles tables and inline tags by using label-based positioning
+          # PRIMARY: Use docx gem to parse DOCX structure + Pdfium for positions
+          # This handles tables with column filtering for multi-column layouts
           Rails.logger.info("DOCX Submission: Using ExtractDocxFieldPositions (docx gem + Pdfium)...")
           
           positioned_fields = Templates::ExtractDocxFieldPositions.call(
@@ -207,15 +204,49 @@ module Api
               area = field[:areas]&.first
               Rails.logger.info("  #{field[:name]} (#{field[:type]}) -> page=#{area[:page]} pos=(#{area[:x].round(3)}, #{area[:y].round(3)}) size=(#{area[:w].round(3)}x#{area[:h].round(3)})")
             end
-          else
-            # Fallback to old approach if new module finds nothing
-            Rails.logger.warn("DOCX Submission: ExtractDocxFieldPositions returned empty, using fallback")
-            last_page = [get_pdf_page_count(tagged_pdf_data) - 1, 0].max
-            use_pdf_fallback(all_fields, docx_extracted_fields, first_doc, last_page)
           end
-        rescue StandardError => e
-          Rails.logger.warn("DOCX Submission: Field detection failed: #{e.message}")
+        rescue LoadError, StandardError => e
+          Rails.logger.warn("DOCX Submission: ExtractDocxFieldPositions failed: #{e.message}")
           Rails.logger.warn(e.backtrace.first(5).join("\n"))
+        end
+
+        # FALLBACK: If ExtractDocxFieldPositions found nothing (e.g. docx gem can't
+        # parse the file), use ParsePdfTextTags which works directly on the tagged PDF
+        # without needing the docx gem. This handles non-table documents reliably.
+        if all_fields.empty? && tagged_pdf_data.present?
+          begin
+            require_relative '../../../lib/templates/parse_pdf_text_tags'
+            
+            Rails.logger.info("DOCX Submission: Falling back to ParsePdfTextTags (direct PDF tag detection)...")
+            
+            pdf_positioned_fields = Templates::ParsePdfTextTags.call(tagged_pdf_data, first_doc)
+            
+            Rails.logger.info("DOCX Submission: ParsePdfTextTags found #{pdf_positioned_fields.size} fields")
+
+            # ParsePdfTextTags works from PDF only; inject DOCX formatting if available
+            if original_docx_data_for_positioning.present?
+              docx_formatting = extract_docx_field_formatting(original_docx_data_for_positioning)
+              pdf_positioned_fields.each do |field|
+                merge_docx_formatting_into_field(field, docx_formatting)
+              end
+            end
+
+            pdf_positioned_fields.each do |field|
+              all_fields << field
+              area = field[:areas]&.first
+              Rails.logger.info("  #{field[:name]} (#{field[:type]}) -> page=#{area[:page]} pos=(#{area[:x].round(3)}, #{area[:y].round(3)}) size=(#{area[:w].round(3)}x#{area[:h].round(3)})")
+            end
+          rescue StandardError => e
+            Rails.logger.warn("DOCX Submission: ParsePdfTextTags failed: #{e.message}")
+            Rails.logger.warn(e.backtrace.first(5).join("\n"))
+          end
+        end
+        
+        # LAST RESORT: Hardcoded positions if both methods failed
+        if all_fields.empty?
+          Rails.logger.warn("DOCX Submission: Both detection methods failed, using hardcoded fallback positions")
+          last_page = [get_pdf_page_count(tagged_pdf_data) - 1, 0].max
+          use_pdf_fallback(all_fields, docx_extracted_fields, first_doc, last_page)
         end
       end
       
@@ -448,7 +479,160 @@ module Api
     end
 
     private
-    
+
+    # Build the variable hash passed to ProcessDocxVariables. Top-level `variables` is the base;
+    # each element of `submitters` may include its own `variables` object (same keys as in the
+    # DOCX, e.g. [[Nama Anggota]] → "Nama Anggota") so values can live next to the matching role.
+    def merge_docx_substitution_variables(top_level, raw_submitters)
+      base = (top_level || {}).respond_to?(:to_unsafe_h) ? top_level.to_unsafe_h : (top_level || {})
+      base = base.deep_stringify_keys
+
+      Array.wrap(raw_submitters).each do |sub|
+        next if sub.blank?
+
+        h = sub.respond_to?(:to_unsafe_h) ? sub.to_unsafe_h : sub
+        h = h.stringify_keys if h.is_a?(Hash)
+        next unless h.is_a?(Hash)
+
+        nested = h['variables']
+        next if nested.blank?
+
+        nested = nested.respond_to?(:to_unsafe_h) ? nested.to_unsafe_h : nested
+        base.merge!(nested.deep_stringify_keys)
+      end
+
+      base
+    end
+
+    DOCX_FONT_MAP = {
+      'times new roman' => 'Times',
+      'times' => 'Times',
+      'courier new' => 'Courier',
+      'courier' => 'Courier',
+      'arial' => 'Helvetica',
+      'helvetica' => 'Helvetica'
+    }.freeze
+
+    # Extract per-tag formatting (alignment, font) from the DOCX XML.
+    # Returns { "TagName" => { alignment: "center", font: "Times" }, ... }
+    def extract_docx_field_formatting(docx_data)
+      require 'zip'
+      require 'nokogiri'
+
+      formatting = {}
+      return formatting if docx_data.blank?
+
+      tempfile = Tempfile.new(['docx_fmt', '.docx'])
+      tempfile.binmode
+      tempfile.write(docx_data)
+      tempfile.close
+
+      begin
+        Zip::File.open(tempfile.path) do |zip_file|
+          entry = zip_file.find_entry('word/document.xml')
+          return formatting unless entry
+
+          xml = Nokogiri::XML(entry.get_input_stream.read)
+          ns = { 'w' => 'http://schemas.openxmlformats.org/wordprocessingml/2006/main' }
+
+          # Detect document defaults from docDefaults and Normal style
+          doc_default_font = nil
+          doc_default_font_size = nil
+
+          default_rpr = xml.at_xpath('//w:docDefaults/w:rPrDefault/w:rPr', ns)
+          if default_rpr
+            rfonts = default_rpr.at_xpath('w:rFonts', ns)
+            if rfonts
+              raw = (rfonts['w:ascii']) rescue nil
+              doc_default_font = DOCX_FONT_MAP[raw.to_s.downcase] if raw.present?
+            end
+            sz = default_rpr.at_xpath('w:sz', ns)
+            if sz
+              half_points = (sz['w:val'].to_i) rescue 0
+              doc_default_font_size = half_points / 2 if half_points > 0
+            end
+          end
+
+          unless doc_default_font
+            normal_rfonts = xml.at_xpath('//w:style[@w:styleId="Normal"]/w:rPr/w:rFonts', ns)
+            if normal_rfonts
+              raw = (normal_rfonts['w:ascii']) rescue nil
+              doc_default_font = DOCX_FONT_MAP[raw.to_s.downcase] if raw.present?
+            end
+          end
+
+          unless doc_default_font_size
+            normal_sz = xml.at_xpath('//w:style[@w:styleId="Normal"]/w:rPr/w:sz', ns)
+            if normal_sz
+              half_points = (normal_sz['w:val'].to_i) rescue 0
+              doc_default_font_size = half_points / 2 if half_points > 0
+            end
+          end
+
+          Rails.logger.info("extract_docx_field_formatting: document defaults font=#{doc_default_font.inspect} font_size=#{doc_default_font_size.inspect}pt")
+
+          xml.xpath('//w:p', ns).each do |para|
+            full_text = para.xpath('.//w:t', ns).map(&:text).join
+            next unless full_text.include?('{{')
+
+            full_text.scan(/\{\{([^}]*type=[^}]+)\}\}/i).each do |m|
+              parts = m[0].split(';').map(&:strip)
+              tag_name = parts.first
+              next if tag_name.blank?
+
+              jc = para.at_xpath('.//w:pPr/w:jc', ns)
+              alignment = jc['w:val'] if jc
+
+              r_fonts = para.at_xpath('.//w:r/w:rPr/w:rFonts', ns) ||
+                        para.at_xpath('.//w:pPr/w:rPr/w:rFonts', ns)
+              raw_font = (r_fonts['w:ascii'] if r_fonts) rescue nil
+              mapped_font = DOCX_FONT_MAP[raw_font.to_s.downcase] if raw_font.present?
+              mapped_font ||= doc_default_font
+
+              sz = para.at_xpath('.//w:r/w:rPr/w:sz', ns) ||
+                   para.at_xpath('.//w:pPr/w:rPr/w:sz', ns)
+              raw_sz = (sz['w:val'].to_i if sz) rescue nil
+              font_size_pt = raw_sz && raw_sz > 0 ? raw_sz / 2 : doc_default_font_size
+
+              Rails.logger.info("extract_docx_field_formatting: #{tag_name} -> alignment=#{alignment.inspect} font=#{mapped_font.inspect} font_size=#{font_size_pt.inspect}pt (raw_font=#{raw_font.inspect})")
+
+              formatting[tag_name] = { alignment: alignment, font: mapped_font, font_size: font_size_pt }
+            end
+          end
+        end
+      rescue StandardError => e
+        Rails.logger.warn("extract_docx_field_formatting: #{e.message}")
+      ensure
+        tempfile.unlink
+      end
+
+      formatting
+    end
+
+    # Merge DOCX-derived formatting into a field that lacks it (fallback path).
+    def merge_docx_formatting_into_field(field, docx_formatting)
+      info = docx_formatting[field[:name].to_s]
+      return unless info
+
+      prefs = field[:preferences] || {}
+
+      if info[:font].present? && prefs[:font].blank? && prefs['font'].blank?
+        prefs[:font] = info[:font]
+      end
+
+      if info[:alignment].present? && !info[:alignment].to_s.downcase.in?(%w[left both])
+        if prefs[:align].blank? && prefs['align'].blank?
+          prefs[:align] = info[:alignment].to_s.downcase
+        end
+      end
+
+      if info[:font_size].present? && prefs[:font_size].blank? && prefs['font_size'].blank?
+        prefs[:font_size] = info[:font_size]
+      end
+
+      field[:preferences] = prefs if prefs.any?
+    end
+
     # Pre-generate stamp attachments for all stamp fields.
     # This fills stamp fields with the custom stamp image (from stamp_url or logo_url)
     # so signers see it already filled in without needing to upload anything.
@@ -760,8 +944,8 @@ module Api
       end
     end
 
-    # Remove all {{...}} tags from DOCX content
-    # This creates a clean version without visible tags
+    # Make all {{...}} tags invisible in DOCX content (white font color)
+    # This creates a clean version where tags are hidden but layout is preserved
     def remove_tags_from_docx(docx_data)
       require 'zip'
       require 'nokogiri'
@@ -795,11 +979,10 @@ module Api
                 original_size = content.length
                 original_content = content.dup
                 
-                # Preserve table row heights before tag removal
-                # This prevents rows from collapsing when tag text is removed
+                # Preserve table row heights (safety net for consistent layout)
                 content = preserve_table_row_heights(content)
                 
-                # Remove tags from this XML file (replaces with spaces)
+                # Make tags invisible in this XML file (white font color)
                 content, removed = remove_tags_from_document_xml(content)
                 tags_removed += removed
                 
@@ -836,282 +1019,182 @@ module Api
       end
     end
     
-    # Remove {{...}} tags from Word document.xml using multiple strategies
+    # Make {{...}} tags invisible in Word document.xml by setting font color to white.
+    #
+    # IMPORTANT: We do NOT replace the tag text with different characters (e.g. underscores).
+    # Replacing text changes character widths in proportional fonts, which causes the clean
+    # PDF layout to differ from the tagged PDF. This misalignment means form fields detected
+    # from the tagged PDF end up at wrong positions on the clean PDF.
+    #
+    # Instead, we keep the ORIGINAL tag characters and set their font color to white (FFFFFF).
+    # This makes them invisible in the final PDF while preserving identical character widths,
+    # line wrapping, cell heights, and overall layout between the tagged and clean PDFs.
     def remove_tags_from_document_xml(xml_content)
       tags_removed = 0
-      
-      # Ensure we're working with a string with proper encoding
-      result_xml = xml_content.to_s.dup
-      result_xml.force_encoding('UTF-8') if result_xml.respond_to?(:force_encoding)
-      
-      # Count initial tags for logging
-      initial_tags = result_xml.scan(/\{\{[^}]+\}\}/)
-      Rails.logger.info("DOCX TAG REMOVAL: Starting - found #{initial_tags.size} tags in raw XML")
-      initial_tags.first(5).each { |t| Rails.logger.info("DOCX TAG REMOVAL:   - #{t}") }
-      
-      # STRATEGY 1: Direct string replacement on the raw XML
-      # This is the most aggressive approach - replace tags anywhere they appear
-      # The tag pattern matches {{anything_except_closing_braces}}
       tag_pattern = /\{\{[^}]+\}\}/
-      
-      # First, do a simple global replacement to catch obvious tags
-      # Replace with EQUAL-LENGTH UNDERSCORES to preserve the exact same layout
-      # between tagged and clean PDFs. Underscores have similar width to regular
-      # characters (unlike spaces which are narrower), so line wrapping, cell heights,
-      # and column widths stay identical between tagged PDF and clean PDF.
-      before_count = result_xml.scan(tag_pattern).size
-      if before_count > 0
-        result_xml = result_xml.gsub(tag_pattern) { |m| '_' * m.length }
-        tags_removed += before_count
-        Rails.logger.info("DOCX TAG REMOVAL: Strategy 1 replaced #{before_count} tags with equal-length underscores")
-      end
-      
-      # STRATEGY 2: Process w:t elements specifically
-      # This handles cases where tags are within Word text elements
-      wt_tag_count = 0
-      result_xml = result_xml.gsub(%r{(<w:t[^>]*>)(.*?)(</w:t>)}m) do |_match|
-        open_tag = Regexp.last_match(1)
-        text_content = Regexp.last_match(2)
-        close_tag = Regexp.last_match(3)
-        
-        if text_content.include?('{{') && text_content.include?('}}')
-          clean_text = text_content.gsub(tag_pattern) { |m| '_' * m.length }
-          if clean_text != text_content
-            wt_tag_count += 1
-            Rails.logger.debug("DOCX TAG REMOVAL: Cleaned w:t: '#{text_content}' -> '#{clean_text}'")
-          end
-          "#{open_tag}#{clean_text}#{close_tag}"
-        else
-          Regexp.last_match(0)
-        end
-      end
-      tags_removed += wt_tag_count
-      Rails.logger.info("DOCX TAG REMOVAL: Strategy 2 (w:t elements) cleaned #{wt_tag_count} elements") if wt_tag_count > 0
-      
-      # STRATEGY 3: Handle split tags using Nokogiri
-      # Word sometimes splits {{tag}} across multiple <w:t> elements like:
-      # <w:t>{{</w:t><w:t>signature</w:t><w:t>}}</w:t>
-      begin
-        doc = Nokogiri::XML(result_xml)
-        namespaces = { 'w' => 'http://schemas.openxmlformats.org/wordprocessingml/2006/main' }
-        nokogiri_removed = 0
-        
-        doc.xpath('//w:p', namespaces).each do |paragraph|
-          text_nodes = paragraph.xpath('.//w:t', namespaces)
-          next if text_nodes.empty?
-          
-          # Build the full paragraph text
-          text_parts = text_nodes.map { |node| { node: node, text: node.text || '' } }
-          full_text = text_parts.map { |p| p[:text] }.join
-          
-          # Process while there are tags
-          iteration = 0
-          while full_text.match?(tag_pattern) && iteration < 50
-            iteration += 1
-            match_data = full_text.match(tag_pattern)
-            break unless match_data
-            
-            tag_start = match_data.begin(0)
-            tag_end = match_data.end(0)
-            
-            # Remove tag from the appropriate text nodes, replacing with space
-            # to preserve table row heights and layout
-            current_pos = 0
-            first_affected = true
-            text_parts.each do |part|
-              part_start = current_pos
-              part_end = current_pos + part[:text].length
-              
-              if part_end > tag_start && part_start < tag_end
-                remove_start = [tag_start - part_start, 0].max
-                remove_end = [tag_end - part_start, part[:text].length].min
-                
-                # Insert equal-length underscores in the first affected node to preserve layout
-                removed_len = remove_end - remove_start
-                space_insert = first_affected ? ('_' * [removed_len, 1].max) : ''
-                first_affected = false
-                
-                new_text = part[:text][0...remove_start].to_s + space_insert + part[:text][remove_end..].to_s
-                part[:node].content = new_text
-                part[:text] = new_text
-              end
-              
-              current_pos = part_end
-            end
-            
-            nokogiri_removed += 1
-            full_text = text_parts.map { |p| p[:text] }.join
-          end
-        end
-        
-        if nokogiri_removed > 0
-          tags_removed += nokogiri_removed
-          Rails.logger.info("DOCX TAG REMOVAL: Strategy 3 (Nokogiri split tags) removed #{nokogiri_removed} tags")
-          
-          # Get the XML back, preserving declaration
-          result_xml = doc.to_xml
-          
-          # Restore original XML declaration if needed
-          if xml_content.start_with?('<?xml') && !result_xml.start_with?('<?xml')
-            declaration = xml_content[/^<\?xml[^?]*\?>/]
-            result_xml = "#{declaration}\n#{result_xml}" if declaration
-          end
-        end
-        
-      rescue StandardError => e
-        Rails.logger.warn("DOCX TAG REMOVAL: Nokogiri pass failed: #{e.message}")
-      end
-      
-      # STRATEGY 4: Final aggressive cleanup
-      # One more pass to catch anything that might have been missed
-      final_tags = result_xml.scan(tag_pattern)
-      if final_tags.any?
-        Rails.logger.warn("DOCX TAG REMOVAL: Final cleanup needed - #{final_tags.size} tags still present")
-        final_tags.each { |t| Rails.logger.warn("DOCX TAG REMOVAL:   Remaining: #{t}") }
-        
-        result_xml = result_xml.gsub(tag_pattern) { |m| '_' * m.length }
-        tags_removed += final_tags.size
-        Rails.logger.info("DOCX TAG REMOVAL: Final cleanup replaced #{final_tags.size} tags with equal-length underscores")
-      end
-      
-      # Verify complete replacement
-      verify_tags = result_xml.scan(/\{\{[^}]+\}\}/)
-      if verify_tags.any?
-        Rails.logger.error("DOCX TAG REMOVAL: FAILED - #{verify_tags.size} tags still in document!")
-        verify_tags.first(3).each { |t| Rails.logger.error("DOCX TAG REMOVAL:   #{t}") }
-      else
-        Rails.logger.info("DOCX TAG REMOVAL: SUCCESS - All tags replaced with underscores (total: #{tags_removed})")
-      end
-      
-      # Make underscore placeholders invisible by setting font color to white.
-      # This keeps the same character width (preserving layout) but hides the
-      # underscores in the final clean PDF.
-      if tags_removed > 0
-        result_xml = make_underscores_white(result_xml)
-      end
-      
-      [result_xml, tags_removed]
-    end
 
-    # Make underscore placeholder text invisible by setting font color to white.
-    # Underscores preserve character width (so PDF layout matches the tagged PDF),
-    # but we don't want them visible in the final document.
-    #
-    # Handles mixed content like "Buyer Signature: ___________" by splitting
-    # the <w:r> into two runs: one normal (label) and one white (underscores).
-    def make_underscores_white(xml_content)
+      return [xml_content, 0] unless xml_content.include?('{{')
+
       begin
         doc = Nokogiri::XML(xml_content)
-        namespaces = { 'w' => 'http://schemas.openxmlformats.org/wordprocessingml/2006/main' }
-        modified = false
-        
-        # Find all w:r (run) elements containing w:t with underscores
-        doc.xpath('//w:r', namespaces).each do |run|
-          text_node = run.at_xpath('w:t', namespaces)
-          next unless text_node
-          
-          text = text_node.text.to_s
-          next unless text.include?('___')  # At least 3 consecutive underscores
-          
-          # Get existing run properties XML to clone for new runs
-          rpr_node = run.at_xpath('w:rPr', namespaces)
-          rpr_xml = rpr_node ? rpr_node.to_xml : nil
-          
-          # Split text into segments: [normal_text, underscore_run, normal_text, ...]
-          segments = text.split(/(_{3,})/)
-          next if segments.size <= 1  # No split needed (shouldn't happen)
-          
-          # If the entire text is underscores, just add white color to this run
-          if text.match?(/\A_+\z/)
-            rpr = rpr_node || begin
-              new_rpr = Nokogiri::XML::Node.new('w:rPr', doc)
-              run.children.first ? run.children.first.add_previous_sibling(new_rpr) : run.add_child(new_rpr)
-              new_rpr
-            end
-            color = rpr.at_xpath('w:color', namespaces)
-            if color
-              color['w:val'] = 'FFFFFF'
-            else
-              color = Nokogiri::XML::Node.new('w:color', doc)
-              color['w:val'] = 'FFFFFF'
-              rpr.add_child(color)
-            end
-            modified = true
-            next
+        ns = { 'w' => 'http://schemas.openxmlformats.org/wordprocessingml/2006/main' }
+
+        doc.xpath('//w:p', ns).each do |para|
+          # Collect all runs with their text nodes
+          run_infos = []
+          para.xpath('.//w:r', ns).each do |run|
+            t_node = run.at_xpath('w:t', ns)
+            next unless t_node
+            run_infos << { run: run, t_node: t_node, text: t_node.text.to_s }
           end
-          
-          # Mixed content: split into multiple runs
-          # Build new runs to insert after the current run, then remove the current run
-          new_runs = []
-          segments.each do |seg|
-            next if seg.empty?
-            
-            new_run = Nokogiri::XML::Node.new('w:r', doc)
-            
-            # Clone run properties
-            if rpr_xml
-              new_rpr = Nokogiri.XML(rpr_xml).root
-              # Import the node into this document
-              new_rpr = doc.import(new_rpr)
-              new_run.add_child(new_rpr)
-              
-              # If this is an underscore segment, add white color
-              if seg.match?(/\A_+\z/)
-                color = new_rpr.at_xpath('w:color', namespaces)
-                if color
-                  color['w:val'] = 'FFFFFF'
-                else
-                  color = Nokogiri::XML::Node.new('w:color', doc)
-                  color['w:val'] = 'FFFFFF'
-                  new_rpr.add_child(color)
-                end
+
+          next if run_infos.empty?
+
+          full_text = run_infos.map { |r| r[:text] }.join
+          next unless full_text.match?(tag_pattern)
+
+          # Find all tag character ranges in the concatenated paragraph text
+          tag_ranges = []
+          full_text.scan(tag_pattern) { tag_ranges << [$~.begin(0), $~.end(0)] }
+          next if tag_ranges.empty?
+
+          tags_removed += tag_ranges.size
+
+          # For each run, determine overlap with tag ranges and make tag parts white
+          pos = 0
+          runs_to_replace = []
+
+          run_infos.each do |ri|
+            run_start = pos
+            run_end = pos + ri[:text].length
+
+            overlaps = tag_ranges.select { |ts, te| run_end > ts && run_start < te }
+
+            if overlaps.any?
+              # Compute which character indices within this run are inside tags
+              tag_mask = Array.new(ri[:text].length, false)
+              overlaps.each do |ts, te|
+                local_start = [ts - run_start, 0].max
+                local_end = [te - run_start, ri[:text].length].min
+                (local_start...local_end).each { |i| tag_mask[i] = true }
               end
-            elsif seg.match?(/\A_+\z/)
-              # No existing rPr, create one with white color for underscore segments
-              new_rpr = Nokogiri::XML::Node.new('w:rPr', doc)
-              color = Nokogiri::XML::Node.new('w:color', doc)
-              color['w:val'] = 'FFFFFF'
-              new_rpr.add_child(color)
-              new_run.add_child(new_rpr)
+
+              if tag_mask.all?
+                # Entire run is tag text - just set color to white
+                set_run_color_white(ri[:run], doc, ns)
+              elsif tag_mask.none?
+                # No tag text (shouldn't happen due to overlap check)
+              else
+                # Mixed content - split into segments and create separate runs
+                runs_to_replace << { ri: ri, tag_mask: tag_mask }
+              end
             end
-            
-            # Add the text element
-            new_t = Nokogiri::XML::Node.new('w:t', doc)
-            new_t['xml:space'] = 'preserve'
-            new_t.content = seg
-            new_run.add_child(new_t)
-            
-            new_runs << new_run
+
+            pos = run_end
           end
-          
-          # Insert new runs after the current run, then remove the current run
-          insert_point = run
-          new_runs.each do |new_run|
-            insert_point.add_next_sibling(new_run)
-            insert_point = new_run
+
+          # Process mixed-content runs (split into white/normal segments)
+          runs_to_replace.each do |info|
+            ri = info[:ri]
+            mask = info[:tag_mask]
+            text = ri[:text]
+            run = ri[:run]
+
+            segments = split_into_segments(text, mask)
+            next if segments.size <= 1
+
+            rpr_node = run.at_xpath('w:rPr', ns)
+
+            insert_point = run
+            segments.each do |seg|
+              new_run = Nokogiri::XML::Node.new('w:r', doc)
+
+              # Clone run properties
+              if rpr_node
+                new_rpr = rpr_node.dup
+                new_run.add_child(new_rpr)
+                if seg[:is_tag]
+                  ensure_white_color(new_rpr, doc, ns)
+                end
+              elsif seg[:is_tag]
+                new_rpr = Nokogiri::XML::Node.new('w:rPr', doc)
+                ensure_white_color(new_rpr, doc, ns)
+                new_run.add_child(new_rpr)
+              end
+
+              new_t = Nokogiri::XML::Node.new('w:t', doc)
+              new_t['xml:space'] = 'preserve'
+              new_t.content = seg[:text]
+              new_run.add_child(new_t)
+
+              insert_point.add_next_sibling(new_run)
+              insert_point = new_run
+            end
+
+            run.remove
           end
-          run.remove
-          
-          modified = true
         end
-        
-        if modified
-          result = doc.to_xml
-          # Preserve original XML declaration
-          if xml_content.start_with?('<?xml') && !result.start_with?('<?xml')
-            declaration = xml_content[/^<\?xml[^?]*\?>/]
-            result = "#{declaration}\n#{result}" if declaration
-          end
-          Rails.logger.info("DOCX TAG REMOVAL: Made underscore placeholders white (invisible)")
-          return result
+
+        result_xml = doc.to_xml
+
+        if xml_content.start_with?('<?xml') && !result_xml.start_with?('<?xml')
+          declaration = xml_content[/^<\?xml[^?]*\?>/]
+          result_xml = "#{declaration}\n#{result_xml}" if declaration
         end
+
+        Rails.logger.info("DOCX TAG REMOVAL: Made #{tags_removed} tag(s) invisible (white font color, original text preserved for layout)")
+
+        [result_xml, tags_removed]
+
       rescue StandardError => e
-        Rails.logger.warn("DOCX TAG REMOVAL: make_underscores_white failed: #{e.message}")
-        Rails.logger.warn(e.backtrace.first(3).join("\n"))
+        Rails.logger.error("DOCX TAG REMOVAL: Failed: #{e.class}: #{e.message}")
+        Rails.logger.error(e.backtrace.first(3).join("\n"))
+        [xml_content, 0]
       end
-      
-      xml_content
     end
+
+    # Set the font color of a w:r (run) element to white
+    def set_run_color_white(run, doc, ns)
+      rpr = run.at_xpath('w:rPr', ns)
+      unless rpr
+        rpr = Nokogiri::XML::Node.new('w:rPr', doc)
+        run.children.first ? run.children.first.add_previous_sibling(rpr) : run.add_child(rpr)
+      end
+      ensure_white_color(rpr, doc, ns)
+    end
+
+    # Ensure a w:rPr element has white font color
+    def ensure_white_color(rpr, doc, ns)
+      color = rpr.at_xpath('w:color', ns)
+      if color
+        color['w:val'] = 'FFFFFF'
+      else
+        color = Nokogiri::XML::Node.new('w:color', doc)
+        color['w:val'] = 'FFFFFF'
+        rpr.add_child(color)
+      end
+    end
+
+    # Split text into segments based on a boolean mask (tag vs non-tag)
+    def split_into_segments(text, tag_mask)
+      segments = []
+      return segments if text.empty?
+
+      current_is_tag = tag_mask[0]
+      seg_start = 0
+
+      (1..text.length).each do |i|
+        is_tag = i < text.length ? tag_mask[i] : !current_is_tag
+        if is_tag != current_is_tag || i == text.length
+          segments << { text: text[seg_start...i], is_tag: current_is_tag }
+          seg_start = i
+          current_is_tag = is_tag
+        end
+      end
+
+      segments
+    end
+
 
     # Preserve table row heights for rows that contain {{...}} tags
     # This prevents rows from collapsing when tag text is replaced with spaces

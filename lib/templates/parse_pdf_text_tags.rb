@@ -205,21 +205,67 @@ module Templates
         s_pos = chars_with_positions[start_ci]
         e_pos = chars_with_positions[end_ci]
         
-        # Position = exactly where {{ appears in the tagged PDF
+        # Position = where {{ appears in the PDF
         tag_x = s_pos[:x]
         tag_y = s_pos[:y]
         tag_h = s_pos[:h] || 0.015
         
         Rails.logger.info("ParsePdfTextTags: '#{field_name}' found at char[#{start_ci}..#{end_ci}] raw_pos=(#{tag_x.round(4)}, #{tag_y.round(4)})")
         
+        # POSITION VALIDATION: Pdfium can misreport positions for white/invisible text
+        # or when fonts are substituted (e.g., macOS fonts unavailable on Linux).
+        # Detect the page content bounds and validate the tag position.
+        content_left = chars_with_positions.map { |c| c[:x] }.min || 0.0
+        content_right = chars_with_positions.map { |c| c[:endx] || (c[:x] + (c[:w] || 0.01)) }.max || 1.0
+        content_width = content_right - content_left
+
+        # Check if the tag characters are consistently positioned (not scattered).
+        # If the majority of tag characters agree on an x position that is offset
+        # from the left margin, it's likely a centered/right-aligned paragraph and
+        # we should trust Pdfium's coordinates.
+        tag_chars = chars_with_positions[start_ci..end_ci]
+        tag_position_is_consistent = false
+        best_y_group = nil
+
+        if tag_chars && tag_chars.size > 5
+          y_groups = tag_chars.group_by { |c| (c[:y] * 100).round }
+          best_y_group = y_groups.max_by { |_, chars| chars.size }
+          if best_y_group
+            representative_chars = best_y_group[1]
+            cluster_x = representative_chars.map { |c| c[:x] }.min
+            cluster_x_max = representative_chars.map { |c| c[:x] }.max
+            tag_position_is_consistent = (cluster_x_max - cluster_x) < 0.30
+          end
+        end
+
+        if tag_x > content_left + (content_width * 0.12) && !tag_position_is_consistent
+          Rails.logger.warn("ParsePdfTextTags: '#{field_name}' x=#{tag_x.round(3)} seems wrong (content starts at #{content_left.round(3)})")
+
+          if tag_chars && tag_chars.size > 5 && best_y_group
+            representative_chars = best_y_group[1]
+            corrected_y = representative_chars.map { |c| c[:y] }.min
+            corrected_x = representative_chars.map { |c| c[:x] }.min
+
+            if corrected_x < content_left + (content_width * 0.12)
+              Rails.logger.info("ParsePdfTextTags: Corrected position to (#{corrected_x.round(3)}, #{corrected_y.round(3)}) from tag char cluster")
+              tag_x = corrected_x
+              tag_y = corrected_y
+            else
+              Rails.logger.info("ParsePdfTextTags: Using content left margin #{content_left.round(3)} for x position")
+              tag_x = content_left
+            end
+          else
+            tag_x = content_left
+          end
+        elsif tag_x > content_left + (content_width * 0.12) && tag_position_is_consistent
+          Rails.logger.info("ParsePdfTextTags: '#{field_name}' x=#{tag_x.round(3)} is offset but tag chars are consistent — likely centered/right-aligned, trusting position")
+        end
+        
         # Width = from {{ to }} if on same line, otherwise line width
         raw_w = (e_pos[:endx] || e_pos[:x] + (e_pos[:w] || 0.01)) - tag_x
         tag_wrapped = (e_pos[:y] - s_pos[:y]).abs > (tag_h * 0.5)
         
         if tag_wrapped || raw_w < 0 || raw_w > 0.6
-          # Tag wraps to multiple lines.
-          # Find the right edge of text on the SAME line AND in the SAME column
-          # (within x range of ±0.3 from tag_x to avoid picking up other column text)
           same_line_same_col = chars_with_positions.select do |n|
             (n[:y] - tag_y).abs < tag_h * 0.5 &&
             (n[:x] - tag_x).abs < 0.3
@@ -231,7 +277,7 @@ module Templates
           tag_w = raw_w
         end
         
-        # Adjust height based on field type (signature needs more vertical space)
+        # For signature/image fields, use wider default if width seems too small
         case field_def[:type]
         when 'signature', 'initials'
           if tag_wrapped
@@ -240,10 +286,25 @@ module Templates
           else
             tag_h = [tag_h * 3, 0.035].max
           end
+          tag_w = [tag_w, 0.20].max
         when 'image', 'stamp'
           tag_h = [tag_h * 3, 0.035].max
         end
         
+        # For consistently-offset tags (centered/right-aligned paragraphs),
+        # re-center the FIELD within the page content area so it doesn't start
+        # where the invisible tag text happened to render.
+        if tag_position_is_consistent && tag_x > content_left + (content_width * 0.12)
+          center_of_content = content_left + content_width / 2.0
+          center_of_tag = tag_x + tag_w / 2.0
+          # If the tag's center is roughly at the page center (±15%), treat as centered
+          if (center_of_tag - center_of_content).abs < content_width * 0.15
+            tag_x = content_left + (content_width - tag_w) / 2.0
+            tag_x = [tag_x, content_left].max
+            Rails.logger.info("ParsePdfTextTags: '#{field_name}' re-centered -> x=#{tag_x.round(3)}")
+          end
+        end
+
         # Clamp to page
         tag_x = [[tag_x, 0.0].max, 0.95].min
         tag_y = [[tag_y, 0.0].max, 0.95].min
@@ -794,19 +855,26 @@ module Templates
       field_type = normalize_field_type(attrs['type'] || DEFAULT_FIELD_TYPE)
       return {} unless FIELD_TYPES.include?(field_type)
 
+      # Convert datenow to date with auto-fill (matches template builder behavior)
+      is_datenow = field_type == 'datenow'
+      if is_datenow
+        field_type = 'date'
+      end
+
       field = {
         name: name.presence || generate_field_name(field_type),
         type: field_type,
         required: parse_boolean(attrs['required'], true),
-        readonly: parse_boolean(attrs['readonly'], false),
+        readonly: is_datenow ? true : parse_boolean(attrs['readonly'], false),
         preferences: {}
       }
 
       # Add role/submitter information
       field[:role] = attrs['role'] if attrs['role'].present?
 
-      # Add default value
-      field[:default_value] = attrs['default'] if attrs['default'].present?
+      # Add default value (datenow uses {{date}} placeholder for current date)
+      field[:default_value] = is_datenow ? '{{date}}' : attrs['default']
+      field.delete(:default_value) if field[:default_value].blank?
 
       # Add description
       field[:description] = attrs['description'] if attrs['description'].present?

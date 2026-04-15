@@ -459,14 +459,26 @@ module Submissions
 
             io = StringIO.new(image.resize([scale * 4, 1].select(&:positive?).min).write_to_buffer('.png'))
 
+            area_x = area['x'] * width
+            area_w = area['w'] * width
+            image_w = image.width * scale
+            image_h = image.height * scale
+            img_align = field.dig('preferences', 'align') || 'left'
+
+            image_x = case img_align
+                       when 'right' then area_x + area_w - image_w
+                       when 'center' then area_x + (area_w / 2) - (image_w / 2)
+                       else area_x
+                       end
+
             canvas.image(
               io,
               at: [
-                (area['x'] * width) + (area['w'] * width / 2) - ((image.width * scale) / 2),
-                height - (area['y'] * height) - (image.height * scale / 2) - (area['h'] * height / 2)
+                image_x,
+                height - (area['y'] * height) - (image_h / 2) - (area['h'] * height / 2)
               ],
-              width: image.width * scale,
-              height: image.height * scale
+              width: image_w,
+              height: image_h
             )
           when 'file', 'payment'
             items = Array.wrap(value).each_with_object([]) do |uuid, acc|
