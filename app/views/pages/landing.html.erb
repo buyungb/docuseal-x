@@ -6,9 +6,18 @@
     <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight mb-4">
       Send. Sign. <span class="text-accent">Seal.</span>
     </h1>
-    <p class="text-lg md:text-xl text-base-content/70 max-w-2xl mx-auto mb-10">
+    <p class="text-lg md:text-xl text-base-content/70 max-w-2xl mx-auto mb-6">
       SealRoute transforms your document workflows. Create PDF forms, send signing requests, and track completions — all from one platform.
     </p>
+    <nav class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm font-medium text-base-content/70 mb-8" aria-label="Product">
+      <%= link_to 'API documentation', api_docs_path, class: 'link link-hover link-primary' %>
+      <span class="hidden sm:inline text-base-content/30">·</span>
+      <%= link_to 'Use cases', use_cases_path, class: 'link link-hover' %>
+      <span class="hidden sm:inline text-base-content/30">·</span>
+      <%= link_to 'Pricing', pricing_path, class: 'link link-hover' %>
+      <span class="hidden sm:inline text-base-content/30">·</span>
+      <a href="#features" class="link link-hover">Features</a>
+    </nav>
     <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
       <%= link_to new_user_session_path, class: 'btn btn-primary btn-lg px-8 shadow-primary-glow' do %>
         <%= svg_icon('login', class: 'w-5 h-5 mr-1') %>
@@ -65,15 +74,19 @@
         <p class="text-base-content/60 text-sm">PDF eSignatures with verification, audit trails, and trusted certificates. Your data stays on your infrastructure.</p>
       </div>
     </div>
-    <div class="card bg-base-100 border border-base-300 shadow-soft hover:shadow-medium transition-all duration-200">
+    <%= link_to api_docs_path, class: 'card bg-base-100 border border-base-300 shadow-soft hover:shadow-medium hover:-translate-y-0.5 transition-all duration-200 group text-left sm:text-center' do %>
       <div class="card-body items-center text-center">
-        <div class="w-14 h-14 rounded-2xl bg-gradient-accent flex items-center justify-center mb-3 shadow-glow">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-accent flex items-center justify-center mb-3 shadow-glow group-hover:shadow-glow">
           <%= svg_icon('api', class: 'w-7 h-7 text-white') %>
         </div>
-        <h3 class="card-title text-lg">API & Webhooks</h3>
+        <h3 class="card-title text-lg group-hover:text-primary">API & Webhooks</h3>
         <p class="text-base-content/60 text-sm">Full REST API for automation. Create templates, send documents, and process signatures programmatically.</p>
+        <span class="mt-1 text-sm text-primary font-medium inline-flex items-center gap-1">
+          View API docs
+          <%= svg_icon('arrow_up_right', class: 'w-4 h-4') %>
+        </span>
       </div>
-    </div>
+    <% end %>
     <div class="card bg-base-100 border border-base-300 shadow-soft hover:shadow-medium transition-all duration-200">
       <div class="card-body items-center text-center">
         <div class="w-14 h-14 rounded-2xl bg-gradient-accent flex items-center justify-center mb-3 shadow-glow">
@@ -312,6 +325,8 @@
 
 <div class="text-center text-base-content/40 text-sm py-6">
   <div class="flex flex-wrap items-center justify-center gap-4 mb-3">
+    <%= link_to 'API docs', api_docs_path, class: 'link link-hover' %>
+    <span>·</span>
     <%= link_to 'Pricing', pricing_path, class: 'link link-hover' %>
     <span>·</span>
     <%= link_to 'Use cases', use_cases_path, class: 'link link-hover' %>
