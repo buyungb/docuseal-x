@@ -81,6 +81,7 @@
     </div>
   <% else %>
     <div class="flex items-center space-x-4">
+      <%= link_to 'API docs', api_docs_path, class: 'hidden md:inline-flex font-medium text-base hover:text-primary' %>
       <%= link_to 'Use cases', use_cases_path, class: 'hidden md:inline-flex font-medium text-base hover:text-primary' %>
       <%= link_to 'Pricing', pricing_path, class: 'hidden md:inline-flex font-medium text-base hover:text-primary' %>
       <% if request.path != new_user_session_path && request.path != setup_index_path %>

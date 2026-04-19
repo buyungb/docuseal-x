@@ -26,10 +26,13 @@ module Submitters
       decline_reason =
         submitter.declined_at? ? submitter.submission_events.find_by(event_type: :decline_form).data['reason'] : nil
 
+      consent_acceptance = build_consent_acceptance(submitter)
+
       submitter.as_json(SERIALIZE_PARAMS)
                .merge('decline_reason' => decline_reason,
                       'role' => submitter_name,
                       'preferences' => submitter.preferences.except('default_values'),
+                      'consent_acceptance' => consent_acceptance,
                       'values' => values,
                       'documents' => documents,
                       'audit_log_url' => submitter.submission.audit_log_url(expires_at:),
@@ -90,6 +93,23 @@ module Submitters
 
         { 'name' => field_name, 'uuid' => field['uuid'], 'value' => value, 'readonly' => field['readonly'] == true }
       end
+    end
+
+    def build_consent_acceptance(submitter)
+      event = submitter.submission_events.find { |e| e.submitter_id == submitter.id && e.event_type == 'accept_consent' }
+      event ||= submitter.submission_events.find_by(event_type: :accept_consent)
+
+      return nil if event.blank?
+
+      data = event.data || {}
+
+      {
+        'accepted_at' => data['accepted_at'].presence || event.event_timestamp.iso8601,
+        'document_url' => data['document_url'],
+        'document_text' => data['document_text'],
+        'ip' => data['ip'],
+        'user_agent' => data['ua']
+      }.compact
     end
 
     def build_submission_status(submission)

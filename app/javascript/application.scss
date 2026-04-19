@@ -243,3 +243,82 @@ button[disabled] .enabled, button.btn-disabled .enabled {
 .font-courier {
   font-family: "Courier New", Consolas, "Liberation Mono", monospace, ui-monospace, SFMono-Regular, Menlo, Monaco;
 }
+
+/* Public API / template-tag docs (Kramdown + Rouge HTML) */
+@layer components {
+  .markdown-body {
+    @apply text-base-content max-w-none text-base leading-relaxed;
+
+    h1 {
+      @apply text-3xl font-bold mt-2 mb-4 pb-3 border-b border-base-300;
+    }
+
+    h2 {
+      @apply text-2xl font-semibold mt-10 mb-3 scroll-mt-24;
+    }
+
+    h3 {
+      @apply text-xl font-semibold mt-8 mb-2 scroll-mt-24;
+    }
+
+    h4 {
+      @apply text-lg font-semibold mt-6 mb-2;
+    }
+
+    p {
+      @apply my-3;
+    }
+
+    a {
+      @apply link link-primary underline-offset-2;
+    }
+
+    ul,
+    ol {
+      @apply my-4 pl-6;
+    }
+
+    li {
+      @apply my-1;
+    }
+
+    blockquote {
+      @apply border-l-4 border-primary pl-4 my-4 text-base-content/80 italic;
+    }
+
+    hr {
+      @apply my-10 border-base-300;
+    }
+
+    pre,
+    .highlight {
+      @apply bg-base-200 rounded-lg p-4 my-4 overflow-x-auto text-sm leading-relaxed;
+    }
+
+    pre code,
+    .highlight code {
+      @apply bg-transparent p-0 text-sm font-mono;
+    }
+
+    :not(pre) > code {
+      @apply bg-base-200 px-1.5 py-0.5 rounded text-sm font-mono;
+    }
+
+    table {
+      @apply w-full border-collapse text-sm my-6 min-w-full;
+    }
+
+    thead {
+      @apply bg-base-200;
+    }
+
+    th,
+    td {
+      @apply border border-base-300 px-3 py-2 align-top text-left;
+    }
+
+    th {
+      @apply font-semibold whitespace-nowrap;
+    }
+  }
+}

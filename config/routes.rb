@@ -11,6 +11,8 @@ Rails.application.routes.draw do
 
   root 'dashboard#index'
 
+  get 'api-docs' => 'pages#api_docs', as: :api_docs
+  get 'docs/template-tags' => 'pages#template_tags_docs', as: :template_tags_docs
   get 'pricing' => 'pages#pricing', as: :pricing
   get 'use-cases' => 'pages#use_cases_index', as: :use_cases
   get 'use-cases/:slug' => 'pages#use_case', as: :use_case
@@ -167,6 +169,7 @@ Rails.application.routes.draw do
     resources :download, only: %i[index], controller: 'submit_form_download'
     resources :decline, only: %i[create], controller: 'submit_form_decline'
     resources :invite, only: %i[create], controller: 'submit_form_invite'
+    resources :consent, only: %i[create], controller: 'submit_form_consent'
     get :completed
   end
 

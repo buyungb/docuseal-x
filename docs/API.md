@@ -1,6 +1,6 @@
 # SealRoute API Documentation
 
-Complete API reference for all REST endpoints.
+Complete API reference for all REST endpoints. **Browse this guide on the web:** [`/api-docs`](/api-docs) (same content as this file; Markdown source lives in `docs/API.md`).
 
 ## Authentication
 

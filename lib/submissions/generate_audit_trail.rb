@@ -248,6 +248,9 @@ module Submissions
           submission.submission_events.find { |e| e.submitter_id == submitter.id && e.complete_form? } ||
           SubmissionEvent.new
 
+        accept_consent_event =
+          submission.submission_events.find { |e| e.submitter_id == submitter.id && e.accept_consent? }
+
         click_email_event =
           submission.submission_events.find { |e| e.submitter_id == submitter.id && e.click_email? }
 
@@ -302,6 +305,7 @@ module Submissions
                 completed_event.data['sid'] && { text: "#{I18n.t('session_id')}: #{completed_event.data['sid']}\n" },
                 completed_event.data['ua'] && { text: "User agent: #{completed_event.data['ua']}\n" },
                 submitter.timezone && { text: "Time zone: #{submitter.timezone.to_s.sub('Kiev', 'Kyiv')}\n" },
+                *build_consent_info_rows(accept_consent_event, timezone, account),
                 "\n"
               ].compact_blank, line_spacing: 1.3, padding: [10, 20, 20, 0]
             )
@@ -503,6 +507,32 @@ module Submissions
 
     def sign_reason
       'Signed with SealRoute.com'
+    end
+
+    def build_consent_info_rows(accept_consent_event, timezone, account)
+      return [] if accept_consent_event.blank?
+
+      data = accept_consent_event.data || {}
+
+      accepted_at = data['accepted_at'].presence || accept_consent_event.event_timestamp
+      accepted_at = Time.zone.parse(accepted_at) if accepted_at.is_a?(String)
+      formatted_time = "#{I18n.l(accepted_at.in_time_zone(timezone), format: :long, locale: account.locale)} " \
+                       "#{TimeUtils.timezone_abbr(timezone, accepted_at)}"
+
+      rows = [
+        { text: "#{I18n.t('consent_accepted', default: 'Consent accepted')}: #{formatted_time}\n",
+          font: [FONT_NAME, { variant: :bold }] }
+      ]
+
+      if data['document_url'].present?
+        rows << { text: "#{I18n.t('consent_document', default: 'Consent document')}: #{data['document_url']}\n" }
+      end
+
+      if data['document_text'].present?
+        rows << { text: "#{I18n.t('consent_text', default: 'Consent text')}: #{data['document_text']}\n" }
+      end
+
+      rows
     end
 
     def select_attachments(submitter)

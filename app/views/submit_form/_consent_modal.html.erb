@@ -1,6 +1,14 @@
-<% consent_accepted = cookies[:consent_accepted] == 'true' %>
-<% unless consent_accepted %>
-<div id="consent_overlay" class="fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center p-4">
+<%
+  consent_cookie_name = "consent_accepted_#{submitter_slug}"
+  already_accepted = cookies[consent_cookie_name] == 'true' ||
+                     @submitter.submission_events.exists?(event_type: 'accept_consent')
+%>
+<% unless already_accepted %>
+<div id="consent_overlay"
+     class="fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center p-4"
+     data-consent-endpoint="<%= submit_form_consent_index_path(submit_form_slug: submitter_slug) %>"
+     data-consent-cookie="<%= consent_cookie_name %>"
+     data-csrf-token="<%= form_authenticity_token %>">
   <div class="bg-base-100 rounded-lg shadow-xl max-w-md w-full p-6">
     <h2 class="text-xl font-bold mb-4"><%= t('consent_required') %></h2>
     <p class="text-base-content/70 mb-4">
@@ -30,12 +38,18 @@
 </div>
 
 <script type="text/javascript" nonce="<%= content_security_policy_nonce %>">
-  var consentCheckbox = document.getElementById('consent_checkbox');
-  var consentAcceptBtn = document.getElementById('consent_accept_btn');
-  var consentOverlay = document.getElementById('consent_overlay');
-  
-  if (consentCheckbox && consentAcceptBtn) {
-    consentCheckbox.addEventListener('change', function(e) {
+  (function() {
+    var consentCheckbox = document.getElementById('consent_checkbox');
+    var consentAcceptBtn = document.getElementById('consent_accept_btn');
+    var consentOverlay = document.getElementById('consent_overlay');
+
+    if (!consentCheckbox || !consentAcceptBtn || !consentOverlay) return;
+
+    var endpoint = consentOverlay.getAttribute('data-consent-endpoint');
+    var csrfToken = consentOverlay.getAttribute('data-csrf-token');
+    var cookieName = consentOverlay.getAttribute('data-consent-cookie') || 'consent_accepted';
+
+    consentCheckbox.addEventListener('change', function() {
       if (this.checked) {
         consentAcceptBtn.classList.remove('btn-disabled');
         consentAcceptBtn.removeAttribute('disabled');
@@ -44,14 +58,41 @@
         consentAcceptBtn.setAttribute('disabled', 'disabled');
       }
     });
-    
-    consentAcceptBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      if (consentCheckbox.checked && consentOverlay) {
-        document.cookie = 'consent_accepted=true; path=/; max-age=86400; SameSite=Lax';
+
+    function dismissOverlay() {
+      document.cookie = cookieName + '=true; path=/; max-age=86400; SameSite=Lax';
+      if (consentOverlay && consentOverlay.parentNode) {
         consentOverlay.parentNode.removeChild(consentOverlay);
       }
+    }
+
+    consentAcceptBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (!consentCheckbox.checked) return;
+
+      consentAcceptBtn.classList.add('btn-disabled');
+      consentAcceptBtn.setAttribute('disabled', 'disabled');
+
+      // Record the consent server-side (IP, UA, timestamp, document URL+text)
+      // before dismissing the overlay so it is captured in the audit trail.
+      fetch(endpoint, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken
+        },
+        body: '{}'
+      }).then(function() {
+        dismissOverlay();
+      }).catch(function() {
+        // Fail-open: if the logging request fails (e.g. offline), still let the
+        // user proceed — the cookie gate remains and we do not want to block
+        // signing on a transient network error.
+        dismissOverlay();
+      });
     });
-  }
+  })();
 </script>
 <% end %>

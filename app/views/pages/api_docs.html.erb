@@ -1,0 +1,6 @@
+<% content_for :html_title, "#{@html_title} | #{Docuseal.product_name}" %>
+<div class="max-w-6xl mx-auto px-4 py-8">
+  <article class="markdown-body bg-base-100 rounded-box border border-base-300 shadow-soft px-5 py-8 sm:px-8 overflow-x-auto">
+    <%= @sanitized_html %>
+  </article>
+</div>

@@ -23,6 +23,8 @@ gem 'google-cloud-storage', require: false
 gem 'hexapdf'
 gem 'image_processing'
 gem 'jwt', require: false
+gem 'kramdown'
+gem 'kramdown-parser-gfm'
 gem 'lograge'
 gem 'mysql2', require: false
 gem 'numo-narray-alt', require: false

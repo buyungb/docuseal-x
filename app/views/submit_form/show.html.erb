@@ -111,6 +111,9 @@
   <% end %>
 <% end %>
 <% if @form_configs[:consent_enabled] && @form_configs[:consent_document_url].present? %>
-  <%= render 'submit_form/consent_modal', consent_url: @form_configs[:consent_document_url], consent_text: @form_configs[:consent_document_text] %>
+  <%= render 'submit_form/consent_modal',
+             consent_url: @form_configs[:consent_document_url],
+             consent_text: @form_configs[:consent_document_text],
+             submitter_slug: @submitter.slug %>
 <% end %>
 <%= render 'scripts/autosize_field' %>

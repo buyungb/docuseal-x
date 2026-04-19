@@ -977,6 +977,7 @@ en: &en
     start_kba_by_html: '<b>KBA started</b> by %{submitter_name}'
     complete_kba_by_html: '<b>KBA completed</b> by %{submitter_name}'
     fail_kba_by_html: '<b>KBA failed</b> by %{submitter_name}'
+    accept_consent_by_html: '<b>Consent accepted</b> by %{submitter_name}'
     api_complete_form_by_html: '<b>Submission completed via API</b> by %{submitter_name}'
   import_list:
     select_worksheet: Select Worksheet
@@ -1956,6 +1957,7 @@ es: &es
     view_form_by_html: '<b>Formulario visto</b> por %{submitter_name}'
     invite_party_by_html: '<b>Invitado</b> %{invited_submitter_name} por %{submitter_name}'
     complete_form_by_html: '<b>Envío completado</b> por %{submitter_name}'
+    accept_consent_by_html: '<b>Consentimiento aceptado</b> por %{submitter_name}'
     api_complete_form_by_html: '<b>Envío completado vía API</b> por %{submitter_name}'
     start_verification_by_html: '<b>Verificación de identidad iniciada</b> por %{submitter_name}'
     complete_verification_by_html: '<b>Verificación de identidad completada</b> por %{submitter_name} con %{provider}'
@@ -2941,6 +2943,7 @@ it: &it
     view_form_by_html: '<b>Modulo visualizzato</b> da %{submitter_name}'
     invite_party_by_html: '<b>Invitato</b> %{invited_submitter_name} da %{submitter_name}'
     complete_form_by_html: '<b>Invio completato</b> da %{submitter_name}'
+    accept_consent_by_html: '<b>Consenso accettato</b> da %{submitter_name}'
     api_complete_form_by_html: '<b>Invio completato tramite API</b> da %{submitter_name}'
     start_verification_by_html: "<b>Verifica dell'identità iniziata</b> da %{submitter_name}"
     complete_verification_by_html: "<b>Verifica dell'identità completata</b> da %{submitter_name} con %{provider}"
@@ -3924,6 +3927,7 @@ fr: &fr
     complete_form_by_html: "<b>Soumission terminée</b> par %{submitter_name}"
     start_verification_by_html: "<b>Vérification d’identité démarrée</b> par %{submitter_name}"
     complete_verification_by_html: "<b>Vérification d’identité terminée</b> par %{submitter_name} avec %{provider}"
+    accept_consent_by_html: "<b>Consentement accepté</b> par %{submitter_name}"
     api_complete_form_by_html: "<b>Soumission terminée via API</b> par %{submitter_name}"
     start_kba_by_html: "<b>KBA démarré</b> par %{submitter_name}"
     complete_kba_by_html: "<b>KBA terminé</b> par %{submitter_name}"
@@ -4908,6 +4912,7 @@ pt: &pt
     complete_form_by_html: '<b>Submissão concluída</b> por %{submitter_name}'
     start_verification_by_html: '<b>Verificação de identidade iniciada</b> por %{submitter_name}'
     complete_verification_by_html: '<b>Verificação de identidade concluída</b> por %{submitter_name} com %{provider}'
+    accept_consent_by_html: '<b>Consentimento aceito</b> por %{submitter_name}'
     api_complete_form_by_html: '<b>Submissão concluída via API</b> por %{submitter_name}'
     start_kba_by_html: '<b>KBA iniciada</b> por %{submitter_name}'
     complete_kba_by_html: '<b>KBA concluída</b> por %{submitter_name}'
@@ -5892,6 +5897,7 @@ de: &de
     complete_form_by_html: '<b>Einreichung abgeschlossen</b> von %{submitter_name}'
     start_verification_by_html: '<b>Identitätsüberprüfung gestartet</b> von %{submitter_name}'
     complete_verification_by_html: '<b>Identitätsüberprüfung abgeschlossen</b> von %{submitter_name} mit %{provider}'
+    accept_consent_by_html: '<b>Einwilligung akzeptiert</b> von %{submitter_name}'
     api_complete_form_by_html: '<b>Einreichung über API abgeschlossen</b> von %{submitter_name}'
     start_kba_by_html: '<b>KBA gestartet</b> von %{submitter_name}'
     complete_kba_by_html: '<b>KBA abgeschlossen</b> von %{submitter_name}'
@@ -7261,6 +7267,7 @@ nl: &nl
     complete_form_by_html: "<b>Inzending voltooid</b> door %{submitter_name}"
     start_verification_by_html: "<b>Identiteitsverificatie gestart</b> door %{submitter_name}"
     complete_verification_by_html: "<b>Identiteitsverificatie voltooid</b> door %{submitter_name} met %{provider}"
+    accept_consent_by_html: "<b>Toestemming geaccepteerd</b> door %{submitter_name}"
     api_complete_form_by_html: "<b>Inzending via API voltooid</b> door %{submitter_name}"
     start_kba_by_html: "<b>KBA gestart</b> door %{submitter_name}"
     complete_kba_by_html: "<b>KBA voltooid</b> door %{submitter_name}"
@@ -8615,6 +8622,7 @@ id:
     start_kba_by_html: '<b>KBA dimulai</b> oleh %{submitter_name}'
     complete_kba_by_html: '<b>KBA diselesaikan</b> oleh %{submitter_name}'
     fail_kba_by_html: '<b>KBA gagal</b> oleh %{submitter_name}'
+    accept_consent_by_html: '<b>Persetujuan diterima</b> oleh %{submitter_name}'
     api_complete_form_by_html: '<b>Pengajuan diselesaikan via API</b> oleh %{submitter_name}'
   import_list:
     select_worksheet: Pilih Lembar Kerja

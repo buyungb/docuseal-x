@@ -4,6 +4,8 @@ class PagesController < ApplicationController
   skip_before_action :authenticate_user!
   skip_authorization_check
 
+  layout :pages_layout
+
   USE_CASES = {
     'developers' => {
       title: 'For Developers',
@@ -135,6 +137,14 @@ class PagesController < ApplicationController
     }
   }.freeze
 
+  def api_docs
+    serve_markdown_doc('API.md', html_title: 'API documentation')
+  end
+
+  def template_tags_docs
+    serve_markdown_doc('TEMPLATE_TAGS.md', html_title: 'Template tags')
+  end
+
   def pricing; end
 
   def use_cases_index
@@ -149,5 +159,23 @@ class PagesController < ApplicationController
     return render 'use_cases/show' if @use_case
 
     raise ActionController::RoutingError, 'Use case not found'
+  end
+
+  private
+
+  def pages_layout
+    action_name.in?(%w[api_docs template_tags_docs]) ? 'docs' : 'application'
+  end
+
+  def serve_markdown_doc(filename, html_title:)
+    mtime = Docs::RenderMarkdown.mtime(filename)
+    raise ActionController::RoutingError, I18n.t('not_found') unless mtime
+
+    return unless stale?(etag: "\"docs-#{filename}-#{mtime.to_i}\"", last_modified: mtime, public: true)
+
+    raw_html = Docs::RenderMarkdown.call(filename)
+    @html_title = html_title
+    @sanitized_html = Docs::HtmlSanitize.call(raw_html).html_safe
+    render :api_docs
   end
 end
