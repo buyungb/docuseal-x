@@ -11,6 +11,10 @@ Rails.application.routes.draw do
 
   root 'dashboard#index'
 
+  get 'pricing' => 'pages#pricing', as: :pricing
+  get 'use-cases' => 'pages#use_cases_index', as: :use_cases
+  get 'use-cases/:slug' => 'pages#use_case', as: :use_case
+
   get 'up' => 'rails/health#show'
   get 'manifest' => 'pwa#manifest'
 

@@ -39,7 +39,7 @@ module Submitters
     def generate_stamp_image(submitter, with_logo: true)
       logo =
         if with_logo
-          Vips::Image.new_from_buffer(load_logo(submitter).read, '')
+          load_logo_image(submitter)
         else
           Vips::Image.new_from_buffer(TRANSPARENT_PIXEL, '').resize(WIDTH)
         end
@@ -108,22 +108,88 @@ module Submitters
 
     def load_logo(submitter)
       account = submitter&.account || submitter&.submission&.account
-      
+
       # Priority: 1. stamp_url (dedicated stamp image), 2. company_logo_url, 3. default
       stamp_url = account&.account_configs&.find_by(key: AccountConfig::STAMP_URL_KEY)&.value
       logo_url = stamp_url.presence || account&.account_configs&.find_by(key: AccountConfig::COMPANY_LOGO_URL_KEY)&.value
 
       if logo_url.present?
-        begin
-          require 'net/http'
-          logo_data = Net::HTTP.get(URI(logo_url))
-          return StringIO.new(logo_data) if logo_data.present?
-        rescue StandardError => e
-          Rails.logger.warn("CreateStampAttachment: Failed to load stamp image from #{logo_url}: #{e.message}")
-        end
+        data = download_image_bytes(logo_url)
+        return StringIO.new(data) if data.present?
       end
 
       PdfIcons.stamp_logo_io
+    end
+
+    # Download an image URL into a byte string. Follows redirects, sends a
+    # User-Agent (required by hosts like upload.wikimedia.org which otherwise
+    # return an HTML error page), and rejects non-image responses so the caller
+    # doesn't hand garbage to libvips.
+    MAX_REDIRECTS = 5
+    USER_AGENT = "SealRoute/#{Docuseal::VERSION rescue '1.0'} (+https://sealroute.com)".freeze
+    IMAGE_MIME_PREFIX = 'image/'
+
+    def download_image_bytes(url, redirects_remaining: MAX_REDIRECTS)
+      require 'net/http'
+
+      uri = URI(url)
+      return nil unless uri.is_a?(URI::HTTP) || uri.is_a?(URI::HTTPS)
+
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      http.open_timeout = 5
+      http.read_timeout = 10
+
+      req = Net::HTTP::Get.new(uri.request_uri)
+      req['User-Agent'] = USER_AGENT
+      req['Accept'] = 'image/*'
+
+      res = http.request(req)
+
+      case res
+      when Net::HTTPRedirection
+        if redirects_remaining <= 0
+          Rails.logger.warn("CreateStampAttachment: too many redirects for #{url}")
+          return nil
+        end
+        next_url = URI.join(uri, res['location']).to_s
+        return download_image_bytes(next_url, redirects_remaining: redirects_remaining - 1)
+      when Net::HTTPSuccess
+        content_type = res.content_type.to_s.downcase
+        unless content_type.start_with?(IMAGE_MIME_PREFIX)
+          Rails.logger.warn("CreateStampAttachment: #{url} returned non-image Content-Type=#{content_type.inspect}; ignoring")
+          return nil
+        end
+        res.body
+      else
+        Rails.logger.warn("CreateStampAttachment: #{url} returned HTTP #{res.code}")
+        nil
+      end
+    rescue StandardError => e
+      Rails.logger.warn("CreateStampAttachment: failed to download #{url}: #{e.message}")
+      nil
+    end
+
+    # Load the configured stamp/logo and decode it with libvips. If the remote
+    # URL serves something that isn't a valid image (HTML error page, redirect
+    # body, corrupted bytes, unsupported format), libvips raises
+    # "VipsForeignLoad: buffer is not in a known format" which used to crash
+    # the signing flow (SubmitFormController#update -> merge_default_values ->
+    # CreateStampAttachment). Fall back to the bundled default stamp instead.
+    def load_logo_image(submitter)
+      io = load_logo(submitter)
+      data = io.respond_to?(:read) ? io.read : io.to_s
+
+      if data.blank?
+        return Vips::Image.new_from_buffer(PdfIcons.stamp_logo_io.read, '')
+      end
+
+      begin
+        Vips::Image.new_from_buffer(data, '')
+      rescue Vips::Error => e
+        Rails.logger.warn("CreateStampAttachment: logo buffer not a valid image (#{e.message}); using default stamp")
+        Vips::Image.new_from_buffer(PdfIcons.stamp_logo_io.read, '')
+      end
     end
   end
 end

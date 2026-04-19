@@ -1,0 +1,44 @@
+<section class="flex flex-col items-center justify-center pt-16 pb-10 text-center px-4">
+  <div class="max-w-3xl mx-auto">
+    <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
+      One platform. <span class="text-accent">Every team's paperwork.</span>
+    </h1>
+    <p class="text-lg text-base-content/70 max-w-2xl mx-auto mb-8">
+      SealRoute fits wherever signatures are the bottleneck. Pick a team to see how it maps to day-to-day work.
+    </p>
+    <%= link_to 'See pricing', pricing_path, class: 'btn btn-outline btn-sm' %>
+  </div>
+</section>
+
+<section class="pb-16">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <% @use_cases.each do |slug, uc| %>
+      <%= link_to use_case_path(slug: slug), class: 'card bg-base-100 border border-base-300 shadow-soft hover:shadow-medium hover:-translate-y-0.5 transition-all duration-200' do %>
+        <div class="card-body">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br <%= uc[:accent] %> flex items-center justify-center mb-2 shadow-glow">
+            <%= svg_icon(uc[:icon], class: 'w-6 h-6 text-white') %>
+          </div>
+          <h2 class="card-title"><%= uc[:title] %></h2>
+          <p class="text-base-content/60 text-sm"><%= uc[:subtitle] %></p>
+          <span class="mt-2 text-sm text-primary font-medium inline-flex items-center gap-1">
+            Explore
+            <%= svg_icon('arrow_up_right', class: 'w-4 h-4') %>
+          </span>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+</section>
+
+<section class="py-12">
+  <div class="card-hero shadow-xl">
+    <div class="card-body items-center text-center py-12 px-8">
+      <h2 class="text-3xl font-bold mb-3">Don't see your use case?</h2>
+      <p class="text-white/80 text-lg max-w-xl mb-6">If it's a PDF or DOCX with signatures on it, SealRoute can handle it. Every feature works the same way across every team.</p>
+      <div class="flex flex-col sm:flex-row items-center gap-3">
+        <%= link_to 'Get started', new_user_session_path, class: 'btn btn-accent btn-lg px-10 shadow-glow' %>
+        <%= link_to 'See pricing', pricing_path, class: 'btn btn-ghost btn-lg text-white' %>
+      </div>
+    </div>
+  </div>
+</section>

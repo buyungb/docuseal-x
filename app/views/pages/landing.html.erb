@@ -23,7 +23,7 @@
   </div>
 </section>
 
-<section class="py-16">
+<section id="features" class="py-16">
   <div class="text-center mb-14">
     <h2 class="text-3xl md:text-4xl font-bold mb-3">Everything You Need</h2>
     <p class="text-base-content/60 text-lg max-w-xl mx-auto">Powerful features to handle your entire document signing workflow.</p>
@@ -116,6 +116,188 @@
   </div>
 </section>
 
+<section id="use-cases" class="py-16">
+  <div class="text-center mb-14">
+    <h2 class="text-3xl md:text-4xl font-bold mb-3">Built for Every Team</h2>
+    <p class="text-base-content/60 text-lg max-w-2xl mx-auto">From product teams embedding signing into their SaaS to back-office teams closing the loop on paperwork — SealRoute fits.</p>
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+    <% PagesController::USE_CASES.each do |slug, uc| %>
+      <%= link_to use_case_path(slug: slug), class: 'card bg-base-100 border border-base-300 shadow-soft hover:shadow-medium hover:-translate-y-0.5 transition-all duration-200' do %>
+        <div class="card-body items-start text-left p-5">
+          <div class="w-11 h-11 rounded-xl bg-gradient-to-br <%= uc[:accent] %> flex items-center justify-center mb-2 shadow-glow">
+            <%= svg_icon(uc[:icon], class: 'w-5 h-5 text-white') %>
+          </div>
+          <h3 class="card-title text-base"><%= uc[:title] %></h3>
+          <p class="text-base-content/60 text-sm"><%= uc[:subtitle] %></p>
+          <span class="mt-2 text-sm text-primary font-medium inline-flex items-center gap-1">
+            Learn more
+            <%= svg_icon('arrow_up_right', class: 'w-4 h-4') %>
+          </span>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+  <div class="text-center mt-10">
+    <%= link_to 'See all use cases', use_cases_path, class: 'btn btn-outline' %>
+  </div>
+</section>
+
+<section id="pricing" class="py-16">
+  <div class="text-center mb-14">
+    <h2 class="text-3xl md:text-4xl font-bold mb-3">Transparent Pricing. No Surprises.</h2>
+    <p class="text-base-content/60 text-lg max-w-2xl mx-auto">One flat price. Perpetual license. Self-hosted. Compare with the alternatives and do the math on year two.</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+    <div class="card bg-base-100 border-2 border-primary shadow-xl relative overflow-hidden">
+      <div class="absolute top-0 right-0 bg-primary text-primary-content text-xs font-bold px-3 py-1 rounded-bl-lg">
+        BEST VALUE
+      </div>
+      <div class="card-body">
+        <h3 class="card-title text-2xl"><%= Docuseal.product_name %></h3>
+        <p class="text-base-content/60 text-sm">Self-hosted, one-time payment</p>
+        <div class="my-4">
+          <span class="text-5xl font-extrabold">$500</span>
+          <span class="text-base-content/60"> / one-time</span>
+        </div>
+        <p class="text-sm text-base-content/70 mb-4">
+          <strong>Perpetual license</strong> · <strong>1 year of updates</strong> included.
+        </p>
+        <ul class="space-y-2 text-sm">
+          <li class="flex items-start gap-2"><%= svg_icon('check', class: 'w-4 h-4 text-success mt-0.5 flex-shrink-0') %> Unlimited documents, signers & templates</li>
+          <li class="flex items-start gap-2"><%= svg_icon('check', class: 'w-4 h-4 text-success mt-0.5 flex-shrink-0') %> Unlimited users on your server</li>
+          <li class="flex items-start gap-2"><%= svg_icon('check', class: 'w-4 h-4 text-success mt-0.5 flex-shrink-0') %> Full REST API & webhooks</li>
+          <li class="flex items-start gap-2"><%= svg_icon('check', class: 'w-4 h-4 text-success mt-0.5 flex-shrink-0') %> DOCX → signed PDF pipeline</li>
+          <li class="flex items-start gap-2"><%= svg_icon('check', class: 'w-4 h-4 text-success mt-0.5 flex-shrink-0') %> Audit trail & PDF signature verification</li>
+          <li class="flex items-start gap-2"><%= svg_icon('check', class: 'w-4 h-4 text-success mt-0.5 flex-shrink-0') %> Your data stays on your infrastructure</li>
+          <li class="flex items-start gap-2"><%= svg_icon('check', class: 'w-4 h-4 text-success mt-0.5 flex-shrink-0') %> White-label branding (logo, stamp, colors)</li>
+        </ul>
+        <div class="card-actions mt-6">
+          <%= link_to 'Get Started', new_user_session_path, class: 'btn btn-primary w-full' %>
+        </div>
+      </div>
+    </div>
+
+    <div class="card bg-base-100 border border-base-300 shadow-soft">
+      <div class="card-body">
+        <h3 class="card-title text-2xl">DocuSign</h3>
+        <p class="text-base-content/60 text-sm">SaaS, per-user subscription</p>
+        <div class="my-4">
+          <span class="text-5xl font-extrabold">$45</span>
+          <span class="text-base-content/60"> / user / mo</span>
+        </div>
+        <p class="text-sm text-base-content/70 mb-4">
+          Standard plan, billed annually. <strong>~$540/user/year</strong>.
+        </p>
+        <ul class="space-y-2 text-sm">
+          <li class="flex items-start gap-2"><%= svg_icon('check', class: 'w-4 h-4 text-base-content/40 mt-0.5 flex-shrink-0') %> Per-envelope limits on most plans</li>
+          <li class="flex items-start gap-2"><%= svg_icon('check', class: 'w-4 h-4 text-base-content/40 mt-0.5 flex-shrink-0') %> API & webhooks from Business Pro ($65/mo)</li>
+          <li class="flex items-start gap-2"><%= svg_icon('x', class: 'w-4 h-4 text-error mt-0.5 flex-shrink-0') %> Self-hosting not available</li>
+          <li class="flex items-start gap-2"><%= svg_icon('x', class: 'w-4 h-4 text-error mt-0.5 flex-shrink-0') %> Data stored on DocuSign cloud</li>
+          <li class="flex items-start gap-2"><%= svg_icon('x', class: 'w-4 h-4 text-error mt-0.5 flex-shrink-0') %> Recurring cost forever</li>
+        </ul>
+        <div class="card-actions mt-6">
+          <a href="https://www.docusign.com/pricing" target="_blank" rel="noopener" class="btn btn-ghost w-full">See DocuSign pricing</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card bg-base-100 border border-base-300 shadow-soft">
+      <div class="card-body">
+        <h3 class="card-title text-2xl">PandaDoc</h3>
+        <p class="text-base-content/60 text-sm">SaaS, per-user subscription</p>
+        <div class="my-4">
+          <span class="text-5xl font-extrabold">$35</span>
+          <span class="text-base-content/60"> / user / mo</span>
+        </div>
+        <p class="text-sm text-base-content/70 mb-4">
+          Essentials plan, billed annually. Business plan is <strong>$65/user/mo</strong>.
+        </p>
+        <ul class="space-y-2 text-sm">
+          <li class="flex items-start gap-2"><%= svg_icon('check', class: 'w-4 h-4 text-base-content/40 mt-0.5 flex-shrink-0') %> 3-user minimum on most plans</li>
+          <li class="flex items-start gap-2"><%= svg_icon('check', class: 'w-4 h-4 text-base-content/40 mt-0.5 flex-shrink-0') %> API access from Business plan</li>
+          <li class="flex items-start gap-2"><%= svg_icon('x', class: 'w-4 h-4 text-error mt-0.5 flex-shrink-0') %> Self-hosting not available</li>
+          <li class="flex items-start gap-2"><%= svg_icon('x', class: 'w-4 h-4 text-error mt-0.5 flex-shrink-0') %> Data stored on PandaDoc cloud</li>
+          <li class="flex items-start gap-2"><%= svg_icon('x', class: 'w-4 h-4 text-error mt-0.5 flex-shrink-0') %> Recurring cost forever</li>
+        </ul>
+        <div class="card-actions mt-6">
+          <a href="https://www.pandadoc.com/pricing/" target="_blank" rel="noopener" class="btn btn-ghost w-full">See PandaDoc pricing</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overflow-x-auto rounded-lg border border-base-300">
+    <table class="table">
+      <thead class="bg-base-200">
+        <tr>
+          <th class="text-base">Feature</th>
+          <th class="text-base text-primary"><%= Docuseal.product_name %></th>
+          <th class="text-base">DocuSign</th>
+          <th class="text-base">PandaDoc</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="font-medium">Pricing model</td>
+          <td class="text-primary font-semibold">$500 one-time</td>
+          <td>$15–$65 / user / mo</td>
+          <td>$19–$65 / user / mo</td>
+        </tr>
+        <tr>
+          <td class="font-medium">5 users, year 1 cost</td>
+          <td class="text-primary font-semibold">$500</td>
+          <td>~$2,700</td>
+          <td>~$2,100</td>
+        </tr>
+        <tr>
+          <td class="font-medium">5 users, 3-year cost</td>
+          <td class="text-primary font-semibold">$500 (+ optional renewals)</td>
+          <td>~$8,100</td>
+          <td>~$6,300</td>
+        </tr>
+        <tr>
+          <td class="font-medium">Self-hosted</td>
+          <td><%= svg_icon('check', class: 'w-5 h-5 text-success') %></td>
+          <td><%= svg_icon('x', class: 'w-5 h-5 text-error') %></td>
+          <td><%= svg_icon('x', class: 'w-5 h-5 text-error') %></td>
+        </tr>
+        <tr>
+          <td class="font-medium">Unlimited documents</td>
+          <td><%= svg_icon('check', class: 'w-5 h-5 text-success') %></td>
+          <td class="text-base-content/60 text-sm">Envelope limits</td>
+          <td class="text-base-content/60 text-sm">Varies</td>
+        </tr>
+        <tr>
+          <td class="font-medium">Full API on base plan</td>
+          <td><%= svg_icon('check', class: 'w-5 h-5 text-success') %></td>
+          <td class="text-base-content/60 text-sm">Business Pro+</td>
+          <td class="text-base-content/60 text-sm">Business+</td>
+        </tr>
+        <tr>
+          <td class="font-medium">Data ownership</td>
+          <td class="text-sm">Your infrastructure</td>
+          <td class="text-sm">Vendor cloud</td>
+          <td class="text-sm">Vendor cloud</td>
+        </tr>
+        <tr>
+          <td class="font-medium">White-label branding</td>
+          <td><%= svg_icon('check', class: 'w-5 h-5 text-success') %></td>
+          <td class="text-base-content/60 text-sm">Enterprise</td>
+          <td class="text-base-content/60 text-sm">Enterprise</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="text-xs text-base-content/50 mt-4 text-center">
+    DocuSign and PandaDoc pricing figures are indicative from public pricing pages and may change. Compare at
+    <a href="https://www.docusign.com/pricing" target="_blank" rel="noopener" class="underline">docusign.com/pricing</a> and
+    <a href="https://www.pandadoc.com/pricing/" target="_blank" rel="noopener" class="underline">pandadoc.com/pricing</a>.
+  </p>
+</section>
+
 <section class="py-16">
   <div class="card-hero shadow-xl">
     <div class="card-body items-center text-center py-14 px-8">
@@ -129,5 +311,12 @@
 </section>
 
 <div class="text-center text-base-content/40 text-sm py-6">
+  <div class="flex flex-wrap items-center justify-center gap-4 mb-3">
+    <%= link_to 'Pricing', pricing_path, class: 'link link-hover' %>
+    <span>·</span>
+    <%= link_to 'Use cases', use_cases_path, class: 'link link-hover' %>
+    <span>·</span>
+    <a href="#features" class="link link-hover">Features</a>
+  </div>
   &copy; <%= Date.current.year %> <%= Docuseal.product_name %>. All rights reserved.
 </div>

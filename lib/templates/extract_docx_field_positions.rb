@@ -12,6 +12,11 @@ module Templates
   module ExtractDocxFieldPositions
     TAG_REGEX = /\{\{([^}]+)\}\}/
 
+    # Inset (in normalized page coords, 0-1) applied to tags inside table cells
+    # so the rendered field doesn't sit on top of the cell border line. ~4pt on
+    # letter-size paper, matching Word's default cell margin of 108 twips.
+    TABLE_CELL_PADDING = 0.007
+
     module_function
 
     # Extract form field tags from DOCX with structural context,
@@ -196,15 +201,32 @@ module Templates
       equal
     end
 
+    # Normalize DOCX <w:jc w:val="..."> values to a set compatible with HexaPDF
+    # (:left, :center, :right, :justify). Office Open XML also allows "start",
+    # "end", "distribute", etc., which would otherwise crash HexaPDF's
+    # TextLayouter with "ArgumentError: :start is not a valid text_align value".
+    DOCX_ALIGNMENT_MAP = {
+      'left' => 'left',
+      'start' => 'left',
+      'center' => 'center',
+      'centre' => 'center',
+      'right' => 'right',
+      'end' => 'right',
+      'both' => 'justify',
+      'justify' => 'justify'
+    }.freeze
+
     # Read the <w:jc> alignment from a DOCX paragraph's XML node.
-    # Returns "center", "right", "both", "left", or nil.
+    # Returns "left", "center", "right", "justify", or nil.
     def extract_paragraph_alignment(paragraph)
       node = paragraph.respond_to?(:node) ? paragraph.node : nil
       return nil unless node
 
       ns = { 'w' => 'http://schemas.openxmlformats.org/wordprocessingml/2006/main' }
       jc = node.at_xpath('.//w:pPr/w:jc', ns)
-      jc['w:val'] if jc
+      return nil unless jc
+
+      DOCX_ALIGNMENT_MAP[jc['w:val'].to_s.downcase]
     rescue StandardError
       nil
     end
@@ -680,6 +702,36 @@ module Templates
         Rails.logger.info("ExtractDocxFieldPositions: #{tag_info[:name]} #{para_align}-aligned -> x=#{tag_x.round(3)} w=#{tag_w.round(3)}")
       end
 
+      # Add table cell padding so the field doesn't visually sit on top of the
+      # cell borders. Pdfium reports the x of the first `{{` character, which
+      # tends to be flush with the cell's left content edge; rendering a filled
+      # value there makes it overlap the vertical border line. A small inset
+      # (~4pt on letter-size) keeps the field inside the cell padding area.
+      if tag_info[:in_table]
+        cell_pad = TABLE_CELL_PADDING
+        col_left_bound = entries.map { |e| e[:x] }.min || 0.0
+        col_right_bound = entries.map { |e| e[:endx] || (e[:x] + (e[:w] || 0.01)) }.max || 1.0
+
+        case para_align
+        when 'center'
+          # Centered in cell; just shrink width slightly so left/right edges
+          # stay off the borders on narrow columns.
+          max_w = [col_right_bound - col_left_bound - (cell_pad * 2), 0.03].max
+          tag_w = [tag_w, max_w].min
+          tag_x = col_left_bound + ((col_right_bound - col_left_bound) - tag_w) / 2.0
+        when 'right'
+          # Inset from the right border.
+          tag_x = [tag_x - cell_pad, col_left_bound + cell_pad].max
+        else
+          # Default left-aligned: inset from the left border.
+          tag_x += cell_pad
+          max_w = [col_right_bound - tag_x - cell_pad, 0.03].max
+          tag_w = [tag_w, max_w].min
+        end
+
+        Rails.logger.debug("ExtractDocxFieldPositions: #{tag_info[:name]} table-padded -> x=#{tag_x.round(3)} w=#{tag_w.round(3)}")
+      end
+
       {
         page: page_idx,
         x: [[tag_x, 0.0].max, 0.95].min,
@@ -787,8 +839,11 @@ module Templates
       preferences['position'] = tag_info[:position] if tag_info[:position].present?
 
       # Carry DOCX paragraph alignment so the rendered value matches the DOCX layout.
-      if tag_info[:alignment].present? && !tag_info[:alignment].to_s.downcase.in?(%w[left both])
-        preferences['align'] = tag_info[:alignment].to_s.downcase
+      # Only carry explicit non-default alignments (center/right); left/justify are
+      # HexaPDF's default behavior and don't need to be stored.
+      align_value = tag_info[:alignment].to_s.downcase
+      if align_value.present? && align_value.in?(%w[center right])
+        preferences['align'] = align_value
       end
 
       # Carry DOCX font family so the rendered value matches the document's typeface.

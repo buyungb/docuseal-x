@@ -1,0 +1,83 @@
+<% uc = @use_case %>
+
+<section class="pt-12 pb-4">
+  <%= link_to use_cases_path, class: 'text-sm text-base-content/60 hover:text-primary inline-flex items-center gap-1' do %>
+    <%= svg_icon('arrow_left', class: 'w-4 h-4') %>
+    All use cases
+  <% end %>
+</section>
+
+<section class="pt-4 pb-10">
+  <div class="flex flex-col md:flex-row md:items-center gap-6">
+    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br <%= uc[:accent] %> flex items-center justify-center shadow-glow flex-shrink-0">
+      <%= svg_icon(uc[:icon], class: 'w-8 h-8 text-white') %>
+    </div>
+    <div>
+      <p class="text-sm uppercase tracking-wider text-base-content/50 font-semibold mb-1"><%= uc[:title] %></p>
+      <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight mb-2"><%= uc[:hero] %></h1>
+      <p class="text-base-content/70 text-lg max-w-2xl"><%= uc[:intro] %></p>
+    </div>
+  </div>
+</section>
+
+<section class="py-10">
+  <h2 class="text-2xl md:text-3xl font-bold mb-8">Typical workflows</h2>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <% uc[:scenarios].each do |sc| %>
+      <div class="card bg-base-100 border border-base-300 shadow-soft">
+        <div class="card-body">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br <%= uc[:accent] %> flex items-center justify-center flex-shrink-0 mt-0.5">
+              <%= svg_icon('check', class: 'w-4 h-4 text-white') %>
+            </div>
+            <div>
+              <h3 class="card-title text-lg leading-tight"><%= sc[:title] %></h3>
+              <p class="text-base-content/60 text-sm mt-1"><%= sc[:body] %></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</section>
+
+<section class="py-10">
+  <h2 class="text-2xl md:text-3xl font-bold mb-6">Features that matter here</h2>
+  <div class="flex flex-wrap gap-2">
+    <% uc[:features].each do |feat| %>
+      <span class="badge badge-lg bg-base-200 border-base-300 text-base-content gap-2 py-4">
+        <%= svg_icon('check', class: 'w-4 h-4 text-success') %>
+        <%= feat %>
+      </span>
+    <% end %>
+  </div>
+</section>
+
+<section class="py-12">
+  <div class="card-hero shadow-xl">
+    <div class="card-body items-center text-center py-12 px-8">
+      <h2 class="text-3xl font-bold mb-3">Ready to try it for <%= uc[:title].sub(/^For /, '') %>?</h2>
+      <p class="text-white/80 text-lg max-w-xl mb-6">One-time $500 perpetual license. Self-hosted. Unlimited users and documents.</p>
+      <div class="flex flex-col sm:flex-row items-center gap-3">
+        <%= link_to 'Get started', new_user_session_path, class: 'btn btn-accent btn-lg px-10 shadow-glow' %>
+        <%= link_to 'Compare pricing', pricing_path, class: 'btn btn-ghost btn-lg text-white' %>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="py-10">
+  <h2 class="text-2xl font-bold mb-6 text-center">Other teams using SealRoute</h2>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <% PagesController::USE_CASES.reject { |slug, _| slug == @use_case_slug }.first(4).each do |slug, other| %>
+      <%= link_to use_case_path(slug: slug), class: 'card bg-base-100 border border-base-300 shadow-soft hover:shadow-medium transition-all duration-200' do %>
+        <div class="card-body p-4">
+          <div class="w-10 h-10 rounded-lg bg-gradient-to-br <%= other[:accent] %> flex items-center justify-center mb-2 shadow-glow">
+            <%= svg_icon(other[:icon], class: 'w-5 h-5 text-white') %>
+          </div>
+          <h3 class="text-sm font-semibold"><%= other[:title] %></h3>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+</section>

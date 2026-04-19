@@ -262,7 +262,18 @@ module Submissions
           value = field['default_value'] if field['type'] == 'heading'
           value = field['default_value'] if field['type'] == 'strikethrough' && value.nil? && field['conditions'].blank?
 
-          text_align = field.dig('preferences', 'align').to_s.to_sym.presence ||
+          raw_align = field.dig('preferences', 'align').to_s.downcase
+          # Normalize DOCX alignment values ("start"/"end"/"both") that may have
+          # been persisted before normalization was added, plus guard against
+          # any unexpected value so HexaPDF's TextLayouter doesn't raise
+          # "ArgumentError: :<value> is not a valid text_align value".
+          normalized_align = case raw_align
+                             when 'left', 'start' then :left
+                             when 'center', 'centre' then :center
+                             when 'right', 'end' then :right
+                             when 'justify', 'both' then :justify
+                             end
+          text_align = normalized_align ||
                        (value.to_s.match?(RTL_REGEXP) ? :right : :left)
 
           text_valign = (field.dig('preferences', 'valign').to_s.presence || 'center').to_sym

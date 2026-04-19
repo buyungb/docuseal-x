@@ -249,6 +249,7 @@ Create a submission from an existing template.
 | `consent_enabled` | boolean | No | Require consent checkbox for all submitters |
 | `consent_document_url` | string | No | Terms and conditions URL |
 | `consent_document_text` | string | No | Consent checkbox label text |
+| `preferences` | object | No | Template-level preferences (see [Template Preferences](#template-preferences)) |
 
 #### Submitter-Level Parameters (`submitters[]`)
 
@@ -302,6 +303,7 @@ Create a one-off submission from a DOCX file with embedded tags. The DOCX can co
 | `consent_enabled` | boolean | No | Require consent checkbox for all submitters |
 | `consent_document_url` | string | No | Terms and conditions URL |
 | `consent_document_text` | string | No | Consent checkbox label text |
+| `preferences` | object | No | Template-level preferences (see [Template Preferences](#template-preferences)) |
 
 #### Submitter-Level Parameters (`submitters[]`)
 
@@ -352,6 +354,26 @@ The API automatically extracts formatting from the DOCX and applies it to render
 
 Explicit tag attributes (e.g., `font=Courier;font_size=14`) override DOCX formatting.
 
+#### Template Preferences
+
+Both `POST /api/submissions` and `POST /api/submissions/docx` accept a top-level `preferences` object that is persisted on the submission's template. These flags override account-level defaults (configured under **Settings → Personalization**) for this specific submission.
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `completed_notification_email_enabled` | boolean | `true` | Send the sender a notification email when all submitters complete |
+| `completed_notification_email_attach_audit` | boolean | `true` | Attach the audit log PDF to the sender's completion-notification email |
+| `completed_notification_email_attach_documents` | boolean | `true` | Attach signed document PDFs to the sender's completion-notification email |
+| `documents_copy_email_enabled` | boolean | `true` | Email each signer a copy of the completed documents |
+| `documents_copy_email_attach_audit` | boolean | `true` | Attach the audit log PDF to the signer's copy email |
+| `documents_copy_email_attach_documents` | boolean | `true` | Attach signed document PDFs to the signer's copy email |
+| `submitters_order` | string | — | `preserved` (sequential) or `random` (parallel). Same effect as top-level `order`. |
+| `bcc_completed` | string | — | Comma-separated BCC addresses for completion notifications |
+| `require_email_2fa` | boolean | `false` | Require email OTP for every signer |
+| `require_phone_2fa` | boolean | `false` | Require phone OTP (requires phone OTP webhook config) |
+| `shared_link_2fa` | boolean | `false` | Require email 2FA when the signing link is shared |
+
+Account-level toggles act as a ceiling: if e.g. `attach_audit_log` is disabled under Personalization, a template-level `true` here will not re-enable it. The audit trail PDF itself is **always generated** on completion regardless of these flags; they only control whether it is attached to outgoing emails.
+
 #### Example
 
 ```bash
@@ -384,7 +406,11 @@ curl -X POST https://api.sealroute.com/api/submissions/docx \
     "order": "preserved",
     "send_email": false,
     "logo_url": "https://example.com/logo.png",
-    "company_name": "My Company"
+    "company_name": "My Company",
+    "preferences": {
+      "completed_notification_email_attach_audit": true,
+      "documents_copy_email_attach_audit": true
+    }
   }'
 ```
 

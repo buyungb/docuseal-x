@@ -6,10 +6,52 @@ This script tests the /api/submissions/docx endpoint with all the variables
 and form fields defined in simple_contract_template.txt.
 
 Usage:
-    python3 test_docx_python.py <docx_file> <api_url> <api_token>
-    
-Example:
+    python3 test_docx_python.py <docx_file> <api_url> <api_token> [command]
+
+Commands:
+    (default)         Create a DOCX submission (with optional custom email message)
+    webhook:list      List existing outgoing webhooks
+    webhook:create    Register a webhook URL. Extra args: <url> [event1,event2,...]
+    webhook:test      Send a test form.completed event. Extra args: <webhook_id>
+    webhook:delete    Delete a webhook. Extra args: <webhook_id>
+
+Examples:
     python3 test_docx_python.py simple_contract.docx https://your-docuseal.com YOUR_TOKEN
+    python3 test_docx_python.py _ https://your-docuseal.com YOUR_TOKEN webhook:list
+    python3 test_docx_python.py _ https://your-docuseal.com YOUR_TOKEN \
+        webhook:create https://example.com/hook form.completed,submission.completed
+    python3 test_docx_python.py _ https://your-docuseal.com YOUR_TOKEN webhook:test 1
+
+Note on "custom message to the user":
+    SealRoute has TWO separate features here — do not confuse them.
+
+    1. Custom invitation EMAIL to each signer (what the signer receives)
+       Set `message: { subject, body }` on the submission (top-level) and/or on
+       each `submitters[]` entry. Per-submitter overrides top-level. The `body`
+       is Markdown and supports merge tags:
+           {template.name}              - submission/template name
+           {submitter.link}             - the per-signer signing URL (required
+                                          if you override body, otherwise the
+                                          signer has no way to open the form)
+           {submitter.name}             - signer display name
+           {submitter.email}            - signer email
+           {account.name}               - your account/company name
+           {submission.submitters}      - comma list of all signers
+       Emails are only sent when `send_email: true` (default). If you set
+       `send_email: false` the message block is ignored — use `embed_src` from
+       the API response to deliver the link yourself.
+
+    2. Outgoing WEBHOOKS (server-to-server notifications to YOUR endpoint)
+       Webhooks are configured via `/api/webhooks` (admin token required).
+       They flow OUT of SealRoute to a URL you own when events occur
+       (form.viewed, form.started, form.completed, form.declined,
+       submission.created, submission.completed, submission.expired,
+       submission.archived, template.created, template.updated).
+       There is no API to push an arbitrary message INTO the signer via a
+       webhook — webhooks notify your backend, and your backend can then
+       deliver whatever custom message you want (SMS, Slack, push, etc.).
+
+    See docs/API.md §"Webhooks" for full payload format.
 
 Template Variables (replaced by API):
     Keys for [[...]] (and {{...}} without type) can be sent as top-level "variables" and/or
@@ -47,19 +89,112 @@ import sys
 import json
 import base64
 import urllib.request
+import urllib.error
 import ssl
 from datetime import datetime
+
+
+def _ssl_ctx():
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    return ctx
+
+
+def api_request(method, api_url, api_token, path, body=None, timeout=60):
+    """Minimal JSON helper for calling SealRoute's REST API."""
+    url = f"{api_url}{path}"
+    data = None
+    if body is not None:
+        data = json.dumps(body).encode('utf-8')
+    req = urllib.request.Request(
+        url,
+        data=data,
+        headers={
+            'Content-Type': 'application/json',
+            'X-Auth-Token': api_token,
+        },
+        method=method,
+    )
+    try:
+        with urllib.request.urlopen(req, context=_ssl_ctx(), timeout=timeout) as resp:
+            raw = resp.read().decode('utf-8')
+            return resp.status, (json.loads(raw) if raw else None)
+    except urllib.error.HTTPError as e:
+        raw = e.read().decode('utf-8')
+        try:
+            return e.code, json.loads(raw)
+        except Exception:
+            return e.code, {'error': raw}
+
+
+def cmd_webhook_list(api_url, api_token):
+    code, data = api_request('GET', api_url, api_token, '/api/webhooks')
+    print(f"GET /api/webhooks -> {code}")
+    print(json.dumps(data, indent=2))
+
+
+def cmd_webhook_create(api_url, api_token, hook_url, events_csv=None):
+    body = {'url': hook_url}
+    if events_csv:
+        body['events'] = [e.strip() for e in events_csv.split(',') if e.strip()]
+    # Optional shared secret header your endpoint can verify:
+    body['secret'] = {'X-Webhook-Secret': 'change-me'}
+    code, data = api_request('POST', api_url, api_token, '/api/webhooks', body)
+    print(f"POST /api/webhooks -> {code}")
+    print(json.dumps(data, indent=2))
+
+
+def cmd_webhook_test(api_url, api_token, webhook_id):
+    code, data = api_request('POST', api_url, api_token,
+                             f'/api/webhooks/{webhook_id}/test')
+    print(f"POST /api/webhooks/{webhook_id}/test -> {code}")
+    print(json.dumps(data, indent=2))
+
+
+def cmd_webhook_delete(api_url, api_token, webhook_id):
+    code, data = api_request('DELETE', api_url, api_token,
+                             f'/api/webhooks/{webhook_id}')
+    print(f"DELETE /api/webhooks/{webhook_id} -> {code}")
+    print(json.dumps(data, indent=2))
+
 
 def main():
     # Parse arguments
     if len(sys.argv) < 4:
-        print("Usage: python3 test_docx_python.py <docx_file> <api_url> <api_token>")
+        print("Usage: python3 test_docx_python.py <docx_file> <api_url> <api_token> [command ...]")
         print("Example: python3 test_docx_python.py simple_contract.docx https://your-docuseal.com YOUR_TOKEN")
+        print("See the module docstring for webhook subcommands.")
         sys.exit(1)
-    
+
     docx_file = sys.argv[1]
     api_url = sys.argv[2].rstrip('/')
     api_token = sys.argv[3]
+
+    # Optional subcommand (webhook management etc.)
+    if len(sys.argv) >= 5:
+        command = sys.argv[4]
+        extra = sys.argv[5:]
+        if command == 'webhook:list':
+            return cmd_webhook_list(api_url, api_token)
+        if command == 'webhook:create':
+            if not extra:
+                print("webhook:create requires <url> [event1,event2,...]")
+                sys.exit(1)
+            return cmd_webhook_create(api_url, api_token, extra[0],
+                                      extra[1] if len(extra) > 1 else None)
+        if command == 'webhook:test':
+            if not extra:
+                print("webhook:test requires <webhook_id>")
+                sys.exit(1)
+            return cmd_webhook_test(api_url, api_token, extra[0])
+        if command == 'webhook:delete':
+            if not extra:
+                print("webhook:delete requires <webhook_id>")
+                sys.exit(1)
+            return cmd_webhook_delete(api_url, api_token, extra[0])
+        print(f"Unknown command: {command}")
+        sys.exit(1)
     
     print("=== DocuSeal DOCX Submission Test (Python) ===")
     print(f"File: {docx_file}")
@@ -167,21 +302,35 @@ def main():
             "file": docx_base64
         }],
         "submitters": [
+            # {
+            #     "role": "anggota",
+            #     "email": "muhammad@aplindo.tech",
+            #     "name": "Muhammad",
+            #     "phone": "+6282112517078",
+            #     # Role-scoped [[...]] keys (merged into substitution map by the API)
+            #     "variables": {
+            #         "Nama_Anggota": "Muhammad",
+            #         "NRP_Anggota": "1234567890",
+            #     },
+            # }, 
             {
-                "role": "anggota",
-                "email": "muhammad@aplindo.tech",
-                "name": "Muhammad",
-                "phone": "+6282112517078",
-                # Role-scoped [[...]] keys (merged into substitution map by the API)
-                "variables": {
-                    "Nama_Anggota": "Muhammad",
-                    "NRP_Anggota": "1234567890",
-                },
-            }, {
                 "role": "Buyer",
                 "email": "buyung@aplindo.tech",
                 "name": "John Doe",
-                "phone": "+62811192575"
+                "phone": "+62811192575",
+                # Per-submitter message override (takes precedence over the
+                # top-level `message` below). Useful when different roles need
+                # different instructions. Uncomment to use.
+                # "message": {
+                #     "subject": "Action required: sign {template.name} as Buyer",
+                #     "body": (
+                #         "Hi {submitter.name},\n\n"
+                #         "Please review and sign **{template.name}** as the Buyer.\n\n"
+                #         "[Open the document]({submitter.link})\n\n"
+                #         "Reply to this email if anything looks off.\n\n"
+                #         "— {account.name}"
+                #     ),
+                # },
             },
             {
                 "role": "Seller",
@@ -196,13 +345,38 @@ def main():
                 "phone": "+6281770938806"
             }
         ],
+        # Custom invitation email for every submitter (overridable per-submitter).
+        # Only delivered when send_email is True. Body is Markdown and supports
+        # merge tags: {template.name}, {submitter.name}, {submitter.email},
+        # {submitter.link}, {account.name}, {submission.submitters}.
+        "message": {
+            "subject": "Please sign: {template.name}",
+            "body": (
+                "Hi {submitter.name},\n\n"
+                "You've been invited by **{account.name}** to sign "
+                "**{template.name}**.\n\n"
+                "[Review and sign]({submitter.link})\n\n"
+                "If you have any questions, just reply to this email.\n\n"
+                "Thanks,\n"
+                "{account.name}"
+            ),
+        },
         "send_email": False,
         "order": "preserved",
         # Custom branding (applied to signing UI, emails, and audit trail)
         "logo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/200px-Google_2015_logo.svg.png",
         "company_name": "TechVendor Inc.",
         # Custom stamp image (used in {{stamp}} fields in signed PDFs, falls back to logo_url)
-        "stamp_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/200px-Google_2015_logo.svg.png"
+        "stamp_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/200px-Google_2015_logo.svg.png",
+        # Template preferences (override account-level defaults)
+        #   completed_notification_email_attach_audit: attach audit log PDF to the
+        #     sender's completion-notification email
+        #   documents_copy_email_attach_audit: attach audit log PDF to the
+        #     signer copy email
+        "preferences": {
+            "completed_notification_email_attach_audit": True,
+            "documents_copy_email_attach_audit": True
+        }
     }
     
     # Print variables being sent

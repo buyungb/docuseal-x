@@ -52,6 +52,16 @@ module Api
         folder: current_account.default_template_folder
       )
 
+      # Apply template-level preferences from the request (e.g. email attachment
+      # toggles like completed_notification_email_attach_audit). These override
+      # the account-level defaults for this specific submission's template.
+      if params[:preferences].present?
+        incoming_prefs = params[:preferences]
+        incoming_prefs = incoming_prefs.to_unsafe_h if incoming_prefs.respond_to?(:to_unsafe_h)
+        template.preferences = (template.preferences || {}).merge(incoming_prefs.deep_stringify_keys)
+        Rails.logger.info("DOCX Submission: Template preferences applied: #{template.preferences.inspect}")
+      end
+
       # Process each DOCX document
       processed_documents = []
       docx_extracted_fields = [] # Fields extracted from DOCX {{...}} tags
@@ -513,6 +523,20 @@ module Api
       'helvetica' => 'Helvetica'
     }.freeze
 
+    # Map DOCX <w:jc w:val="..."> values to the subset HexaPDF accepts.
+    # Prevents "ArgumentError: :start is not a valid text_align value" from
+    # Office Open XML alignments like "start", "end", "distribute".
+    DOCX_ALIGNMENT_MAP = {
+      'left' => 'left',
+      'start' => 'left',
+      'center' => 'center',
+      'centre' => 'center',
+      'right' => 'right',
+      'end' => 'right',
+      'both' => 'justify',
+      'justify' => 'justify'
+    }.freeze
+
     # Extract per-tag formatting (alignment, font) from the DOCX XML.
     # Returns { "TagName" => { alignment: "center", font: "Times" }, ... }
     def extract_docx_field_formatting(docx_data)
@@ -581,7 +605,8 @@ module Api
               next if tag_name.blank?
 
               jc = para.at_xpath('.//w:pPr/w:jc', ns)
-              alignment = jc['w:val'] if jc
+              raw_alignment = jc['w:val'] if jc
+              alignment = DOCX_ALIGNMENT_MAP[raw_alignment.to_s.downcase] if raw_alignment.present?
 
               r_fonts = para.at_xpath('.//w:r/w:rPr/w:rFonts', ns) ||
                         para.at_xpath('.//w:pPr/w:rPr/w:rFonts', ns)
@@ -620,9 +645,10 @@ module Api
         prefs[:font] = info[:font]
       end
 
-      if info[:alignment].present? && !info[:alignment].to_s.downcase.in?(%w[left both])
+      align_value = info[:alignment].to_s.downcase
+      if align_value.present? && align_value.in?(%w[center right])
         if prefs[:align].blank? && prefs['align'].blank?
-          prefs[:align] = info[:alignment].to_s.downcase
+          prefs[:align] = align_value
         end
       end
 
