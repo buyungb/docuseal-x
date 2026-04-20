@@ -26,7 +26,7 @@ export default actionable(targetable(class extends HTMLElement {
 
   onDragover (e) {
     if (e.dataTransfer?.types?.includes('Files')) {
-      this.style.backgroundColor = '#e8ecf0'
+      this.style.backgroundColor = '#dceaf6'
       this.classList.remove('border-base-300', 'hover:bg-base-200/30')
       this.classList.add('border-base-content/30')
     }

@@ -156,7 +156,7 @@ safeRegisterElement('template-builder', class extends HTMLElement {
     this.app = createApp(TemplateBuilder, {
       template: reactive(JSON.parse(this.dataset.template)),
       customFields: reactive(JSON.parse(this.dataset.customFields || '[]')),
-      backgroundColor: '#f4f7f9',
+      backgroundColor: '#eaf3fc',
       locale: this.dataset.locale,
       withPhone: this.dataset.withPhone === 'true',
       withVerification: ['true', 'false'].includes(this.dataset.withVerification) ? this.dataset.withVerification === 'true' : null,

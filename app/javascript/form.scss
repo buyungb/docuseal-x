@@ -34,8 +34,8 @@ button[disabled] .enabled, button.btn-disabled .enabled {
 .input,
 .select,
 .textarea {
-  background-color: #f3f5f7;
-  border-color: #d1d9e2;
+  background-color: #eaf3fc;
+  border-color: #c5ddf3;
   color: #141c2b;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -56,28 +56,28 @@ button[disabled] .enabled, button.btn-disabled .enabled {
 .input[disabled],
 .select[disabled],
 .textarea[disabled] {
-  background-color: #e8ecf0;
-  border-color: #d1d9e2;
+  background-color: #dceaf6;
+  border-color: #c5ddf3;
   color: #626e7a;
   opacity: 0.7;
   cursor: not-allowed;
 }
 
 .input-bordered {
-  border-color: #d1d9e2;
+  border-color: #c5ddf3;
 }
 
 .select-bordered {
-  border-color: #d1d9e2;
+  border-color: #c5ddf3;
 }
 
 .textarea-bordered {
-  border-color: #d1d9e2;
+  border-color: #c5ddf3;
 }
 
 .base-textarea {
   @apply textarea textarea-bordered rounded-3xl;
-  background-color: #f3f5f7;
+  background-color: #eaf3fc;
 }
 
 .btn {
@@ -86,7 +86,7 @@ button[disabled] .enabled, button.btn-disabled .enabled {
 
 .base-input {
   @apply input input-bordered;
-  background-color: #f3f5f7;
+  background-color: #eaf3fc;
 }
 
 .base-button {
@@ -99,7 +99,7 @@ button[disabled] .enabled, button.btn-disabled .enabled {
 
 .base-checkbox {
   @apply checkbox rounded bg-white checkbox-sm;
-  border-color: #d1d9e2;
+  border-color: #c5ddf3;
 }
 
 .base-checkbox:checked {
@@ -108,7 +108,7 @@ button[disabled] .enabled, button.btn-disabled .enabled {
 
 .base-radio {
   @apply radio bg-white radio-sm;
-  border-color: #d1d9e2;
+  border-color: #c5ddf3;
 }
 
 .base-radio:checked {

@@ -1,5 +1,5 @@
-<div class="h-36 relative group">
-  <a href="<%= template_path(template) %>" class="flex h-full flex-col justify-between rounded-2xl pt-6 px-7 w-full bg-base-100 border border-base-300 shadow-soft hover:shadow-medium transition-all duration-200 before:border-2 before:border-accent/30 before:border-dashed before:absolute before:left-0 before:right-0 before:top-0 before:bottom-0 before:hidden before:rounded-2xl" data-targets="dashboard-dropzone.templateCards">
+<div class="relative group rounded-2xl bg-base-100 border border-base-300 shadow-soft hover:shadow-medium transition-all duration-200 overflow-hidden before:border-2 before:border-accent/30 before:border-dashed before:absolute before:left-0 before:right-0 before:top-0 before:bottom-0 before:hidden before:rounded-2xl before:pointer-events-none" data-targets="dashboard-dropzone.templateCards">
+  <a href="<%= template_path(template) %>" class="flex flex-col justify-between pt-6 px-7 pb-3 w-full">
     <div class="text-xl font-semibold" style="line-height: 1.6rem; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;">
       <% if template.template_accesses.present? %>
         <span class="tooltip tooltip-bottom" data-tip="<%= t('shared_with') %> <%= template.template_accesses.size %> <%= t('users').downcase %>">
@@ -8,7 +8,7 @@
       <% end %>
       <% template.name.split(/(_)/).each do |item| %><%= item %><wbr><% end %>
     </div>
-    <div class="pb-6 pt-1 space-y-1" data-targets="dashboard-dropzone.hiddenOnDrag">
+    <div class="pt-3 space-y-1" data-targets="dashboard-dropzone.hiddenOnDrag">
       <p class="flex items-center space-x-1 text-xs text-base-content/60">
         <%= svg_icon('user', class: 'w-4 h-4') %>
         <span><%= template.author.full_name.presence || template.author.email.to_s.sub(/\+\w+@/, '@') %></span>
@@ -30,51 +30,49 @@
       </p>
     </div>
   </a>
-  <div class="absolute top-0 bottom-0 w-0 items-center hidden md:group-hover:flex" style="right: 37px" data-targets="dashboard-dropzone.hiddenOnDrag">
-    <div class="space-y-1">
-      <% if can?(:manage, TemplateAccess.new(template: template)) && !template.archived_at? %>
-        <span class="tooltip tooltip-left" data-tip="<%= t('share_with_users') %>">
-          <a href="<%= template_accesses_path(template) %>" data-turbo-frame="modal" class="btn btn-xs hover:btn-outline bg-base-100 border-base-300 btn-circle">
-            <%= svg_icon('users', class: 'w-4 h-4') %>
-          </a>
-        </span>
-      <% end %>
-      <% if can?(:update, template) && !template.archived_at? && template.account_id == current_account.id %>
-        <span class="tooltip tooltip-left" data-tip="<%= t('move') %>">
-          <a href="<%= edit_template_folder_path(template.id) %>" data-turbo-frame="modal" class="btn btn-xs hover:btn-outline bg-base-100 border-base-300 btn-circle">
-            <%= svg_icon('folder_share', class: 'w-4 h-4') %>
-          </a>
-        </span>
-      <% end %>
-      <% if template.archived_at? && can?(:update, template) %>
-        <span class="tooltip tooltip-left" data-tip="<%= t('restore') %>">
-          <%= button_to template_restore_index_path(template), class: 'btn btn-xs hover:btn-outline bg-base-100 border-base-300 btn-circle' do %>
-            <%= svg_icon('rotate', class: 'w-4 h-4 enabled') %>
-            <%= svg_icon('loader', class: 'w-4 h-4 animate-spin disabled') %>
-          <% end %>
-        </span>
-      <% elsif can?(:update, template) %>
-        <span class="tooltip tooltip-left" data-tip="<%= t('edit') %>">
-          <a href="<%= edit_template_path(template) %>" class="btn btn-xs hover:btn-outline bg-base-100 border-base-300 btn-circle">
-            <%= svg_icon('pencil', class: 'w-4 h-4') %>
-          </a>
-        </span>
-      <% end %>
-      <% if can?(:create, template) %>
-        <span class="tooltip tooltip-left" data-tip="<%= t('clone') %>">
-          <a href="<%= new_template_clone_path(template) %>" data-turbo-frame="modal" class="btn btn-xs hover:btn-outline bg-base-100 border-base-300 btn-circle">
-            <%= svg_icon('copy', class: 'w-4 h-4') %>
-          </a>
-        </span>
-      <% end %>
-      <% if can?(:destroy, template) %>
-        <span class="tooltip tooltip-left" data-tip="<%= template.archived_at? ? t('delete') : t('archive') %>">
-          <%= button_to template_path(template), data: template.archived_at? ? { turbo_confirm: t('template_deletion_is_irreversible_and_will_permanently_remove_all_associated_signed_documents_with_it_are_you_sure_') } : {}, params: { permanently: template.archived_at? }.compact_blank, method: :delete, class: 'btn btn-xs hover:btn-outline bg-base-100 border-base-300 btn-circle', aria_label: t('restore') do %>
-            <%= svg_icon(template.archived_at? ? 'trash' : 'archive', class: 'w-4 h-4 enabled') %>
-            <%= svg_icon('loader', class: 'w-4 h-4 animate-spin disabled') %>
-          <% end %>
-        </span>
-      <% end %>
-    </div>
+  <div class="flex items-center justify-end gap-1 px-4 py-2 border-t border-base-200 bg-base-100" data-targets="dashboard-dropzone.hiddenOnDrag">
+    <% if can?(:manage, TemplateAccess.new(template: template)) && !template.archived_at? %>
+      <span class="tooltip tooltip-top" data-tip="<%= t('share_with_users') %>">
+        <a href="<%= template_accesses_path(template) %>" data-turbo-frame="modal" class="btn btn-xs hover:btn-outline bg-base-100 border-base-300 btn-circle">
+          <%= svg_icon('users', class: 'w-4 h-4') %>
+        </a>
+      </span>
+    <% end %>
+    <% if can?(:update, template) && !template.archived_at? && template.account_id == current_account.id %>
+      <span class="tooltip tooltip-top" data-tip="<%= t('move') %>">
+        <a href="<%= edit_template_folder_path(template.id) %>" data-turbo-frame="modal" class="btn btn-xs hover:btn-outline bg-base-100 border-base-300 btn-circle">
+          <%= svg_icon('folder_share', class: 'w-4 h-4') %>
+        </a>
+      </span>
+    <% end %>
+    <% if template.archived_at? && can?(:update, template) %>
+      <span class="tooltip tooltip-top" data-tip="<%= t('restore') %>">
+        <%= button_to template_restore_index_path(template), class: 'btn btn-xs hover:btn-outline bg-base-100 border-base-300 btn-circle' do %>
+          <%= svg_icon('rotate', class: 'w-4 h-4 enabled') %>
+          <%= svg_icon('loader', class: 'w-4 h-4 animate-spin disabled') %>
+        <% end %>
+      </span>
+    <% elsif can?(:update, template) %>
+      <span class="tooltip tooltip-top" data-tip="<%= t('edit') %>">
+        <a href="<%= edit_template_path(template) %>" class="btn btn-xs hover:btn-outline bg-base-100 border-base-300 btn-circle">
+          <%= svg_icon('pencil', class: 'w-4 h-4') %>
+        </a>
+      </span>
+    <% end %>
+    <% if can?(:create, template) %>
+      <span class="tooltip tooltip-top" data-tip="<%= t('clone') %>">
+        <a href="<%= new_template_clone_path(template) %>" data-turbo-frame="modal" class="btn btn-xs hover:btn-outline bg-base-100 border-base-300 btn-circle">
+          <%= svg_icon('copy', class: 'w-4 h-4') %>
+        </a>
+      </span>
+    <% end %>
+    <% if can?(:destroy, template) %>
+      <span class="tooltip tooltip-top" data-tip="<%= template.archived_at? ? t('delete') : t('archive') %>">
+        <%= button_to template_path(template), data: template.archived_at? ? { turbo_confirm: t('template_deletion_is_irreversible_and_will_permanently_remove_all_associated_signed_documents_with_it_are_you_sure_') } : {}, params: { permanently: template.archived_at? }.compact_blank, method: :delete, class: 'btn btn-xs hover:btn-outline bg-base-100 border-base-300 btn-circle', aria_label: t('restore') do %>
+          <%= svg_icon(template.archived_at? ? 'trash' : 'archive', class: 'w-4 h-4 enabled') %>
+          <%= svg_icon('loader', class: 'w-4 h-4 animate-spin disabled') %>
+        <% end %>
+      </span>
+    <% end %>
   </div>
 </div>

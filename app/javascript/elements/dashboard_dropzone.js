@@ -170,7 +170,7 @@ export default targetable(class extends HTMLElement {
 
   onDragover (e) {
     if (e.dataTransfer?.types?.includes('Files') || this.dataset.targets !== 'dashboard-dropzone.templateCards') {
-      this.style.backgroundColor = '#e8ecf0'
+      this.style.backgroundColor = '#dceaf6'
 
       if (this.classList.contains('before:border-base-300')) {
         this.classList.remove('before:border-base-300')
