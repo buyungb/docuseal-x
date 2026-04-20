@@ -42,8 +42,8 @@ class ApplicationController < ActionController::Base
   end
 
   def default_url_options
-    if request.domain == 'sealroute.com'
-      return { host: 'sealroute.com', protocol: ENV['FORCE_SSL'].present? ? 'https' : 'http' }
+    if Docuseal.multitenant? && request.domain == 'sealroute.com'
+      return { host: request.host, protocol: ENV['FORCE_SSL'].present? ? 'https' : 'http' }
     end
 
     Docuseal.default_url_options
