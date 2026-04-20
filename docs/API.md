@@ -1,6 +1,6 @@
 # SealRoute API Documentation
 
-Complete API reference for all REST endpoints. **Browse this guide on the web:** [`/api-docs`](/api-docs) (same content as this file; Markdown source lives in `docs/API.md`).
+Complete REST API reference for integrating SealRoute into your own applications.
 
 ## Authentication
 
@@ -344,15 +344,15 @@ Top-level `variables` and each submitter's `variables` are merged into a single 
 
 #### DOCX Formatting Inheritance
 
-The API automatically extracts formatting from the DOCX and applies it to rendered fields:
+The API automatically carries your Word document's formatting onto the rendered form fields, so the signed PDF matches the look of your DOCX:
 
-| DOCX Property | Detected From | Applied As |
-|---------------|---------------|------------|
-| **Alignment** | `<w:jc>` (center, right) | `preferences.align` |
-| **Font family** | `<w:rFonts>` (Times New Roman → Times, Arial → Helvetica) | `preferences.font` |
-| **Font size** | `<w:sz>` or document defaults in `styles.xml` | `preferences.font_size` |
+| Property | Source in Word | Effect |
+|----------|----------------|--------|
+| **Alignment** | Paragraph alignment (center, right) | Field is rendered with the same alignment |
+| **Font family** | Font of the surrounding text (Times New Roman → Times, Arial → Helvetica, Courier New → Courier) | Same font used for the rendered value |
+| **Font size** | Font size of the surrounding text or the document default | Same point size used for the rendered value |
 
-Explicit tag attributes (e.g., `font=Courier;font_size=14`) override DOCX formatting.
+Explicit tag attributes (e.g., `font=Courier;font_size=14`) override DOCX formatting. For full details see [Template Tags → DOCX Formatting Inheritance](./TEMPLATE_TAGS.md#docx-formatting-inheritance).
 
 #### Template Preferences
 

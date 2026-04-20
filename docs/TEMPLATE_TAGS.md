@@ -175,7 +175,7 @@ Subtotal: $2,500.00
 
 #### 2. Table Row Loops
 
-For repeating rows in a Word table - the entire table row (`<w:tr>`) is duplicated for each item:
+For repeating rows in a Word table — the entire table row is duplicated for each item:
 
 | Product | Qty | Price | Subtotal |
 |---------|-----|-------|----------|
@@ -432,10 +432,9 @@ The `datenow` field type creates a **readonly date field** that is automatically
 
 ### How It Works
 
-1. In the DOCX template: `{{SignDate;type=datenow;role=Buyer}}`
-2. Internally converted to: `type=date`, `readonly=true`, `default_value={{date}}`
-3. When the signer submits, `{{date}}` resolves to the current date in the account's timezone
-4. The date is rendered on the final PDF using the field's format preference
+1. Place `{{SignDate;type=datenow;role=Buyer}}` in your DOCX template.
+2. The signer cannot edit this field — it is filled automatically on completion.
+3. The date is captured at **completion time** in the account's timezone and stamped onto the final PDF.
 
 ### Date Format
 
@@ -456,11 +455,11 @@ By default, dates use `DD/MM/YYYY` (or `MM/DD/YYYY` for US locales). Override wi
 
 ## DOCX Formatting Inheritance
 
-When using DOCX templates, SealRoute reads paragraph formatting from the document and applies it to the rendered field values. This means the final PDF matches the visual style of your DOCX.
+When you use a DOCX template, SealRoute carries the visual formatting of your Word document over to the rendered form fields. You can style your template in Word and the signed PDF will match — no need to specify alignment, font, or font size in every tag.
 
-### Automatic Alignment Detection
+### Automatic Alignment
 
-If a field tag is placed in a **centered** or **right-aligned** paragraph in Word, the field is automatically positioned and aligned accordingly:
+If a field tag is placed in a **centered** or **right-aligned** paragraph in Word, the rendered field follows the same alignment:
 
 ```
                     {{SignDate;type=datenow;role=Buyer}}        ← centered in Word
@@ -468,46 +467,41 @@ If a field tag is placed in a **centered** or **right-aligned** paragraph in Wor
                     [[Nama_Anggota]]                            ← centered in Word
 ```
 
-The system reads `<w:jc w:val="center"/>` from the DOCX XML and:
-- **Positions** the field centered on the page content area
-- Sets `preferences.align = "center"` so the rendered value text is also centered
+The field is positioned at the correct spot on the page and its value text is aligned the same way.
 
-### Automatic Font Detection
+### Automatic Font Family
 
-The system reads the font family from `<w:rFonts>` in the DOCX XML and maps it:
+The font family used in Word is mapped to a PDF-friendly font:
 
-| DOCX Font | Mapped To |
-|-----------|-----------|
-| Times New Roman | `Times` |
-| Arial | `Helvetica` |
-| Courier New | `Courier` |
+| Font used in Word | Rendered as |
+|-------------------|-------------|
+| Times New Roman | Times |
+| Arial | Helvetica |
+| Courier New | Courier |
 
-Other fonts fall back to the system default (GoNotoKurrent or Helvetica).
+Other fonts fall back to a universal default.
 
-### Automatic Font Size Detection
+### Automatic Font Size
 
-The system reads the font size from `<w:sz>` in the DOCX XML. DOCX stores sizes in half-points (e.g., `sz=24` = 12pt).
+The font size at the tag's location in your Word document is used for the rendered value. If your document uses 12pt throughout, all field values render at 12pt.
 
-**Resolution order** (first match wins):
+The size is resolved in this order (first match wins):
 
-1. Explicit `font_size=N` attribute in the tag (e.g., `{{Date;type=date;font_size=14}}`)
-2. Run-level `<w:sz>` on the text run containing the tag
-3. Paragraph-level default `<w:pPr><w:rPr><w:sz>`
-4. Document default from `<w:docDefaults>` in `word/styles.xml`
-5. `Normal` style in `word/styles.xml`
-6. System default (11pt, scaled to page size)
-
-This means if your DOCX document uses 12pt font throughout, all field values (dates, text, etc.) will render at 12pt in the final PDF — without needing to specify `font_size` in each tag.
+1. Explicit `font_size=N` on the tag (e.g., `{{Date;type=date;font_size=14}}`)
+2. The font size of the text surrounding the tag in Word
+3. The paragraph's default font size in Word
+4. The document's default font size (set in Word's style defaults)
+5. System default (~11pt)
 
 ### Explicit Overrides
 
-Tag attributes always override DOCX formatting:
+Tag attributes always override the DOCX formatting:
 
 ```
 {{SignDate;type=datenow;role=Buyer;align=left;font=Courier;font_size=10}}
 ```
 
-This forces left alignment, Courier font, and 10pt size regardless of DOCX paragraph formatting.
+This forces left alignment, Courier, and 10pt regardless of how the paragraph is styled in Word.
 
 ---
 
@@ -522,6 +516,52 @@ By default, drawn signatures are aligned to the **left** within their field area
 ```
 
 This affects both the signing UI (where the signature image is displayed) and the flattened PDF output.
+
+---
+
+## Field Size (`width` / `height`)
+
+By default, SealRoute auto-sizes each field based on the tag's position in your Word document:
+
+| Field type | Default height (≈ % of page) | Default height on US Letter |
+|------------|------------------------------|-----------------------------|
+| `signature`, `initials` | 5% – 8% | ~90 – 145 px |
+| `text`, `date`, `datenow` | 2.8% – 8% | ~50 – 145 px |
+
+If you want a **taller signature area** (or a larger stamp / image / text box), use `height=` and/or `width=` on the tag. Values are **integer pixels** relative to the rendered page image (US Letter is rendered at 1400 × 1812 px internally).
+
+### Examples
+
+```
+# Auto-sized (default)
+{{BuyerSign;type=signature;role=Buyer}}
+
+# Taller signature box (≈ 11% of page height)
+{{BuyerSign;type=signature;role=Buyer;height=200}}
+
+# Explicit width AND height (wider + taller drawn signature)
+{{BuyerSign;type=signature;role=Buyer;width=500;height=220}}
+
+# Larger initials box
+{{BuyerInit;type=initials;role=Buyer;height=120}}
+
+# Square stamp
+{{CompanyStamp;type=stamp;role=Seller;width=240;height=240}}
+
+# Bigger uploaded image field
+{{Photo;type=image;role=Buyer;width=400;height=300}}
+```
+
+### Rule of thumb on A4 / Letter
+
+| `height=` value | ≈ % of page | Typical use |
+|-----------------|-------------|-------------|
+| `100` | ~5.5% | Default-ish signature |
+| `150` | ~8% | Slightly taller signature |
+| `200` | ~11% | Comfortable drawing area |
+| `300` | ~17% | Large ceremonial signature / stamp |
+
+> **Tip:** `width` / `height` override the auto-size completely. If you only set one (e.g. `height=200`), the other dimension is still auto-derived from the tag's position in Word.
 
 ---
 
@@ -596,49 +636,6 @@ When submitting documents via API, the submitters' roles must match the roles de
 
 ---
 
-## How Tag Processing Works
-
-When a DOCX template with `{{...}}` tags is submitted via the API, SealRoute processes it as follows:
-
-### Processing Flow
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        DOCX SUBMISSION FLOW                              │
-└─────────────────────────────────────────────────────────────────────────┘
-
-1. DOCX with Tags
-   │
-   ├──► [[...]] variables replaced with data from "variables" object
-   │
-   ├──► {{...}} tags made invisible (white text, original text preserved)
-   │
-   ├──► DOCX paragraph formatting extracted (alignment, font family, font size)
-   │
-   ├──► Converted to PDF via Gotenberg (single PDF)
-   │
-   ├──► Pdfium scans the SAME PDF to find {{...}} tag positions
-   │    (white text is invisible to users but readable by Pdfium)
-   │
-   └──► Form fields placed at detected positions with inherited formatting
-```
-
-### Step-by-Step Process
-
-1. **Variable Substitution**: `[[...]]` placeholders replaced with values from `variables`
-2. **DOCX Analysis**: Paragraph alignment (`center`/`right`), font family (`Times New Roman`, etc.), and font size extracted from DOCX XML — including document defaults from `styles.xml`
-3. **Tag Invisibility**: `{{...}}` tags made invisible (white font color) — text preserved for detection
-4. **PDF Conversion**: Single PDF generated via Gotenberg
-5. **Tag Position Detection**: Pdfium extracts tag positions from the same PDF (white text is still searchable)
-6. **Formatting Application**: Detected alignment, font, and font size carried into field preferences
-7. **Field Placement**: Interactive form fields placed at correct positions with matching typography
-
-### Single-PDF Approach
-
-Using the **same PDF** for both display and detection eliminates layout mismatches that could occur from separate conversions. Tags are invisible to users but remain extractable by Pdfium.
-
----
-
 ## Troubleshooting
 
 ### Tags Not Being Detected
@@ -650,20 +647,18 @@ Using the **same PDF** for both display and detection eliminates layout mismatch
 
 ### Tags Still Visible in PDF
 
-1. **Check server logs**: Look for "DOCX TAG REMOVAL" log entries
-2. **Verify tag format**: Tags must be `{{name;type=X}}` format
-3. **Check encoding**: Ensure DOCX uses standard UTF-8 encoding
-4. **Avoid special characters**: Don't use Unicode curly braces (use standard `{` and `}`)
+1. **Verify tag format**: Tags must be `{{name;type=X}}` format
+2. **Check encoding**: Ensure the DOCX uses standard UTF-8 encoding
+3. **Avoid special characters**: Don't use Unicode curly braces — use standard `{` and `}`
 
 ### Field Position Issues
 
-1. **Tags may be hyphenated**: Word processors can split tags across lines
+1. **Tags may be hyphenated**: Word processors can split tags across lines — keep each tag on a single line
 2. **Use standard fonts**: Use Times New Roman, Arial, or Courier New for best results
 3. **Keep tags on single line**: Avoid line breaks within a tag
-4. **Check PDF conversion**: Ensure Gotenberg service is running correctly
-5. **Centered tags**: Tags in centered paragraphs are automatically centered on the page
-6. **Font mismatch**: If the rendered date/text looks different from the document font, add `font=Times` to the tag or ensure the DOCX paragraph uses a recognized font family
-7. **Font size mismatch**: If the rendered text appears too small or too large, add `font_size=12` (or whichever point size matches your document) to the tag. The system auto-detects font size from the DOCX, but only recognizes `<w:sz>` at the run, paragraph, or `docDefaults` level
+4. **Centered tags**: Tags in centered paragraphs are automatically centered on the page
+5. **Font mismatch**: If the rendered date/text looks different from the document font, add `font=Times` to the tag or ensure the DOCX paragraph uses a recognized font family
+6. **Font size mismatch**: If the rendered text appears too small or too large, add `font_size=12` (or whichever point size matches your document) to the tag
 
 ---
 
@@ -705,6 +700,8 @@ Using the **same PDF** for both display and detection eliminates layout mismatch
 | `font_type` | `bold`/`italic`/`bold_italic` | Font variant |
 | `color` | Hex color (e.g. `FF0000`) | Text color for the rendered value |
 | `format` | Date/number format string | Format pattern (e.g. `DD/MM/YYYY` for dates) |
+| `width` | Integer (pixels) | Override field width. See [Field Size](#field-size-width--height). |
+| `height` | Integer (pixels) | Override field height. Useful for taller signature / stamp / image areas. See [Field Size](#field-size-width--height). |
 
 ---
 
@@ -1108,11 +1105,3 @@ Go to **Settings** → **Personalization** → **Company Logo** to set:
 - The API `logo_url` and `company_name` parameters **update account settings** (they persist)
 - If no custom branding is set, the default SealRoute logo and name are used
 - The logo is NOT embedded in the signed document PDF — it only appears in the UI and audit trail
-
----
-
-## Related Documentation
-
-- [Phone OTP Webhook](./webhooks/phone-otp-webhook.md) - Custom SMS provider integration
-- [Form Webhook](./webhooks/form-webhook.md) - Form lifecycle events
-- [Submission Webhook](./webhooks/submission-webhook.md) - Submission events
