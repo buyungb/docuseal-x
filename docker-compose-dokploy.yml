@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   docuseal:
     image: buyungbahari/docuseal-x:latest
@@ -9,9 +11,9 @@ services:
       gotenberg:
         condition: service_started
     environment:
-      # Internal DB connection (docker network)
+      # Koneksi DB internal docker network
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/docuseal
-
+      
       # Gotenberg for DOCX to PDF conversion
       GOTENBERG_URL: http://gotenberg:3000
 
@@ -19,47 +21,34 @@ services:
       # Generate with: openssl rand -hex 64
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:-your_secret_key_here_replace_with_64_hex_chars}
 
-      # Public hostname (api.sealroute.com). Read by lib/docuseal.rb and used
-      # to build absolute URLs in emails, webhooks, signing links, etc.
-      HOST: ${HOST}
-      APP_URL: https://${HOST}
-
-      # Traefik terminates TLS, so tell Rails the request is already HTTPS and
-      # enable force_ssl for the HTTP -> HTTPS redirect inside the app.
-      FORCE_SSL: "true"
+      # OPTIONAL: kalau Docuseal butuh base URL / force https, kamu bisa tambahkan ini
+      # APP_URL: https://${HOST}
+      # FORCE_SSL: "true"
     volumes:
       - docuseal_data:/data/docuseal
 
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/up >/dev/null 2>&1 || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 10
-      start_period: 60s
-
-    # Do NOT expose ports in Dokploy (Traefik handles routing)
+    # ❗JANGAN expose ports di Dokploy (Traefik yang handle routing)
     # ports:
     #   - "3000:3000"
 
     labels:
       - "traefik.enable=true"
 
-      # HTTPS router on ${HOST} (e.g. api.sealroute.com)
+      # Router: domain
       - "traefik.http.routers.docuseal.rule=Host(`${HOST}`)"
+
+      # HTTPS entrypoint (umumnya 'websecure' di Dokploy)
       - "traefik.http.routers.docuseal.entrypoints=websecure"
       - "traefik.http.routers.docuseal.tls=true"
-      - "traefik.http.routers.docuseal.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.docuseal.service=docuseal"
 
-      # HTTP router -> redirect to HTTPS (so http://api.sealroute.com/api-docs works)
-      - "traefik.http.routers.docuseal-http.rule=Host(`${HOST}`)"
-      - "traefik.http.routers.docuseal-http.entrypoints=web"
-      - "traefik.http.routers.docuseal-http.middlewares=docuseal-redirect"
-      - "traefik.http.middlewares.docuseal-redirect.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.docuseal-redirect.redirectscheme.permanent=true"
-
-      # Internal container port
+      # Service port internal container docuseal
       - "traefik.http.services.docuseal.loadbalancer.server.port=3000"
+
+      # (Opsional) Redirect HTTP -> HTTPS (kalau Dokploy juga punya entrypoint 'web')
+      # - "traefik.http.routers.docuseal_http.rule=Host(`${HOST}`)"
+      # - "traefik.http.routers.docuseal_http.entrypoints=web"
+      # - "traefik.http.routers.docuseal_http.middlewares=redirect-to-https"
+      # - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
 
     networks:
       - dokploy-network
@@ -82,7 +71,7 @@ services:
     networks:
       - internal
 
-  # Gotenberg: DOCX/DOC -> PDF conversion service
+  # Gotenberg: DOCX/DOC to PDF conversion service
   gotenberg:
     image: gotenberg/gotenberg:8
     restart: unless-stopped
@@ -94,11 +83,11 @@ services:
       - internal
 
 networks:
-  # Traefik network managed by Dokploy (must already exist)
+  # ✅ Network Traefik milik Dokploy (biasanya sudah ada)
   dokploy-network:
     external: true
 
-  # Internal network between services (not exposed)
+  # Network internal antar service (tidak diexpose)
   internal:
     driver: bridge
 
