@@ -69,7 +69,15 @@ activate = 1' >> /etc/openssl_legacy.cnf
 
 COPY --chown=docuseal:docuseal ./Gemfile ./Gemfile.lock ./
 
-RUN apk add --no-cache build-base && bundle install && apk del --no-cache build-base && rm -rf ~/.bundle /usr/local/bundle/cache && ruby -e "puts Dir['/usr/local/bundle/**/{spec,rdoc,resources/shared,resources/collation,resources/locales}']" | xargs rm -rf && ln -sf /usr/lib/libonnxruntime.so.1 $(ruby -e "print Dir[Gem::Specification.find_by_name('onnxruntime').gem_dir + '/vendor/*.so'].first")
+# build-base pulls gcc; transient "I/O error" / "package integrity error" on extract is usually
+# Docker disk pressure or a bad layer cache — try: docker builder prune, free disk, then rebuild.
+RUN apk update && \
+    (apk add --no-cache build-base || (sleep 5 && apk update && apk add --no-cache build-base)) && \
+    bundle install && \
+    apk del --no-cache build-base && \
+    rm -rf ~/.bundle /usr/local/bundle/cache && \
+    ruby -e "puts Dir['/usr/local/bundle/**/{spec,rdoc,resources/shared,resources/collation,resources/locales}']" | xargs rm -rf && \
+    ln -sf /usr/lib/libonnxruntime.so.1 $(ruby -e "print Dir[Gem::Specification.find_by_name('onnxruntime').gem_dir + '/vendor/*.so'].first")
 
 COPY --chown=docuseal:docuseal ./bin ./bin
 COPY --chown=docuseal:docuseal ./app ./app
