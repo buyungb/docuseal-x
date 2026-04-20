@@ -4,8 +4,6 @@ class PagesController < ApplicationController
   skip_before_action :authenticate_user!
   skip_authorization_check
 
-  layout :pages_layout
-
   USE_CASES = {
     'developers' => {
       title: 'For Developers',
@@ -162,10 +160,6 @@ class PagesController < ApplicationController
   end
 
   private
-
-  def pages_layout
-    action_name.in?(%w[api_docs template_tags_docs]) ? 'docs' : 'application'
-  end
 
   def serve_markdown_doc(filename, html_title:)
     mtime = Docs::RenderMarkdown.mtime(filename)

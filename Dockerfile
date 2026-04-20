@@ -87,6 +87,7 @@ COPY --chown=docuseal:docuseal ./log ./log
 COPY --chown=docuseal:docuseal ./lib ./lib
 COPY --chown=docuseal:docuseal ./public ./public
 COPY --chown=docuseal:docuseal ./tmp ./tmp
+COPY --chown=docuseal:docuseal ./docs ./docs
 COPY --chown=docuseal:docuseal LICENSE README.md Rakefile config.ru .version ./
 COPY --chown=docuseal:docuseal .version ./public/version
 

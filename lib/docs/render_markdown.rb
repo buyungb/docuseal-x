@@ -4,7 +4,11 @@ require 'kramdown'
 require 'kramdown-parser-gfm'
 
 module Docs
-  # Renders GitHub-flavored Markdown from +docs/+ with Rouge-highlighted fenced code.
+  # Renders GitHub-flavored Markdown from +docs/+. Fenced code blocks keep
+  # their +language-*+ class so a client-side highlighter (e.g. Prism / hljs)
+  # can colorize them later; no server-side highlighter is loaded because
+  # Rouge 4.7.0 eager-loads every lexer on +require+ and one of them
+  # (+apiblueprint+) raises on Ruby 4.x, which takes the page down.
   module RenderMarkdown
     module_function
 
@@ -18,16 +22,12 @@ module Docs
         text = text.gsub('](./TEMPLATE_TAGS.md)', "](#{href})")
       end
 
-      require 'rouge'
-
       Kramdown::Document.new(
         text,
         input: 'GFM',
-        syntax_highlighter: :rouge,
-        syntax_highlighter_opts: {
-          span: { line_numbers: false },
-          block: { line_numbers: false, wrap: true }
-        }
+        syntax_highlighter: nil,
+        hard_wrap: false,
+        auto_ids: true
       ).to_html
     end
 

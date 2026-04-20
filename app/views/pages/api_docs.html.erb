@@ -1,6 +1,19 @@
 <% content_for :html_title, "#{@html_title} | #{Docuseal.product_name}" %>
-<div class="max-w-6xl mx-auto px-4 py-8">
-  <article class="markdown-body bg-base-100 rounded-box border border-base-300 shadow-soft px-5 py-8 sm:px-8 overflow-x-auto">
-    <%= @sanitized_html %>
-  </article>
-</div>
+
+<header class="mt-2 mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+  <div>
+    <p class="text-xs uppercase tracking-wider text-base-content/50 font-semibold mb-1">Documentation</p>
+    <h1 class="text-3xl md:text-4xl font-bold tracking-tight"><%= @html_title %></h1>
+    <p class="text-base-content/60 mt-1 text-sm md:text-base">Self-hosted <%= Docuseal.product_name %> · REST API &amp; template tags reference.</p>
+  </div>
+  <nav class="flex flex-wrap items-center gap-2 text-sm" aria-label="Docs">
+    <%= link_to 'API reference', api_docs_path,
+                class: "btn btn-sm #{current_page?(api_docs_path) ? 'btn-primary' : 'btn-ghost'}" %>
+    <%= link_to 'Template tags', template_tags_docs_path,
+                class: "btn btn-sm #{current_page?(template_tags_docs_path) ? 'btn-primary' : 'btn-ghost'}" %>
+  </nav>
+</header>
+
+<article class="markdown-body bg-base-100 rounded-box border border-base-300 shadow-soft px-5 py-8 sm:px-8 overflow-x-auto">
+  <%= @sanitized_html %>
+</article>
