@@ -28,7 +28,7 @@
             class="btn btn-outline font-medium btn-sm type-text-button"
             @click.prevent="toggleTextInput"
           >
-            <IconTextSize :width="16" />
+            <PhTextAa weight="duotone" :width="16" />
             <span class="hidden sm:inline">
               {{ t('type') }}
             </span>
@@ -45,7 +45,7 @@
             class="btn btn-outline font-medium btn-sm type-text-button"
             @click.prevent="toggleTextInput"
           >
-            <IconSignature :width="16" />
+            <PhSignature weight="duotone" :width="16" />
             <span class="hidden sm:inline">
               {{ t('draw') }}
             </span>
@@ -56,7 +56,7 @@
           :data-tip="t('click_to_upload')"
         >
           <label class="btn btn-outline btn-sm font-medium inline-flex flex-nowrap upload-image-button">
-            <IconUpload :width="16" />
+            <PhUploadSimple weight="duotone" :width="16" />
             <input
               :key="uploadImageInputKey"
               type="file"
@@ -75,7 +75,7 @@
           class="btn font-medium btn-outline btn-sm clear-canvas-button"
           @click.prevent="remove"
         >
-          <IconReload :width="16" />
+          <PhArrowClockwise weight="duotone" :width="16" />
           {{ t('clear') }}
         </a>
         <a
@@ -84,7 +84,7 @@
           class="btn font-medium btn-outline btn-sm clear-canvas-button"
           @click.prevent="clear"
         >
-          <IconReload :width="16" />
+          <PhArrowClockwise weight="duotone" :width="16" />
           {{ t('clear') }}
         </a>
         <a
@@ -93,7 +93,7 @@
           class="py-1.5 inline md:hidden"
           @click.prevent="$emit('minimize')"
         >
-          <IconArrowsDiagonalMinimize2
+          <PhArrowsInSimple weight="duotone"
             :width="20"
             :height="20"
           />
@@ -150,7 +150,7 @@
 
 <script>
 import { cropCanvasAndExportToPNG } from './crop_canvas'
-import { IconReload, IconTextSize, IconUpload, IconSignature, IconArrowsDiagonalMinimize2 } from '@tabler/icons-vue'
+import { PhArrowClockwise, PhTextAa, PhUploadSimple, PhSignature, PhArrowsInSimple } from '@phosphor-icons/vue'
 import SignaturePad from 'signature_pad'
 import AppearsOn from './appears_on'
 import MarkdownContent from './markdown_content'
@@ -161,13 +161,13 @@ const scale = 3
 export default {
   name: 'InitialsStep',
   components: {
-    IconUpload,
+    PhUploadSimple,
     AppearsOn,
-    IconReload,
-    IconTextSize,
-    IconSignature,
+    PhArrowClockwise,
+    PhTextAa,
+    PhSignature,
     MarkdownContent,
-    IconArrowsDiagonalMinimize2
+    PhArrowsInSimple
   },
   inject: ['baseUrl', 't'],
   props: {

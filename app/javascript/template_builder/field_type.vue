@@ -51,8 +51,7 @@
 </template>
 
 <script>
-import { IconTextSize, IconWritingSign, IconCalendarEvent, IconPhoto, IconCheckbox, IconPaperclip, IconSelect, IconCircleDot, IconChecks, IconColumns3, IconPhoneCheck, IconLetterCaseUpper, IconCreditCard, IconRubberStamp, IconSquareNumber1, IconHeading, IconId, IconCalendarCheck, IconStrikethrough, IconUserScan } from '@tabler/icons-vue'
-
+import { PhTextAa, PhSignature, PhCalendarDots, PhImage, PhCheckSquare, PhPaperclip, PhCaretUpDown, PhRadioButton, PhChecks, PhColumns, PhPhoneCall, PhCreditCard, PhStamp, PhNumberSquareOne, PhTextH, PhIdentificationCard, PhCalendarCheck, PhTextStrikethrough, PhScan } from '@phosphor-icons/vue'
 export default {
   name: 'FiledTypeDropdown',
   inject: ['withPhone', 'withPayment', 'withVerification', 'withKba', 't', 'fieldTypes'],
@@ -141,26 +140,26 @@ export default {
     },
     fieldIcons () {
       return {
-        heading: IconHeading,
-        strikethrough: IconStrikethrough,
-        text: IconTextSize,
-        signature: IconWritingSign,
-        initials: IconLetterCaseUpper,
-        date: IconCalendarEvent,
-        datenow: IconCalendarCheck,
-        number: IconSquareNumber1,
-        image: IconPhoto,
-        checkbox: IconCheckbox,
-        multiple: IconChecks,
-        file: IconPaperclip,
-        radio: IconCircleDot,
-        select: IconSelect,
-        cells: IconColumns3,
-        stamp: IconRubberStamp,
-        payment: IconCreditCard,
-        phone: IconPhoneCheck,
-        verification: IconId,
-        kba: IconUserScan
+        heading: PhTextH,
+        strikethrough: PhTextStrikethrough,
+        text: PhTextAa,
+        signature: PhSignature,
+        initials: PhTextAa,
+        date: PhCalendarDots,
+        datenow: PhCalendarCheck,
+        number: PhNumberSquareOne,
+        image: PhImage,
+        checkbox: PhCheckSquare,
+        multiple: PhChecks,
+        file: PhPaperclip,
+        radio: PhRadioButton,
+        select: PhCaretUpDown,
+        cells: PhColumns,
+        stamp: PhStamp,
+        payment: PhCreditCard,
+        phone: PhPhoneCall,
+        verification: PhIdentificationCard,
+        kba: PhScan
       }
     },
     skipTypes () {

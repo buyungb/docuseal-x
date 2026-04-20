@@ -1,0 +1,203 @@
+# Phosphor Duotone icon map
+#
+# Used by:
+#   script/rebuild_icon_partials.rb       (ERB: app/views/icons/_<key>.html.erb)
+#   script/migrate_vue_icon_imports.rb    (Vue: @tabler/icons-vue IconXxx -> @phosphor-icons/vue PhYyy)
+#
+# Key:
+#   snake_case name of the current Tabler icon. For ERB, this matches the partial
+#   base name (app/views/icons/_<key>.html.erb). For Vue, this matches the snake_case
+#   conversion of the Tabler PascalCase import (IconWritingSign -> writing_sign).
+#
+# Entry:
+#   phosphor:       <kebab-case-name>   must exist at
+#                   node_modules/@phosphor-icons/core/assets/duotone/<name>-duotone.svg
+#   accent:         (optional) Tailwind class applied to the duotone fill layer (20% opacity body).
+#                   Leave blank to inherit the current icon color via currentColor.
+#   keep_existing:  true  -- skip both scripts; keep the hand-crafted partial / import as-is
+#                            (used for OAuth brand marks that require official multi-color logos).
+
+# =====================================================================
+# ERB partials (app/views/icons/_*.html.erb)
+# =====================================================================
+
+"2fa":                       { phosphor: shield-check, accent: text-success }
+adjustments:                 { phosphor: sliders }
+adjustments_horizontal:      { phosphor: sliders-horizontal }
+alert_circle:                { phosphor: warning-circle, accent: text-warning }
+api:                         { phosphor: plugs-connected }
+archive:                     { phosphor: archive }
+arrow_left:                  { phosphor: arrow-left }
+arrow_right:                 { phosphor: arrow-right }
+arrow_sort:                  { phosphor: arrows-down-up }
+arrow_up_right:              { phosphor: arrow-up-right }
+building:                    { phosphor: buildings }
+calendar:                    { phosphor: calendar }
+calendar_check:              { phosphor: calendar-check }
+calendar_event:              { phosphor: calendar-dots }
+certificate:                 { phosphor: certificate, accent: text-primary }
+check:                       { phosphor: check }
+checkbox:                    { phosphor: check-square }
+checks:                      { phosphor: checks, accent: text-success }
+chevron_down:                { phosphor: caret-down }
+chevron_left:                { phosphor: caret-left }
+circle_arrow_left:           { phosphor: arrow-circle-left }
+circle_arrow_right:          { phosphor: arrow-circle-right }
+circle_check:                { phosphor: check-circle, accent: text-success }
+circle_check_filled:         { phosphor: check-circle, accent: text-success }
+circle_chevron_left:         { phosphor: caret-circle-left }
+circle_dot:                  { phosphor: radio-button }
+circle_question:             { phosphor: question }
+clipboard:                   { phosphor: clipboard }
+clipboard_copy:              { phosphor: clipboard-text }
+clock:                       { phosphor: clock }
+clock_cancel:                { phosphor: clock-countdown }
+clock_edit:                  { phosphor: clock-afternoon }
+clock_exclamation:           { phosphor: clock-user, accent: text-warning }
+cloud_upload:                { phosphor: cloud-arrow-up, accent: text-primary }
+code:                        { phosphor: code }
+code_circle:                 { phosphor: code }
+columns_3:                   { phosphor: columns }
+copy:                        { phosphor: copy }
+corner_down_right:           { phosphor: arrow-elbow-down-right }
+corner_right_down:           { phosphor: arrow-elbow-right-down }
+credit_card:                 { phosphor: credit-card }
+device_desktop:              { phosphor: desktop }
+device_floppy:               { phosphor: floppy-disk }
+device_mobile:               { phosphor: device-mobile }
+device_tablet:               { phosphor: device-tablet }
+devices:                     { phosphor: devices }
+discount_check_filled:       { phosphor: seal-check, accent: text-success }
+dots_vertical:               { phosphor: dots-three-vertical }
+download:                    { phosphor: download-simple }
+email_check:                 { phosphor: envelope, accent: text-success }
+eu_flag:                     { phosphor: flag }
+exclamation_circle:          { phosphor: warning-circle, accent: text-warning }
+external_link:               { phosphor: arrow-square-out }
+eye:                         { phosphor: eye }
+eye_off:                     { phosphor: eye-slash }
+file_text:                   { phosphor: file-text }
+file_upload:                 { phosphor: file-arrow-up }
+files:                       { phosphor: files }
+filter:                      { phosphor: funnel }
+folder:                      { phosphor: folder }
+folder_plus:                 { phosphor: folder-plus }
+folder_share:                { phosphor: folder-user }
+forms:                       { phosphor: textbox }
+hand_click:                  { phosphor: hand-pointing }
+id:                          { phosphor: identification-card }
+info_circle:                 { phosphor: info, accent: text-info }
+layout_grid:                 { phosphor: squares-four }
+layout_list:                 { phosphor: list-bullets }
+letter_case_upper:           { phosphor: text-aa }
+link:                        { phosphor: link-simple }
+list:                        { phosphor: list }
+loader:                      { phosphor: circle-notch }
+lock:                        { phosphor: lock }
+lock_access:                 { phosphor: lock-key }
+lock_open:                   { phosphor: lock-open }
+login:                       { phosphor: sign-in }
+logout:                      { phosphor: sign-out }
+logs:                        { phosphor: list-magnifying-glass }
+mail:                        { phosphor: envelope }
+mail_forward:                { phosphor: envelope-simple }
+mail_opened:                 { phosphor: envelope-open }
+mail_up:                     { phosphor: envelope-simple-open }
+paperclip:                   { phosphor: paperclip }
+pencil:                      { phosphor: pencil-simple }
+pencil_share:                { phosphor: pencil-simple-line }
+phone:                       { phosphor: phone }
+phone_check:                 { phosphor: phone-call, accent: text-success }
+photo:                       { phosphor: image }
+player_play:                 { phosphor: play }
+plus:                        { phosphor: plus }
+reload:                      { phosphor: arrow-clockwise }
+rotate:                      { phosphor: arrow-counter-clockwise }
+rubber_stamp:                { phosphor: stamp, accent: text-accent }
+save:                        { phosphor: floppy-disk }
+search:                      { phosphor: magnifying-glass }
+select:                      { phosphor: caret-up-down }
+send:                        { phosphor: paper-plane-tilt, accent: text-primary }
+settings:                    { phosphor: gear }
+shield_check:                { phosphor: shield-check, accent: text-success }
+slash:                       { phosphor: divide }   # partial is orphan; kept for safety
+sort_ascending_letters:      { phosphor: sort-ascending }
+sort_descending_numbers:     { phosphor: sort-descending }
+sort_descending_small_big:   { phosphor: sort-descending }
+sparkles:                    { phosphor: sparkle, accent: text-accent }
+square_number_1:             { phosphor: number-square-one }
+start:                       { phosphor: rocket-launch, accent: text-primary }
+terminal:                    { phosphor: terminal }
+text_size:                   { phosphor: text-aa }
+trash:                       { phosphor: trash, accent: text-error }
+upload:                      { phosphor: upload-simple }
+usa_flag:                    { phosphor: flag }
+user:                        { phosphor: user }
+user_number:                 { phosphor: user-focus }
+user_plus:                   { phosphor: user-plus, accent: text-success }
+user_scan:                   { phosphor: scan }
+users:                       { phosphor: users }
+users_plus:                  { phosphor: users-three, accent: text-success }
+waving_hand:                 { phosphor: hand-waving, accent: text-accent }
+world:                       { phosphor: globe, accent: text-primary }
+writing:                     { phosphor: pencil-simple-line }
+writing_sign:                { phosphor: signature, accent: text-primary }
+x:                           { phosphor: x }
+x_circle:                    { phosphor: x-circle, accent: text-error }
+zoom_check:                  { phosphor: magnifying-glass-plus }
+
+# =====================================================================
+# Vue-only names (Tabler IconXxx -> snake_case -> Phosphor)
+# These do NOT have a matching ERB partial today; they are used only inside Vue components.
+# =====================================================================
+
+inner_shadow_top:            { phosphor: circle-notch }
+brand_stripe:                { phosphor: credit-card }
+heading:                     { phosphor: text-h }
+strikethrough:               { phosphor: text-strikethrough }
+code_plus:                   { phosphor: brackets-curly }
+math_function:               { phosphor: function }
+circle_plus:                 { phosphor: plus-circle }
+align_box_left_top:          { phosphor: align-left }
+trash_x:                     { phosphor: trash, accent: text-error }
+bold:                        { phosphor: text-b }
+italic:                      { phosphor: text-italic }
+align_left:                  { phosphor: text-align-left }
+align_right:                 { phosphor: text-align-right }
+align_center:                { phosphor: text-align-center }
+align_box_center_top:        { phosphor: align-top-simple }
+align_box_center_bottom:     { phosphor: align-bottom-simple }
+align_box_center_middle:     { phosphor: align-center-vertical-simple }
+arrows_horizontal:           { phosphor: arrows-left-right }
+route_alt_left:              { phosphor: flow-arrow }
+new_section:                 { phosphor: plus-square }
+sort_descending_2:           { phosphor: sort-descending }
+typography:                  { phosphor: text-aa }
+click:                       { phosphor: cursor-click }
+layout_align_left:           { phosphor: align-left }
+layout_align_right:          { phosphor: align-right }
+layout_align_top:            { phosphor: align-top }
+layout_align_bottom:         { phosphor: align-bottom }
+refresh:                     { phosphor: arrow-clockwise }
+brand_google_drive:          { phosphor: google-drive-logo }
+camera:                      { phosphor: camera }
+signature:                   { phosphor: signature, accent: text-primary }
+arrows_diagonal_minimize_2:  { phosphor: arrows-in-simple }
+qrcode:                      { phosphor: qr-code }
+arrows_diagonal:             { phosphor: arrows-out-simple }
+chevron_up:                  { phosphor: caret-up }
+shape:                       { phosphor: shapes }
+file_plus:                   { phosphor: file-plus }
+file_symlink:                { phosphor: file-arrow-up }
+
+# =====================================================================
+# Brand icons -- OAuth marks keep their official multi-color logo. Others swap to Phosphor.
+# =====================================================================
+
+brand_google:                { keep_existing: true }                       # Google OAuth -- official G kept
+brand_microsoft:             { keep_existing: true }                       # Microsoft OAuth -- official 4-color quad kept
+brand_gdrive:                { keep_existing: true }                       # Google Drive picker -- official Drive triangle kept
+brand_github:                { phosphor: github-logo }                     # ERB partial pruned; Vue falls back to Phosphor github-logo
+brand_discord:               { phosphor: discord-logo }                    # settings nav
+brand_openai:                { phosphor: robot, accent: text-accent }      # settings nav
+# brand_docker / brand_twitter: ERB partials pruned (unused in UI). Vue side not referenced.

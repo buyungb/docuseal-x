@@ -17,7 +17,7 @@
           :href="attachmentsIndex[val].url"
           target="_blank"
         >
-          <IconPaperclip
+          <PhPaperclip weight="duotone"
             :width="16"
             class="flex-none"
             :heigh="16"
@@ -30,7 +30,7 @@
           class="remove-attachment-button"
           @click.prevent="removeAttachment(val)"
         >
-          <IconTrashX
+          <PhTrash weight="duotone"
             :width="18"
             :heigh="19"
           />
@@ -64,15 +64,14 @@
 <script>
 import FileDropzone from './dropzone'
 import MarkdownContent from './markdown_content'
-import { IconPaperclip, IconTrashX } from '@tabler/icons-vue'
-
+import { PhPaperclip, PhTrash } from '@phosphor-icons/vue'
 export default {
   name: 'AttachmentStep',
   components: {
     FileDropzone,
     MarkdownContent,
-    IconPaperclip,
-    IconTrashX
+    PhPaperclip,
+    PhTrash
   },
   inject: ['t'],
   props: {

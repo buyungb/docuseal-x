@@ -70,21 +70,21 @@
         class="btn btn-ghost btn-circle btn-sm toggle-multiline-text-button"
         @click.prevent="toggleTextArea"
       >
-        <IconAlignBoxLeftTop />
+        <PhAlignLeft weight="duotone" />
       </a>
     </div>
   </div>
 </template>
 
 <script>
-import { IconAlignBoxLeftTop } from '@tabler/icons-vue'
+import { PhAlignLeft } from '@phosphor-icons/vue'
 import AppearsOn from './appears_on'
 import MarkdownContent from './markdown_content'
 
 export default {
   name: 'TextStep',
   components: {
-    IconAlignBoxLeftTop,
+    PhAlignLeft,
     MarkdownContent,
     AppearsOn
   },

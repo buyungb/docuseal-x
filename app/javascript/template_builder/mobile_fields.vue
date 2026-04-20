@@ -4,12 +4,12 @@
       class="btn btn-neutral text-white btn-circle btn-lg group"
       tabindex="0"
     >
-      <IconPlus
+      <PhPlus weight="duotone"
         class="group-focus:hidden"
         width="28"
         height="28"
       />
-      <IconX
+      <PhX weight="duotone"
         class="hidden group-focus:inline p-3"
         width="64"
         height="50"
@@ -80,14 +80,14 @@
   </span>
 </template>
 <script>
-import { IconPlus, IconX } from '@tabler/icons-vue'
+import { PhPlus, PhX } from '@phosphor-icons/vue'
 import FieldType from './field_type'
 
 export default {
   name: 'MobileFields',
   components: {
-    IconPlus,
-    IconX
+    PhPlus,
+    PhX
   },
   inject: ['withPhone', 'withPayment', 'withVerification', 'withKba', 'backgroundColor', 't'],
   props: {

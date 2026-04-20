@@ -12,13 +12,13 @@
     >
       <div class="absolute top-0 right-0 left-0 bottom-0 flex items-center justify-center">
         <div class="flex flex-col items-center">
-          <IconInnerShadowTop
+          <PhCircleNotch weight="duotone"
             v-if="isLoading"
             class="animate-spin"
             :width="30"
             :height="30"
           />
-          <IconCloudUpload
+          <PhCloudArrowUp weight="duotone"
             v-else
             :width="30"
             :height="30"
@@ -48,13 +48,12 @@
 </template>
 
 <script>
-import { IconCloudUpload, IconInnerShadowTop } from '@tabler/icons-vue'
-
+import { PhCloudArrowUp, PhCircleNotch } from '@phosphor-icons/vue'
 export default {
   name: 'FileDropzone',
   components: {
-    IconCloudUpload,
-    IconInnerShadowTop
+    PhCloudArrowUp,
+    PhCircleNotch
   },
   inject: ['baseUrl', 't'],
   props: {

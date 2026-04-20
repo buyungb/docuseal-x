@@ -121,7 +121,7 @@
             @focus="isSettingsFocus = true"
             @blur="maybeBlurSettings"
           >
-            <IconDotsVertical class="w-5 h-5" />
+            <PhDotsThreeVertical weight="duotone" class="w-5 h-5" />
           </label>
           <ul
             v-if="renderDropdown"
@@ -159,7 +159,7 @@
         :title="t('remove')"
         @click.prevent="$emit('remove')"
       >
-        <IconX width="14" />
+        <PhX weight="duotone" width="14" />
       </button>
     </div>
     <div
@@ -227,7 +227,7 @@
             :style="{ color: field.preferences?.color }"
             :class="{ 'w-full h-full': isWFullType }"
           >
-            <IconCheck
+            <PhCheck weight="duotone"
               v-if="field.type == 'checkbox'"
               class="aspect-square mx-auto"
               :class="{ '!w-auto !h-full': area.w > area.h, '!w-full !h-auto': area.w <= area.h }"
@@ -235,7 +235,7 @@
             <template
               v-else-if="(field.type === 'radio' || field.type === 'multiple') && field?.areas?.length > 1"
             >
-              <IconCheck
+              <PhCheck weight="duotone"
                 v-if="field.type === 'multiple' ? field.default_value.includes(buildAreaOptionValue(area)) : buildAreaOptionValue(area) === field.default_value"
                 class="aspect-square mx-auto"
                 :class="{ '!w-auto !h-full': area.w > area.h, '!w-full !h-auto': area.w <= area.h }"
@@ -384,22 +384,22 @@ import FormulaModal from './formula_modal'
 import FontModal from './font_modal'
 import ConditionsModal from './conditions_modal'
 import DescriptionModal from './description_modal'
-import { IconX, IconCheck, IconDotsVertical } from '@tabler/icons-vue'
+import { PhX, PhCheck, PhDotsThreeVertical } from '@phosphor-icons/vue'
 import { v4 } from 'uuid'
 
 export default {
   name: 'FieldArea',
   components: {
     FieldType,
-    IconCheck,
+    PhCheck,
     FieldSettings,
     FormulaModal,
     FontModal,
-    IconDotsVertical,
+    PhDotsThreeVertical,
     DescriptionModal,
     ConditionsModal,
     FieldSubmitter,
-    IconX
+    PhX
   },
   inject: ['template', 'save', 't', 'isInlineSize', 'selectedAreasRef', 'isCmdKeyRef'],
   props: {

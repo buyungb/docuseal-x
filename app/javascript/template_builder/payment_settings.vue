@@ -8,7 +8,7 @@
       :title="t('settings')"
       class="cursor-pointer text-transparent group-hover:text-base-content"
     >
-      <IconSettings
+      <PhGear weight="duotone"
         :width="18"
         :stroke-width="1.6"
       />
@@ -128,7 +128,7 @@
           v-if="isConnected && isOauthSuccess"
           class="text-sm text-center"
         >
-          <IconCircleCheck
+          <PhCheckCircle weight="duotone"
             class="inline text-green-600 w-4 h-4"
           />
           Stripe Connected
@@ -174,7 +174,7 @@
               v-if="isLoading"
               class="flex items-center space-x-1"
             >
-              <IconInnerShadowTop
+              <PhCircleNotch weight="duotone"
                 class="w-4 h-4 animate-spin inline"
               />
               <span>
@@ -185,7 +185,7 @@
               v-else
               class="flex items-center space-x-1"
             >
-              <IconBrandStripe
+              <PhCreditCard weight="duotone"
                 class="w-4 h-4 inline"
               />
               <span>
@@ -209,7 +209,7 @@
           class="label-text cursor-pointer text-center w-full flex items-center"
           @click="$emit('click-formula')"
         >
-          <IconMathFunction
+          <PhFunction weight="duotone"
             width="18"
           />
           <span class="text-sm">
@@ -223,7 +223,7 @@
           class="label-text cursor-pointer text-center w-full flex items-center"
           @click="$emit('click-description')"
         >
-          <IconInfoCircle
+          <PhInfo weight="duotone"
             width="18"
           />
           <span class="text-sm">
@@ -239,7 +239,7 @@
           class="label-text cursor-pointer text-center w-full flex items-center"
           @click="$emit('click-condition')"
         >
-          <IconRouteAltLeft
+          <PhFlowArrow weight="duotone"
             width="18"
           />
           <span class="text-sm">
@@ -257,7 +257,7 @@
           class="text-sm py-1 px-2"
           @click.prevent="$emit('add-custom-field', field)"
         >
-          <IconForms
+          <PhTextbox weight="duotone"
             :width="20"
             :stroke-width="1.6"
           />
@@ -269,7 +269,7 @@
 </template>
 
 <script>
-import { IconMathFunction, IconSettings, IconCircleCheck, IconInfoCircle, IconBrandStripe, IconInnerShadowTop, IconRouteAltLeft, IconForms } from '@tabler/icons-vue'
+import { PhFunction, PhGear, PhCheckCircle, PhInfo, PhCreditCard, PhCircleNotch, PhFlowArrow, PhTextbox } from '@phosphor-icons/vue'
 import { ref } from 'vue'
 
 const isConnected = ref(false)
@@ -277,14 +277,14 @@ const isConnected = ref(false)
 export default {
   name: 'PaymentSettings',
   components: {
-    IconSettings,
-    IconCircleCheck,
-    IconRouteAltLeft,
-    IconInfoCircle,
-    IconForms,
-    IconMathFunction,
-    IconInnerShadowTop,
-    IconBrandStripe
+    PhGear,
+    PhCheckCircle,
+    PhFlowArrow,
+    PhInfo,
+    PhTextbox,
+    PhFunction,
+    PhCircleNotch,
+    PhCreditCard
   },
   inject: ['backgroundColor', 'save', 'currencies', 't', 'isPaymentConnected'],
   props: {

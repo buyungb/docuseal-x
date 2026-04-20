@@ -117,8 +117,8 @@ class ApplicationController < ActionController::Base
                      locals: { title:, disabled_with:, title_class:, icon:, icon_disabled: })
   end
 
-  def svg_icon(icon_name, class: '')
-    render_to_string(partial: "icons/#{icon_name}", locals: { class: })
+  def svg_icon(icon_name, class: '', accent_class: nil)
+    render_to_string(partial: "icons/#{icon_name}", locals: { class:, accent_class: })
   end
 
   def form_link_host

@@ -14,7 +14,7 @@
     >
       <div class="absolute top-0 right-0 left-0 bottom-0 flex items-center justify-center">
         <div class="flex flex-col items-center pointer-events-none">
-          <IconInnerShadowTop
+          <PhCircleNotch weight="duotone"
             v-if="isLoading"
             class="animate-spin"
             :width="40"
@@ -46,7 +46,7 @@
             @click.stop.prevent="$emit('click-google-drive')"
           >
             <span>{{ t('or_add_from') }}</span>
-            <IconBrandGoogleDrive class="w-4 h-4 inline-block ml-1" />
+            <PhGoogleDriveLogo weight="duotone" class="w-4 h-4 inline-block ml-1" />
             <span class="ml-1 font-medium hover:underline">Google Drive</span>
           </button>
         </div>
@@ -71,17 +71,16 @@
 
 <script>
 import Upload from './upload'
-import { IconCloudUpload, IconFilePlus, IconFileSymlink, IconFiles, IconInnerShadowTop, IconBrandGoogleDrive } from '@tabler/icons-vue'
-
+import { PhCloudArrowUp, PhFilePlus, PhFileArrowUp, PhFiles, PhCircleNotch, PhGoogleDriveLogo } from '@phosphor-icons/vue'
 export default {
   name: 'FileDropzone',
   components: {
-    IconFilePlus,
-    IconCloudUpload,
-    IconInnerShadowTop,
-    IconFileSymlink,
-    IconFiles,
-    IconBrandGoogleDrive
+    PhFilePlus,
+    PhCloudArrowUp,
+    PhCircleNotch,
+    PhFileArrowUp,
+    PhFiles,
+    PhGoogleDriveLogo
   },
   inject: ['baseFetch', 't'],
   props: {
@@ -97,7 +96,7 @@ export default {
     icon: {
       type: String,
       required: false,
-      default: 'IconCloudUpload'
+      default: 'PhCloudArrowUp'
     },
     cloneTemplateOnUpload: {
       type: Boolean,

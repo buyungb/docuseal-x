@@ -4,7 +4,7 @@
     :class="{ 'dropdown-open': isLoading }"
   >
     <label tabindex="0">
-      <IconBrandGoogleDrive
+      <PhGoogleDriveLogo weight="duotone"
         width="19"
         class="inline-block mr-1 cursor-pointer"
       />
@@ -21,7 +21,7 @@
           target="_blank"
           class="flex items-center"
         >
-          <IconExternalLink class="w-4 h-4 flex-shrink-0" />
+          <PhArrowSquareOut weight="duotone" class="w-4 h-4 flex-shrink-0" />
           <span>{{ t('view') }}</span>
         </a>
       </li>
@@ -31,7 +31,7 @@
           type="submit"
           :disabled="isLoading"
         >
-          <IconRefresh
+          <PhArrowClockwise weight="duotone"
             class="w-4 h-4 flex-shrink-0"
             :class="{ 'animate-spin': isLoading }"
           />
@@ -57,14 +57,13 @@
 
 <script>
 import Upload from './upload'
-import { IconRefresh, IconBrandGoogleDrive, IconExternalLink } from '@tabler/icons-vue'
-
+import { PhArrowClockwise, PhGoogleDriveLogo, PhArrowSquareOut } from '@phosphor-icons/vue'
 export default {
   name: 'GoogleDriveDocumentSettings',
   components: {
-    IconRefresh,
-    IconBrandGoogleDrive,
-    IconExternalLink
+    PhArrowClockwise,
+    PhGoogleDriveLogo,
+    PhArrowSquareOut
   },
   inject: ['baseFetch', 't', 'backgroundColor'],
   props: {

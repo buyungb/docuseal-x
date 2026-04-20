@@ -62,7 +62,7 @@
             class="relative cursor-pointer text-transparent group-hover:text-base-content"
             @click="$emit('set-draw', { field })"
           >
-            <IconNewSection
+            <PhPlusSquare weight="duotone"
               :width="18"
               :stroke-width="1.6"
             />
@@ -73,7 +73,7 @@
             :title="t('formula')"
             @click="isShowFormulaModal = true"
           >
-            <IconMathFunction
+            <PhFunction weight="duotone"
               :width="18"
               :stroke-width="1.6"
             />
@@ -84,7 +84,7 @@
             :title="t('condition')"
             @click="isShowConditionsModal = true"
           >
-            <IconRouteAltLeft
+            <PhFlowArrow weight="duotone"
               :width="18"
               :stroke-width="1.6"
             />
@@ -110,7 +110,7 @@
               :title="t('settings')"
               class="cursor-pointer text-transparent group-hover:text-base-content"
             >
-              <IconSettings
+              <PhGear weight="duotone"
                 :width="18"
                 :stroke-width="1.6"
               />
@@ -149,7 +149,7 @@
             :title="t('remove')"
             @click="$emit('remove', field)"
           >
-            <IconTrashX
+            <PhTrash weight="duotone"
               :width="18"
               :stroke-width="1.6"
             />
@@ -200,7 +200,7 @@
               tabindex="-1"
               @click.prevent="$emit('set-draw', { field, option })"
             >
-              <IconNewSection
+              <PhPlusSquare weight="duotone"
                 :width="18"
                 :stroke-width="1.6"
               />
@@ -252,7 +252,7 @@
           <span class="lowercase">
             {{ field.options.length }} {{ t('options') }}
           </span>
-          <IconChevronDown
+          <PhCaretDown weight="duotone"
             class="ml-2 mr-2 mt-0.5"
             width="15"
             height="15"
@@ -319,25 +319,25 @@ import FormulaModal from './formula_modal'
 import FontModal from './font_modal'
 import ConditionsModal from './conditions_modal'
 import DescriptionModal from './description_modal'
-import { IconRouteAltLeft, IconMathFunction, IconNewSection, IconTrashX, IconSettings, IconChevronDown } from '@tabler/icons-vue'
+import { PhFlowArrow, PhFunction, PhPlusSquare, PhTrash, PhGear, PhCaretDown } from '@phosphor-icons/vue'
 import { v4 } from 'uuid'
 
 export default {
   name: 'TemplateField',
   components: {
     Contenteditable,
-    IconSettings,
+    PhGear,
     FieldSettings,
     PaymentSettings,
-    IconChevronDown,
-    IconNewSection,
+    PhCaretDown,
+    PhPlusSquare,
     FormulaModal,
     FontModal,
     DescriptionModal,
     ConditionsModal,
-    IconRouteAltLeft,
-    IconTrashX,
-    IconMathFunction,
+    PhFlowArrow,
+    PhTrash,
+    PhFunction,
     FieldType
   },
   inject: ['template', 'backgroundColor', 'selectedAreasRef', 't', 'locale'],

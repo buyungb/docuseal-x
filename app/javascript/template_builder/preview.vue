@@ -26,7 +26,7 @@
                 class="btn border-gray-300 bg-white text-base-content btn-xs rounded hover:text-base-100 hover:bg-base-content hover:border-base-content w-full transition-colors p-0 document-control-button"
                 @click.stop="isShowConditionsModal = true"
               >
-                <IconRouteAltLeft
+                <PhFlowArrow weight="duotone"
                   :width="14"
                   :stroke-width="1.6"
                 />
@@ -66,7 +66,7 @@
                   class="btn border-gray-300 bg-white text-base-content btn-xs rounded hover:text-base-100 hover:bg-base-content hover:border-base-content w-full transition-colors p-0 document-control-button"
                   @click.stop="$emit('reorder', item)"
                 >
-                  <IconSortDescending2
+                  <PhSortDescending weight="duotone"
                     :width="18"
                     :height="18"
                     :stroke-width="1.6"
@@ -128,7 +128,7 @@
 <script>
 import Contenteditable from './contenteditable'
 import Upload from './upload'
-import { IconRouteAltLeft, IconSortDescending2 } from '@tabler/icons-vue'
+import { PhFlowArrow, PhSortDescending } from '@phosphor-icons/vue'
 import ConditionsModal from './conditions_modal'
 import ReplaceButton from './replace'
 import GoogleDriveDocumentSettings from './google_drive_document_settings'
@@ -139,11 +139,11 @@ export default {
   name: 'DocumentPreview',
   components: {
     Contenteditable,
-    IconRouteAltLeft,
+    PhFlowArrow,
     ConditionsModal,
     ReplaceButton,
     GoogleDriveDocumentSettings,
-    IconSortDescending2
+    PhSortDescending
   },
   inject: ['t'],
   props: {

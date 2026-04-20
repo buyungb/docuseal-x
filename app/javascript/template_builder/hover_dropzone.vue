@@ -8,7 +8,7 @@
     <div class="flex flex-col gap-2 p-4 items-center bg-base-100 h-full max-h-[85vh] max-w-6xl rounded-2xl w-full">
       <Dropzone
         class="flex-1 h-full"
-        icon="IconFilePlus"
+        icon="PhFilePlus"
         :template-id="templateId"
         :accept-file-types="acceptFileTypes"
         :with-hover-class="false"
@@ -22,7 +22,7 @@
       <div class="flex-1 flex gap-2 w-full">
         <Dropzone
           class="flex-1 h-full"
-          icon="IconFileSymlink"
+          icon="PhFileArrowUp"
           :template-id="templateId"
           :accept-file-types="acceptFileTypes"
           :with-hover-class="false"
@@ -35,7 +35,7 @@
         <Dropzone
           v-if="withReplaceAndClone"
           class="flex-1 h-full"
-          icon="IconFiles"
+          icon="PhFiles"
           :template-id="templateId"
           :accept-file-types="acceptFileTypes"
           :with-hover-class="false"

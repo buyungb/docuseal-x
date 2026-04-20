@@ -1728,6 +1728,16 @@
     tslib "^2.8.1"
     tsyringe "^4.10.0"
 
+"@phosphor-icons/core@^2.1.1":
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/@phosphor-icons/core/-/core-2.1.1.tgz#62a4cfbec9772f1a613a647da214fbb96f3ad39d"
+  integrity sha512-v4ARvrip4qBCImOE5rmPUylOEK4iiED9ZyKjcvzuezqMaiRASCHKcRIuvvxL/twvLpkfnEODCOJp5dM4eZilxQ==
+
+"@phosphor-icons/vue@^2.2.1":
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/@phosphor-icons/vue/-/vue-2.2.1.tgz#e836db5c56e15b04bdad99195308e24597a82b4e"
+  integrity sha512-3RNg1utc2Z5RwPKWFkW3eXI/0BfQAwXgtFxPUPeSzi55jGYUq16b+UqcgbKLazWFlwg5R92OCLKjDiJjeiJcnA==
+
 "@pkgjs/parseargs@^0.11.0":
   version "0.11.0"
   resolved "https://registry.yarnpkg.com/@pkgjs/parseargs/-/parseargs-0.11.0.tgz#a77ea742fab25775145434eb1d2328cf5013ac33"
@@ -1754,18 +1764,6 @@
   integrity sha512-g41FgN5kfuGkOrWhhmVvFes2BzQ3msU5oR/8KPdXbkBt8UIHtwL+by9maItDIhu+BR7pxshABtaB/FqpESa9Mg==
   dependencies:
     htmlparser2 "^8.0.1"
-
-"@tabler/icons-vue@^2.47.0":
-  version "2.47.0"
-  resolved "https://registry.yarnpkg.com/@tabler/icons-vue/-/icons-vue-2.47.0.tgz#604608a6df673d035c0e8e33f0565eeffa3adf36"
-  integrity sha512-huEDak5xouwsRjbTUZlYZny9kC8ez61vdx/KwhR2Uc5HcUpxpFy+7p+IKH/ZZ48IcTHmCbdBJgbFRUI1mePJog==
-  dependencies:
-    "@tabler/icons" "2.47.0"
-
-"@tabler/icons@2.47.0":
-  version "2.47.0"
-  resolved "https://registry.yarnpkg.com/@tabler/icons/-/icons-2.47.0.tgz#c41c680d1947e3ab2d60af3febc4132287c60596"
-  integrity sha512-4w5evLh+7FUUiA1GucvGj2ReX2TvOjEr4ejXdwL/bsjoSkof6r1gQmzqI+VHrE2CpJpB3al7bCTulOkFa/RcyA==
 
 "@trysound/sax@0.2.0":
   version "0.2.0"

@@ -30,7 +30,7 @@
         class="btn btn-outline btn-sm !normal-case font-normal set-current-date-button"
         @click.prevent="[setCurrentDate(), $emit('focus')]"
       >
-        <IconCalendarCheck :width="16" />
+        <PhCalendarCheck weight="duotone" :width="16" />
         {{ t('set_today') }}
       </button>
     </div>
@@ -62,14 +62,14 @@
 </template>
 
 <script>
-import { IconCalendarCheck } from '@tabler/icons-vue'
+import { PhCalendarCheck } from '@phosphor-icons/vue'
 import AppearsOn from './appears_on'
 import MarkdownContent from './markdown_content'
 
 export default {
   name: 'DateStep',
   components: {
-    IconCalendarCheck,
+    PhCalendarCheck,
     MarkdownContent,
     AppearsOn
   },

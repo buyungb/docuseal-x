@@ -63,7 +63,7 @@
               :title="t('settings')"
               class="cursor-pointer text-transparent group-hover:text-base-content"
             >
-              <IconSettings
+              <PhGear weight="duotone"
                 :width="18"
                 :stroke-width="1.6"
               />
@@ -98,7 +98,7 @@
             :title="t('save')"
             @click="field.name ? $emit('save', field) : focusName()"
           >
-            <IconCheck
+            <PhCheck weight="duotone"
               :width="18"
               :stroke-width="2"
             />
@@ -109,7 +109,7 @@
             :title="t('remove')"
             @click="onRemoveClick"
           >
-            <IconTrashX
+            <PhTrash weight="duotone"
               :width="18"
               :stroke-width="1.6"
             />
@@ -161,22 +161,22 @@ import FieldSettings from './field_settings'
 import FormulaModal from './formula_modal'
 import FontModal from './font_modal'
 import DescriptionModal from './description_modal'
-import { IconTrashX, IconSettings, IconCheck } from '@tabler/icons-vue'
+import { PhTrash, PhGear, PhCheck } from '@phosphor-icons/vue'
 import IconDrag from './icon_drag'
 
 export default {
   name: 'CustomField',
   components: {
     Contenteditable,
-    IconSettings,
-    IconCheck,
+    PhGear,
+    PhCheck,
     FieldSettings,
     PaymentSettings,
     IconDrag,
     FormulaModal,
     FontModal,
     DescriptionModal,
-    IconTrashX,
+    PhTrash,
     FieldType
   },
   inject: ['backgroundColor', 't'],

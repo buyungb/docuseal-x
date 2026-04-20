@@ -240,7 +240,7 @@
           :style="{ backgroundColor }"
         >
           <div class="w-0 absolute left-0">
-            <IconLock
+            <PhLock weight="duotone"
               width="18"
               height="18"
               stroke-width="1.5"
@@ -266,7 +266,7 @@
           :style="{ backgroundColor }"
         >
           <div class="w-0 absolute left-0">
-            <IconLock
+            <PhLock weight="duotone"
               width="18"
               height="18"
               stroke-width="1.5"
@@ -308,7 +308,7 @@
       @click="fieldPagesLoaded !== null ? null : detectFields()"
     >
       <template v-if="fieldPagesLoaded !== null">
-        <IconInnerShadowTop
+        <PhCircleNotch weight="duotone"
           width="22"
           class="animate-spin"
         />
@@ -326,7 +326,7 @@
         </span>
       </template>
       <template v-else>
-        <IconSparkles width="22" />
+        <PhSparkle weight="duotone" width="22" />
         <span
           class="hidden md:inline"
         >
@@ -359,7 +359,7 @@ import Field from './field'
 import CustomField from './custom_field'
 import FieldType from './field_type'
 import FieldSubmitter from './field_submitter'
-import { IconLock, IconCirclePlus, IconInnerShadowTop, IconSparkles } from '@tabler/icons-vue'
+import { PhLock, PhPlusCircle, PhCircleNotch, PhSparkle } from '@phosphor-icons/vue'
 import IconDrag from './icon_drag'
 import { v4 } from 'uuid'
 
@@ -369,12 +369,12 @@ export default {
     Field,
     CustomField,
     FieldType,
-    IconCirclePlus,
-    IconSparkles,
-    IconInnerShadowTop,
+    PhPlusCircle,
+    PhSparkle,
+    PhCircleNotch,
     FieldSubmitter,
     IconDrag,
-    IconLock
+    PhLock
   },
   inject: ['save', 'backgroundColor', 'withPhone', 'withVerification', 'withKba', 'withPayment', 't', 'fieldsDragFieldRef', 'customDragFieldRef', 'baseFetch', 'selectedAreasRef'],
   props: {

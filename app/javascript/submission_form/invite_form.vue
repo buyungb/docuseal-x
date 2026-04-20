@@ -48,7 +48,7 @@
         :disabled="isSubmitting"
       >
         <span class="flex">
-          <IconInnerShadowTop
+          <PhCircleNotch weight="duotone"
             v-if="isSubmitting"
             class="mr-1 animate-spin"
           />
@@ -65,12 +65,11 @@
 </template>
 
 <script>
-import { IconInnerShadowTop } from '@tabler/icons-vue'
-
+import { PhCircleNotch } from '@phosphor-icons/vue'
 export default {
   name: 'InviteForm',
   components: {
-    IconInnerShadowTop
+    PhCircleNotch
   },
   inject: ['t'],
   props: {

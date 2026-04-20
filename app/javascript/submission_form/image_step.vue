@@ -18,7 +18,7 @@
         class="btn btn-outline btn-sm reupload-button"
         @click.prevent="remove"
       >
-        <IconReload :width="16" />
+        <PhArrowClockwise weight="duotone" :width="16" />
         {{ t('reupload') }}
       </button>
     </div>
@@ -56,14 +56,14 @@
 
 <script>
 import FileDropzone from './dropzone'
-import { IconReload } from '@tabler/icons-vue'
+import { PhArrowClockwise } from '@phosphor-icons/vue'
 import MarkdownContent from './markdown_content'
 
 export default {
   name: 'ImageStep',
   components: {
     FileDropzone,
-    IconReload,
+    PhArrowClockwise,
     MarkdownContent
   },
   inject: ['t'],

@@ -12,8 +12,8 @@
     "@github/catalyst": "^2.0.0-beta",
     "@hotwired/turbo": "https://github.com/docusealco/turbo#main",
     "@hotwired/turbo-rails": "^7.3.0",
+    "@phosphor-icons/vue": "^2.2.1",
     "@specious/htmlflow": "^1.1.0",
-    "@tabler/icons-vue": "^2.47.0",
     "autocompleter": "^9.1.0",
     "autoprefixer": "^10.4.14",
     "babel-loader": "9.1.2",
@@ -68,6 +68,7 @@
   ],
   "devDependencies": {
     "@babel/eslint-parser": "^7.21.8",
+    "@phosphor-icons/core": "^2.1.1",
     "babel-eslint": "^10.1.0",
     "eslint": "^8.40.0",
     "eslint-config-standard": "^17.0.0",

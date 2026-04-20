@@ -31,7 +31,7 @@
                   <span style="margin-top: 1px">
                     {{ preferences.font || 'Default' }}
                   </span>
-                  <IconChevronDown
+                  <PhCaretDown weight="duotone"
                     class="ml-2 mr-2 mt-0.5"
                     width="18"
                     height="18"
@@ -189,12 +189,11 @@
 </template>
 
 <script>
-import { IconChevronDown, IconBold, IconItalic, IconAlignLeft, IconAlignRight, IconAlignCenter, IconAlignBoxCenterTop, IconAlignBoxCenterBottom, IconAlignBoxCenterMiddle } from '@tabler/icons-vue'
-
+import { PhCaretDown, PhTextB, PhTextItalic, PhTextAlignLeft, PhTextAlignRight, PhTextAlignCenter, PhAlignTopSimple, PhAlignBottomSimple, PhAlignCenterVerticalSimple } from '@phosphor-icons/vue'
 export default {
   name: 'FontModal',
   components: {
-    IconChevronDown
+    PhCaretDown
   },
   inject: ['t', 'save', 'template'],
   props: {
@@ -238,22 +237,22 @@ export default {
     },
     types () {
       return [
-        { icon: IconBold, value: 'bold' },
-        { icon: IconItalic, value: 'italic' }
+        { icon: PhTextB, value: 'bold' },
+        { icon: PhTextItalic, value: 'italic' }
       ]
     },
     aligns () {
       return [
-        { icon: IconAlignLeft, value: 'left' },
-        { icon: IconAlignCenter, value: 'center' },
-        { icon: IconAlignRight, value: 'right' }
+        { icon: PhTextAlignLeft, value: 'left' },
+        { icon: PhTextAlignCenter, value: 'center' },
+        { icon: PhTextAlignRight, value: 'right' }
       ]
     },
     valigns () {
       return [
-        { icon: IconAlignBoxCenterTop, value: 'top' },
-        { icon: IconAlignBoxCenterMiddle, value: 'center' },
-        { icon: IconAlignBoxCenterBottom, value: 'bottom' }
+        { icon: PhAlignTopSimple, value: 'top' },
+        { icon: PhAlignCenterVerticalSimple, value: 'center' },
+        { icon: PhAlignBottomSimple, value: 'bottom' }
       ]
     },
     sizes () {

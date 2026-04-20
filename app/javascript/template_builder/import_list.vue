@@ -72,7 +72,7 @@
               </option>
             </select>
             <div class="flex items-center px-1">
-              <IconArrowsHorizontal style="width: 19px; height: 19px" />
+              <PhArrowsLeftRight weight="duotone" style="width: 19px; height: 19px" />
             </div>
             <div class="w-full relative">
               <select
@@ -115,7 +115,7 @@
                     class="btn btn-xs btn-circle bg-white border-0 border-gray-300"
                     @click.prevent
                   >
-                    <IconInfoCircle class="h-4 w-4" />
+                    <PhInfo weight="duotone" class="h-4 w-4" />
                   </button>
                 </span>
               </div>
@@ -130,7 +130,7 @@
                   class="btn btn-xs btn-circle"
                   @click.prevent="mappings.splice(mappings.indexOf(mapping), 1)"
                 >
-                  <IconX class="h-3.5 w-3.5" />
+                  <PhX weight="duotone" class="h-3.5 w-3.5" />
                 </button>
               </span>
             </div>
@@ -141,7 +141,7 @@
             class="btn btn-sm btn-primary w-full !normal-case font-medium"
             @click.prevent="addMapping(submitter)"
           >
-            <IconPlus class="w-4 h-4" />
+            <PhPlus weight="duotone" class="w-4 h-4" />
             {{ t('new_field_mapping') }}
           </button>
         </div>
@@ -177,13 +177,13 @@
         >
           <div class="absolute top-0 right-0 left-0 bottom-0 flex items-center justify-center">
             <div class="flex flex-col items-center">
-              <IconInnerShadowTop
+              <PhCircleNotch weight="duotone"
                 v-if="isLoading"
                 class="animate-spin"
                 :width="40"
                 :height="40"
               />
-              <IconCloudUpload
+              <PhCloudArrowUp weight="duotone"
                 v-else
                 :width="40"
                 :height="40"
@@ -225,18 +225,18 @@
 </template>
 
 <script>
-import { IconCloudUpload, IconX, IconPlus, IconArrowsHorizontal, IconInfoCircle, IconInnerShadowTop } from '@tabler/icons-vue'
+import { PhCloudArrowUp, PhX, PhPlus, PhArrowsLeftRight, PhInfo, PhCircleNotch } from '@phosphor-icons/vue'
 import { v4 } from 'uuid'
 
 export default {
   name: 'FileDropzone',
   components: {
-    IconCloudUpload,
-    IconX,
-    IconArrowsHorizontal,
-    IconPlus,
-    IconInfoCircle,
-    IconInnerShadowTop
+    PhCloudArrowUp,
+    PhX,
+    PhArrowsLeftRight,
+    PhPlus,
+    PhInfo,
+    PhCircleNotch
   },
   props: {
     template: {

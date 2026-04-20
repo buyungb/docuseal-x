@@ -31,7 +31,7 @@
             class="btn btn-outline btn-sm font-medium type-text-button"
             @click.prevent="[toggleTextInput(), hideQr()]"
           >
-            <IconSignature :width="16" />
+            <PhSignature weight="duotone" :width="16" />
             <span class="hidden sm:inline">
               {{ t('draw') }}
             </span>
@@ -49,7 +49,7 @@
             class="btn btn-outline btn-sm font-medium inline-flex flex-nowrap type-text-button"
             @click.prevent="[toggleTextInput(), hideQr()]"
           >
-            <IconTextSize :width="16" />
+            <PhTextAa weight="duotone" :width="16" />
             <span class="hidden sm:inline">
               {{ t('type') }}
             </span>
@@ -62,7 +62,7 @@
           :data-tip="t('take_photo')"
         >
           <label class="btn btn-outline btn-sm font-medium inline-flex flex-nowrap upload-image-button">
-            <IconCamera :width="16" />
+            <PhCamera weight="duotone" :width="16" />
             <input
               :key="uploadImageInputKey"
               type="file"
@@ -81,7 +81,7 @@
           class="btn btn-outline btn-sm font-medium reupload-button"
           @click.prevent="remove"
         >
-          <IconReload :width="16" />
+          <PhArrowClockwise weight="duotone" :width="16" />
           {{ t(format === 'upload' ? 'reupload' : 'redraw') }}
         </a>
         <span
@@ -95,7 +95,7 @@
             :class="{ 'btn-outline': !isShowQr, 'text-white': isShowQr }"
             @click.prevent="isShowQr ? hideQr() : [isTextSignature = false, showQr()]"
           >
-            <IconQrcode
+            <PhQrCode weight="duotone"
               :width="19"
               :height="19"
             />
@@ -107,7 +107,7 @@
           class="py-1.5 inline md:hidden"
           @click.prevent="$emit('minimize')"
         >
-          <IconArrowsDiagonalMinimize2
+          <PhArrowsInSimple weight="duotone"
             :width="20"
             :height="20"
           />
@@ -153,7 +153,7 @@
           class="btn btn-ghost font-medium btn-xs md:btn-sm"
           @click.prevent="[clear(), hideQr()]"
         >
-          <IconReload :width="16" />
+          <PhArrowClockwise weight="duotone" :width="16" />
           {{ t('clear') }}
         </a>
       </div>
@@ -181,7 +181,7 @@
             class="btn btn-sm btn-circle btn-normal btn-outline"
             @click.prevent="hideQr"
           >
-            <IconX />
+            <PhX weight="duotone" />
           </a>
         </div>
         <div class="flex items-center justify-center w-full h-full p-4">
@@ -301,7 +301,7 @@
 </template>
 
 <script>
-import { IconReload, IconCamera, IconSignature, IconTextSize, IconArrowsDiagonalMinimize2, IconQrcode, IconX } from '@tabler/icons-vue'
+import { PhArrowClockwise, PhCamera, PhSignature, PhTextAa, PhArrowsInSimple, PhQrCode, PhX } from '@phosphor-icons/vue'
 import { cropCanvasAndExportToPNG } from './crop_canvas'
 import { isValidSignatureCanvas } from './validate_signature'
 import SignaturePad from 'signature_pad'
@@ -318,15 +318,15 @@ export default {
   name: 'SignatureStep',
   components: {
     AppearsOn,
-    IconReload,
+    PhArrowClockwise,
     FileDropzone,
-    IconCamera,
-    IconQrcode,
+    PhCamera,
+    PhQrCode,
     MarkdownContent,
-    IconX,
-    IconTextSize,
-    IconSignature,
-    IconArrowsDiagonalMinimize2
+    PhX,
+    PhTextAa,
+    PhSignature,
+    PhArrowsInSimple
   },
   inject: ['baseUrl', 't'],
   props: {

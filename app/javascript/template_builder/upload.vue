@@ -13,12 +13,12 @@
           class="flex items-center space-x-2 w-full justify-center"
           :class="{ 'pl-3': withGoogleDrive }"
         >
-          <IconInnerShadowTop
+          <PhCircleNotch weight="duotone"
             v-if="isLoading"
             width="20"
             class="animate-spin"
           />
-          <IconUpload
+          <PhUploadSimple weight="duotone"
             v-else
             width="20"
           />
@@ -41,7 +41,7 @@
             tabindex="0"
             class="flex items-center h-full cursor-pointer"
           >
-            <IconChevronDown class="w-5 h-5 flex-shrink-0" />
+            <PhCaretDown weight="duotone" class="w-5 h-5 flex-shrink-0" />
           </label>
           <ul
             tabindex="0"
@@ -53,7 +53,7 @@
                 type="button"
                 @click="openGoogleDriveModal"
               >
-                <IconBrandGoogleDrive class="w-5 h-5 flex-shrink-0" />
+                <PhGoogleDriveLogo weight="duotone" class="w-5 h-5 flex-shrink-0" />
                 <span class="whitespace-nowrap text-sm normal-case font-medium">Google Drive</span>
               </button>
             </li>
@@ -105,7 +105,7 @@
               >
                 <span v-if="isConnectGoogleDriveClicked">
                   <span class="flex items-center justify-center space-x-2">
-                    <IconInnerShadowTop class="animate-spin" />
+                    <PhCircleNotch weight="duotone" class="animate-spin" />
                     <span class="">Submitting...</span>
                   </span>
                 </span>
@@ -113,7 +113,7 @@
                   v-else
                 >
                   <span class="flex items-center justify-center space-x-2">
-                    <IconBrandGoogleDrive />
+                    <PhGoogleDriveLogo weight="duotone" />
                     <span>Connect Google Drive</span>
                   </span>
                 </span>
@@ -134,7 +134,7 @@
                   style="margin: 1px"
                 />
                 <div class="absolute top-0 bottom-0 left-0 right-0 flex items-center justify-center">
-                  <IconInnerShadowTop class="animate-spin" />
+                  <PhCircleNotch weight="duotone" class="animate-spin" />
                 </div>
               </div>
             </div>
@@ -166,15 +166,14 @@
 </template>
 
 <script>
-import { IconUpload, IconInnerShadowTop, IconChevronDown, IconBrandGoogleDrive } from '@tabler/icons-vue'
-
+import { PhUploadSimple, PhCircleNotch, PhCaretDown, PhGoogleDriveLogo } from '@phosphor-icons/vue'
 export default {
   name: 'DocumentsUpload',
   components: {
-    IconUpload,
-    IconInnerShadowTop,
-    IconChevronDown,
-    IconBrandGoogleDrive
+    PhUploadSimple,
+    PhCircleNotch,
+    PhCaretDown,
+    PhGoogleDriveLogo
   },
   inject: ['baseFetch', 't', 'backgroundColor'],
   props: {

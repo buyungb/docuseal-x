@@ -52,7 +52,7 @@
     v-if="isLoading"
     class="w-full flex space-x-2 justify-center mb-2"
   >
-    <IconInnerShadowTop
+    <PhCircleNotch weight="duotone"
       width="40"
       class="animate-spin h-10"
     />
@@ -93,7 +93,7 @@
           :disabled="isSubmitting || !answers[currentQuestion.id]"
         >
           <span class="flex">
-            <IconInnerShadowTop
+            <PhCircleNotch weight="duotone"
               v-if="isSubmitting"
               class="mr-1 animate-spin"
             />
@@ -262,7 +262,7 @@
           :disabled="isLoading"
         >
           <span class="flex">
-            <IconInnerShadowTop
+            <PhCircleNotch weight="duotone"
               v-if="isLoading"
               class="mr-1 animate-spin"
             />
@@ -281,13 +281,12 @@
 
 <script>
 import MarkdownContent from './markdown_content'
-import { IconInnerShadowTop } from '@tabler/icons-vue'
-
+import { PhCircleNotch } from '@phosphor-icons/vue'
 export default {
   name: 'KbaStep',
   components: {
     MarkdownContent,
-    IconInnerShadowTop
+    PhCircleNotch
   },
   inject: ['baseUrl', 't'],
   props: {

@@ -27,7 +27,7 @@
       class="relative inline"
       :class="{ 'peer-focus:hidden': hideIcon, 'peer-focus:invisible': !hideIcon }"
     >
-      <IconPencil
+      <PhPencilSimple
         class="cursor-pointer flex-none opacity-0 group-hover/contenteditable-container:opacity-100 group-hover/contenteditable:opacity-100 align-middle pl-1"
         :style="iconInline ? {} : { right: -(1.1 * iconWidth) + 'px' }"
         :title="t('edit')"
@@ -41,12 +41,11 @@
 </template>
 
 <script>
-import { IconPencil } from '@tabler/icons-vue'
-
+import { PhPencilSimple } from '@phosphor-icons/vue'
 export default {
   name: 'ContenteditableField',
   components: {
-    IconPencil
+    PhPencilSimple
   },
   inject: ['t'],
   props: {

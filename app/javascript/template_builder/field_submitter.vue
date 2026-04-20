@@ -27,7 +27,7 @@
           tabindex="0"
           class="bg-base-100 cursor-pointer rounded-md p-2 border border-base-300 w-full flex justify-center"
         >
-          <IconChevronUp
+          <PhCaretUp weight="duotone"
             width="24"
             height="24"
           />
@@ -64,7 +64,7 @@
                 class="px-2"
                 @click.prevent.stop="remove(submitter)"
               >
-                <IconTrashX :width="18" />
+                <PhTrash weight="duotone" :width="18" />
               </button>
             </a>
           </li>
@@ -74,7 +74,7 @@
               class="flex px-2"
               @click.prevent="addSubmitter"
             >
-              <IconUserPlus
+              <PhUserPlus weight="duotone"
                 :width="20"
                 :stroke-width="1.6"
               />
@@ -127,7 +127,7 @@
       </div>
       <span class="flex items-center transition-all duration-75 group-hover:border border-base-content/20 border-dashed w-6 h-6 justify-center rounded flex-shrink-0">
         <component
-          :is="editable ? 'IconPlus' : 'IconChevronDown'"
+          :is="editable ? 'PhPlus' : 'PhCaretDown'"
           width="18"
           height="18"
         />
@@ -187,7 +187,7 @@
               class="invisible group-hover:visible px-2"
               @click.prevent.stop="remove(submitter)"
             >
-              <IconTrashX :width="18" />
+              <PhTrash weight="duotone" :width="18" />
             </button>
           </div>
         </a>
@@ -201,7 +201,7 @@
           class="flex px-2"
           @click.prevent="addSubmitter"
         >
-          <IconUserPlus
+          <PhUserPlus weight="duotone"
             :width="20"
             :stroke-width="1.6"
           />
@@ -215,7 +215,7 @@
 </template>
 
 <script>
-import { IconUserPlus, IconTrashX, IconPlus, IconChevronUp, IconChevronDown } from '@tabler/icons-vue'
+import { PhUserPlus, PhTrash, PhPlus, PhCaretUp, PhCaretDown } from '@phosphor-icons/vue'
 import Contenteditable from './contenteditable'
 import { v4 } from 'uuid'
 
@@ -230,12 +230,12 @@ function getOrdinalSuffix (num) {
 export default {
   name: 'FieldSubmitter',
   components: {
-    IconUserPlus,
-    IconChevronDown,
+    PhUserPlus,
+    PhCaretDown,
     Contenteditable,
-    IconPlus,
-    IconTrashX,
-    IconChevronUp
+    PhPlus,
+    PhTrash,
+    PhCaretUp
   },
   inject: ['t', 'save'],
   props: {

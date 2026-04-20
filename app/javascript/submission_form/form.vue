@@ -54,7 +54,7 @@
       :disabled="isSubmittingComplete"
     >
       <span class="flex items-center">
-        <IconInnerShadowTop
+        <PhCircleNotch weight="duotone"
           v-if="isSubmittingComplete"
           class="mr-1 animate-spin w-5 h-5"
         />
@@ -72,7 +72,7 @@
     @click.prevent="[isFormVisible = true, $nextTick(() => scrollIntoField(currentField))]"
   >
     <template v-if="['initials', 'signature'].includes(currentField.type)">
-      <IconWritingSign stroke-width="1.5" />
+      <PhSignature weight="duotone" stroke-width="1.5" />
       {{ t('sign_now') }}
     </template>
     <template v-else-if="alwaysMinimize">
@@ -84,7 +84,7 @@
     <template v-else>
       {{ t('start_now') }}
     </template>
-    <IconArrowsDiagonal
+    <PhArrowsOutSimple weight="duotone"
       class="absolute right-0 mr-4"
       :width="20"
       :height="20"
@@ -105,7 +105,7 @@
       :title="t('minimize')"
       @click.prevent="minimizeForm"
     >
-      <IconArrowsDiagonalMinimize2
+      <PhArrowsInSimple weight="duotone"
         :width="20"
         :height="20"
       />
@@ -502,7 +502,7 @@
             :disabled="isButtonDisabled"
           >
             <span class="flex">
-              <IconInnerShadowTop
+              <PhCircleNotch weight="duotone"
                 v-if="isSubmitting"
                 class="mr-1 animate-spin"
               />
@@ -587,7 +587,7 @@ import DateStep from './date_step'
 import MarkdownContent from './markdown_content'
 import InviteForm from './invite_form'
 import FormCompleted from './completed'
-import { IconInnerShadowTop, IconArrowsDiagonal, IconWritingSign, IconArrowsDiagonalMinimize2 } from '@tabler/icons-vue'
+import { PhCircleNotch, PhArrowsOutSimple, PhSignature, PhArrowsInSimple } from '@phosphor-icons/vue'
 import AppearsOn from './appears_on'
 import i18n from './i18n'
 import { sanitizeUrl } from '@braintree/sanitize-url'
@@ -633,23 +633,23 @@ export default {
     ImageStep,
     SignatureStep,
     AppearsOn,
-    IconWritingSign,
+    PhSignature,
     AttachmentStep,
     InitialsStep,
     VerificationStep,
     KbaStep,
     InviteForm,
     MultiSelectStep,
-    IconInnerShadowTop,
+    PhCircleNotch,
     DateStep,
-    IconArrowsDiagonal,
+    PhArrowsOutSimple,
     TextStep,
     NumberStep,
     FormulaFieldAreas,
     PhoneStep,
     MarkdownContent,
     PaymentStep,
-    IconArrowsDiagonalMinimize2,
+    PhArrowsInSimple,
     FormCompleted
   },
   provide () {

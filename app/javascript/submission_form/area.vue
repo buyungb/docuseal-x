@@ -116,7 +116,7 @@
         target="_blank"
         :href="attachment.url"
       >
-        <IconPaperclip
+        <PhPaperclip weight="duotone"
           class="inline w-[1.6vw] h-[1.6vw] lg:w-4 lg:h-4"
         />
         {{ attachment.filename }}
@@ -136,7 +136,7 @@
         :checked="!!modelValue"
         @click="$emit('update:model-value', !modelValue)"
       >
-      <IconCheck
+      <PhCheck weight="duotone"
         v-else-if="modelValue"
         class="aspect-square"
         :class="{ '!w-auto !h-full': area.w > area.h, '!w-full !h-auto': area.w <= area.h }"
@@ -156,7 +156,7 @@
         :checked="!!modelValue && modelValue === optionValue(option)"
         @click="$emit('update:model-value', optionValue(option))"
       >
-      <IconCheck
+      <PhCheck weight="duotone"
         v-else-if="!!modelValue && modelValue === optionValue(option)"
         class="aspect-square"
         :class="{ '!w-auto !h-full': area.w > area.h, '!w-full !h-auto': area.w <= area.h }"
@@ -176,7 +176,7 @@
         :checked="!!modelValue && modelValue.includes(optionValue(option))"
         @change="updateMultipleSelectValue(optionValue(option))"
       >
-      <IconCheck
+      <PhCheck weight="duotone"
         v-else-if="!!modelValue && modelValue.includes(optionValue(option))"
         class="aspect-square"
         :class="{ '!w-auto !h-full': area.w > area.h, '!w-full !h-auto': area.w <= area.h }"
@@ -279,14 +279,13 @@
 
 <script>
 import MarkdownContent from './markdown_content'
-import { IconTextSize, IconWritingSign, IconCalendarEvent, IconPhoto, IconCheckbox, IconPaperclip, IconSelect, IconCircleDot, IconChecks, IconCheck, IconColumns3, IconPhoneCheck, IconLetterCaseUpper, IconCreditCard, IconRubberStamp, IconSquareNumber1, IconId, IconUserScan } from '@tabler/icons-vue'
-
+import { PhTextAa, PhSignature, PhCalendarDots, PhImage, PhCheckSquare, PhPaperclip, PhCaretUpDown, PhRadioButton, PhChecks, PhCheck, PhColumns, PhPhoneCall, PhCreditCard, PhStamp, PhNumberSquareOne, PhIdentificationCard, PhScan } from '@phosphor-icons/vue'
 export default {
   name: 'FieldArea',
   components: {
-    IconPaperclip,
+    PhPaperclip,
     MarkdownContent,
-    IconCheck
+    PhCheck
   },
   inject: ['t'],
   props: {
@@ -453,23 +452,23 @@ export default {
     },
     fieldIcons () {
       return {
-        text: IconTextSize,
-        signature: IconWritingSign,
-        date: IconCalendarEvent,
-        number: IconSquareNumber1,
-        image: IconPhoto,
-        initials: IconLetterCaseUpper,
-        file: IconPaperclip,
-        select: IconSelect,
-        checkbox: IconCheckbox,
-        radio: IconCircleDot,
-        stamp: IconRubberStamp,
-        cells: IconColumns3,
-        multiple: IconChecks,
-        phone: IconPhoneCheck,
-        payment: IconCreditCard,
-        verification: IconId,
-        kba: IconUserScan
+        text: PhTextAa,
+        signature: PhSignature,
+        date: PhCalendarDots,
+        number: PhNumberSquareOne,
+        image: PhImage,
+        initials: PhTextAa,
+        file: PhPaperclip,
+        select: PhCaretUpDown,
+        checkbox: PhCheckSquare,
+        radio: PhRadioButton,
+        stamp: PhStamp,
+        cells: PhColumns,
+        multiple: PhChecks,
+        phone: PhPhoneCall,
+        payment: PhCreditCard,
+        verification: PhIdentificationCard,
+        kba: PhScan
       }
     },
     image () {

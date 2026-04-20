@@ -35,13 +35,13 @@
             class="mr-1 flex btn btn-neutral btn-outline border-base-content/20 btn-sm normal-case font-normal bg-white !rounded-xl"
             @click.prevent="insertTextUnderCursor(`{{${f.name || buildDefaultName(f, template.fields)}}}`)"
           >
-            <IconMathFunction
+            <PhFunction weight="duotone"
               v-if="f.preferences?.formula"
               width="17"
               height="17"
               stroke-width="1.5"
             />
-            <IconCodePlus
+            <PhBracketsCurly weight="duotone"
               v-else
               width="20"
               height="20"
@@ -123,13 +123,12 @@
 </template>
 
 <script>
-import { IconCodePlus, IconMathFunction } from '@tabler/icons-vue'
-
+import { PhBracketsCurly, PhFunction } from '@phosphor-icons/vue'
 export default {
   name: 'FormulaModal',
   components: {
-    IconCodePlus,
-    IconMathFunction
+    PhBracketsCurly,
+    PhFunction
   },
   inject: ['t', 'save', 'template', 'withFormula'],
   props: {

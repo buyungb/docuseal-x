@@ -5,7 +5,7 @@
     dir="auto"
   >
     <div class="font-medium text-2xl flex items-center space-x-1.5 mx-auto">
-      <IconCircleCheck
+      <PhCheckCircle weight="duotone"
         class="inline text-green-600"
         :width="30"
         :height="30"
@@ -39,11 +39,11 @@
         :disabled="isSendingCopy"
         @click.prevent="sendCopyToEmail"
       >
-        <IconInnerShadowTop
+        <PhCircleNotch weight="duotone"
           v-if="isSendingCopy"
           class="animate-spin"
         />
-        <IconMail v-else />
+        <PhEnvelope weight="duotone" v-else />
         <span>
           {{ t('send_copy_via_email') }}
         </span>
@@ -54,11 +54,11 @@
         :disabled="isDownloading"
         @click.prevent="download"
       >
-        <IconInnerShadowTop
+        <PhCircleNotch weight="duotone"
           v-if="isDownloading"
           class="animate-spin"
         />
-        <IconDownload v-else />
+        <PhDownloadSimple weight="duotone" v-else />
         <span>
           {{ t('download') }}
         </span>
@@ -69,7 +69,7 @@
         href="https://github.com/docusealco/docuseal"
         class="white-button flex items-center space-x-1 w-full"
       >
-        <IconBrandGithub />
+        <PhGithubLogo weight="duotone" />
         <span>
           Star on Github
         </span>
@@ -79,7 +79,7 @@
         href="https://sealroute.com/sign_up"
         class="white-button flex items-center space-x-1 w-full"
       >
-        <IconLogin />
+        <PhSignIn weight="duotone" />
         <span>
           {{ t('create_a_free_account') }}
         </span>
@@ -100,7 +100,7 @@
 </template>
 
 <script>
-import { IconCircleCheck, IconBrandGithub, IconMail, IconDownload, IconInnerShadowTop, IconLogin } from '@tabler/icons-vue'
+import { PhCheckCircle, PhGithubLogo, PhEnvelope, PhDownloadSimple, PhCircleNotch, PhSignIn } from '@phosphor-icons/vue'
 import MarkdownContent from './markdown_content'
 import { sanitizeUrl } from '@braintree/sanitize-url'
 
@@ -108,12 +108,12 @@ export default {
   name: 'FormCompleted',
   components: {
     MarkdownContent,
-    IconCircleCheck,
-    IconInnerShadowTop,
-    IconBrandGithub,
-    IconMail,
-    IconLogin,
-    IconDownload
+    PhCheckCircle,
+    PhCircleNotch,
+    PhGithubLogo,
+    PhEnvelope,
+    PhSignIn,
+    PhDownloadSimple
   },
   inject: ['baseUrl', 't'],
   props: {

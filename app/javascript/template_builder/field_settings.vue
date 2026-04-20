@@ -475,7 +475,7 @@
       class="label-text cursor-pointer text-center w-full flex items-center"
       @click="$emit('click-font')"
     >
-      <IconTypography
+      <PhTextAa weight="duotone"
         width="18"
       />
       <span class="text-sm">
@@ -490,7 +490,7 @@
       class="label-text cursor-pointer text-center w-full flex items-center"
       @click="$emit('click-description')"
     >
-      <IconInfoCircle
+      <PhInfo weight="duotone"
         width="18"
       />
       <span class="text-sm">
@@ -505,7 +505,7 @@
       class="label-text cursor-pointer text-center w-full flex items-center"
       @click="$emit('click-condition')"
     >
-      <IconRouteAltLeft
+      <PhFlowArrow weight="duotone"
         width="18"
       />
       <span class="text-sm">
@@ -518,7 +518,7 @@
       class="label-text cursor-pointer text-center w-full flex items-center"
       @click="$emit('click-formula')"
     >
-      <IconMathFunction
+      <PhFunction weight="duotone"
         width="18"
       />
       <span class="text-sm">
@@ -540,13 +540,13 @@
         class="text-sm py-1 px-2 group/1"
         @click.prevent="$emit('scroll-to', area)"
       >
-        <IconShape
+        <PhShapes weight="duotone"
           :width="20"
           :stroke-width="1.6"
         />
         {{ t('page') }}
         <template v-if="template.schema.length > 1">{{ template.schema.findIndex((item) => item.attachment_uuid === area.attachment_uuid) + 1 }}-</template>{{ area.page + 1 }}
-        <IconX
+        <PhX
           :width="12"
           class="group-hover/1:inline hidden"
           @click.prevent.stop="[$emit('remove-area', area), $event.target.closest('.dropdown').querySelector('label').focus()]"
@@ -559,7 +559,7 @@
         class="text-sm py-1 px-2"
         @click.prevent="$emit('set-draw', { field })"
       >
-        <IconNewSection
+        <PhPlusSquare weight="duotone"
           :width="20"
           :stroke-width="1.6"
         />
@@ -573,7 +573,7 @@
       class="text-sm py-1 px-2"
       @click.prevent="copyToAllPages(field)"
     >
-      <IconCopy
+      <PhCopy weight="duotone"
         :width="20"
         :stroke-width="1.6"
       />
@@ -586,7 +586,7 @@
       class="text-sm py-1 px-2"
       @click.prevent="$emit('add-custom-field', field)"
     >
-      <IconForms
+      <PhTextbox weight="duotone"
         :width="20"
         :stroke-width="1.6"
       />
@@ -596,20 +596,19 @@
 </template>
 
 <script>
-import { IconRouteAltLeft, IconTypography, IconShape, IconX, IconMathFunction, IconNewSection, IconInfoCircle, IconCopy, IconForms } from '@tabler/icons-vue'
-
+import { PhFlowArrow, PhTextAa, PhShapes, PhX, PhFunction, PhPlusSquare, PhInfo, PhCopy, PhTextbox } from '@phosphor-icons/vue'
 export default {
   name: 'FieldSettings',
   components: {
-    IconShape,
-    IconInfoCircle,
-    IconMathFunction,
-    IconRouteAltLeft,
-    IconForms,
-    IconCopy,
-    IconNewSection,
-    IconTypography,
-    IconX
+    PhShapes,
+    PhInfo,
+    PhFunction,
+    PhFlowArrow,
+    PhTextbox,
+    PhCopy,
+    PhPlusSquare,
+    PhTextAa,
+    PhX
   },
   inject: ['template', 't'],
   props: {

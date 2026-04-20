@@ -45,7 +45,7 @@
         class="w-full px-2 py-1 rounded-md hover:bg-base-100 flex items-center space-x-2 text-sm"
         @click.stop="openFontModal"
       >
-        <IconTypography class="w-4 h-4" />
+        <PhTextAa weight="duotone" class="w-4 h-4" />
         <span>{{ t('font') }}</span>
       </button>
       <button
@@ -53,7 +53,7 @@
         class="w-full px-2 py-1 rounded-md hover:bg-base-100 flex items-center space-x-2 text-sm"
         @click.stop="openDescriptionModal"
       >
-        <IconInfoCircle class="w-4 h-4" />
+        <PhInfo weight="duotone" class="w-4 h-4" />
         <span>{{ t('description') }}</span>
       </button>
       <button
@@ -61,7 +61,7 @@
         class="w-full px-2 py-1 rounded-md hover:bg-base-100 flex items-center space-x-2 text-sm"
         @click.stop="openConditionModal"
       >
-        <IconRouteAltLeft class="w-4 h-4" />
+        <PhFlowArrow weight="duotone" class="w-4 h-4" />
         <span>{{ t('condition') }}</span>
       </button>
       <button
@@ -69,7 +69,7 @@
         class="w-full px-2 py-1 rounded-md hover:bg-base-100 flex items-center space-x-2 text-sm"
         @click.stop="openFormulaModal"
       >
-        <IconMathFunction class="w-4 h-4" />
+        <PhFunction weight="duotone" class="w-4 h-4" />
         <span>{{ t('formula') }}</span>
       </button>
       <hr
@@ -81,7 +81,7 @@
         class="w-full px-2 py-1 rounded-md hover:bg-base-100 flex items-center space-x-2 text-sm"
         @click.stop="$emit('align', 'left')"
       >
-        <IconLayoutAlignLeft class="w-4 h-4" />
+        <PhAlignLeft weight="duotone" class="w-4 h-4" />
         <span>{{ t('align_left') }}</span>
       </button>
       <button
@@ -89,7 +89,7 @@
         class="w-full px-2 py-1 rounded-md hover:bg-base-100 flex items-center space-x-2 text-sm"
         @click.stop="$emit('align', 'right')"
       >
-        <IconLayoutAlignRight class="w-4 h-4" />
+        <PhAlignRight weight="duotone" class="w-4 h-4" />
         <span>{{ t('align_right') }}</span>
       </button>
       <button
@@ -97,7 +97,7 @@
         class="w-full px-2 py-1 rounded-md hover:bg-base-100 flex items-center space-x-2 text-sm"
         @click.stop="$emit('align', 'top')"
       >
-        <IconLayoutAlignTop class="w-4 h-4" />
+        <PhAlignTop weight="duotone" class="w-4 h-4" />
         <span>{{ t('align_top') }}</span>
       </button>
       <button
@@ -105,7 +105,7 @@
         class="w-full px-2 py-1 rounded-md hover:bg-base-100 flex items-center space-x-2 text-sm"
         @click.stop="$emit('align', 'bottom')"
       >
-        <IconLayoutAlignBottom class="w-4 h-4" />
+        <PhAlignBottom weight="duotone" class="w-4 h-4" />
         <span>{{ t('align_bottom') }}</span>
       </button>
       <hr
@@ -117,7 +117,7 @@
         class="w-full px-2 py-1 rounded-md hover:bg-base-100 flex items-center space-x-2 text-sm"
         @click.stop="openFontModal"
       >
-        <IconTypography class="w-4 h-4" />
+        <PhTextAa weight="duotone" class="w-4 h-4" />
         <span>{{ t('font') }}</span>
       </button>
       <button
@@ -125,7 +125,7 @@
         class="w-full px-2 py-1 rounded-md hover:bg-base-100 flex items-center space-x-2 text-sm"
         @click.stop="openConditionModal"
       >
-        <IconRouteAltLeft class="w-4 h-4" />
+        <PhFlowArrow weight="duotone" class="w-4 h-4" />
         <span>{{ t('condition') }}</span>
       </button>
       <hr
@@ -138,7 +138,7 @@
         @click.stop="$emit('copy')"
       >
         <span class="flex items-center space-x-2">
-          <IconCopy class="w-4 h-4" />
+          <PhCopy weight="duotone" class="w-4 h-4" />
           <span>{{ t('copy') }}</span>
         </span>
         <span class="text-xs text-base-content/60 ml-4">{{ isMac ? '⌘C' : 'Ctrl+C' }}</span>
@@ -149,7 +149,7 @@
         @click.stop="$emit('delete')"
       >
         <span class="flex items-center space-x-2">
-          <IconTrashX class="w-4 h-4" />
+          <PhTrash weight="duotone" class="w-4 h-4" />
           <span>{{ t('remove') }}</span>
         </span>
         <span class="text-xs text-base-content/60 ml-4">Del</span>
@@ -162,7 +162,7 @@
         @click.stop="!hasClipboardData ? null : $emit('paste')"
       >
         <span class="flex items-center space-x-2">
-          <IconClipboard class="w-4 h-4" />
+          <PhClipboard weight="duotone" class="w-4 h-4" />
           <span>{{ t('paste') }}</span>
         </span>
         <span class="text-xs text-base-content/60 ml-4">{{ isMac ? '⌘V' : 'Ctrl+V' }}</span>
@@ -173,11 +173,11 @@
         @click.stop="handleToggleSelectMode"
       >
         <span class="flex items-center space-x-2">
-          <IconClick
+          <PhCursorClick weight="duotone"
             v-if="!isSelectModeRef.value"
             class="w-4 h-4"
           />
-          <IconNewSection
+          <PhPlusSquare weight="duotone"
             v-else
             class="w-4 h-4"
           />
@@ -194,7 +194,7 @@
         class="w-full px-2 py-1 rounded-md hover:bg-base-100 flex items-center space-x-2 text-sm"
         @click.stop="$emit('autodetect-fields')"
       >
-        <IconSparkles class="w-4 h-4" />
+        <PhSparkle weight="duotone" class="w-4 h-4" />
         <span>{{ t('autodetect_fields') }}</span>
       </button>
     </div>
@@ -251,7 +251,7 @@
 </template>
 
 <script>
-import { IconCopy, IconClipboard, IconTrashX, IconTypography, IconInfoCircle, IconRouteAltLeft, IconMathFunction, IconClick, IconNewSection, IconLayoutAlignLeft, IconLayoutAlignRight, IconLayoutAlignTop, IconLayoutAlignBottom, IconSparkles } from '@tabler/icons-vue'
+import { PhCopy, PhClipboard, PhTrash, PhTextAa, PhInfo, PhFlowArrow, PhFunction, PhCursorClick, PhPlusSquare, PhAlignLeft, PhAlignRight, PhAlignTop, PhAlignBottom, PhSparkle } from '@phosphor-icons/vue'
 import FormulaModal from './formula_modal'
 import FontModal from './font_modal'
 import ConditionsModal from './conditions_modal'
@@ -262,20 +262,20 @@ import FieldType from './field_type.vue'
 export default {
   name: 'ContextMenu',
   components: {
-    IconCopy,
-    IconClipboard,
-    IconTrashX,
-    IconTypography,
-    IconInfoCircle,
-    IconRouteAltLeft,
-    IconMathFunction,
-    IconClick,
-    IconNewSection,
-    IconLayoutAlignLeft,
-    IconLayoutAlignRight,
-    IconLayoutAlignTop,
-    IconLayoutAlignBottom,
-    IconSparkles,
+    PhCopy,
+    PhClipboard,
+    PhTrash,
+    PhTextAa,
+    PhInfo,
+    PhFlowArrow,
+    PhFunction,
+    PhCursorClick,
+    PhPlusSquare,
+    PhAlignLeft,
+    PhAlignRight,
+    PhAlignTop,
+    PhAlignBottom,
+    PhSparkle,
     FormulaModal,
     FontModal,
     ConditionsModal,

@@ -23,7 +23,7 @@ module.exports = {
   daisyui: {
     themes: [
       {
-        docuseal: {
+        sealroute: {
           'color-scheme': 'light',
           primary: '#193468',
           'primary-content': '#ffffff',

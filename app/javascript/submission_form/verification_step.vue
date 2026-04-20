@@ -24,7 +24,7 @@
       v-if="isLoading"
       class="w-full flex space-x-2 justify-center mb-2"
     >
-      <IconInnerShadowTop
+      <PhCircleNotch weight="duotone"
         width="40"
         class="animate-spin h-10"
       />
@@ -46,14 +46,14 @@
 
 <script>
 import MarkdownContent from './markdown_content'
-import { IconInnerShadowTop } from '@tabler/icons-vue'
+import { PhCircleNotch } from '@phosphor-icons/vue'
 import phoneData from './phone_data'
 
 export default {
   name: 'VerificationStep',
   components: {
     MarkdownContent,
-    IconInnerShadowTop
+    PhCircleNotch
   },
   inject: ['baseUrl', 't'],
   props: {

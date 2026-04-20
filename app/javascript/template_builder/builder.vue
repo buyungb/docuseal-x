@@ -31,7 +31,7 @@
       class="top-1.5 sticky h-0 z-20 max-w-2xl mx-auto"
     >
       <div class="alert border-base-content/30 py-2 px-2.5">
-        <IconInfoCircle
+        <PhInfo weight="duotone"
           class="stroke-info shrink-0 w-6 h-6"
         />
         <span>{{ t('uploaded_pdf_contains_form_fields_keep_or_remove_them') }}</span>
@@ -111,7 +111,7 @@
               class="btn btn-primary btn-ghost text-base hidden md:flex"
               type="submit"
             >
-              <IconWritingSign
+              <PhSignature weight="duotone"
                 width="22"
                 class="inline"
               />
@@ -128,7 +128,7 @@
             data-turbo-frame="modal"
             @click="maybeShowErrorTemplateAlert"
           >
-            <IconWritingSign
+            <PhSignature weight="duotone"
               width="22"
               class="inline"
             />
@@ -144,7 +144,7 @@
             class="white-button md:!px-6"
             @click="maybeShowErrorTemplateAlert"
           >
-            <IconUsersPlus
+            <PhUsersThree weight="duotone"
               width="20"
               class="inline"
             />
@@ -163,12 +163,12 @@
               v-bind="isSaving ? { disabled: true } : {}"
               @click.prevent="onSaveClick"
             >
-              <IconInnerShadowTop
+              <PhCircleNotch weight="duotone"
                 v-if="isSaving"
                 width="22"
                 class="animate-spin"
               />
-              <IconDeviceFloppy
+              <PhFloppyDisk weight="duotone"
                 v-else
                 width="22"
               />
@@ -185,7 +185,7 @@
                 class="base-button !rounded-l-none !pl-1 !pr-2 !border-l-neutral-500"
               >
                 <span class="text-sm align-text-top">
-                  <IconChevronDown class="w-5 h-5 flex-shrink-0" />
+                  <PhCaretDown weight="duotone" class="w-5 h-5 flex-shrink-0" />
                 </span>
               </label>
               <ul
@@ -198,7 +198,7 @@
                     data-turbo="false"
                     class="flex items-center justify-center space-x-2"
                   >
-                    <IconEye class="w-6 h-6 flex-shrink-0" />
+                    <PhEye weight="duotone" class="w-6 h-6 flex-shrink-0" />
                     <span class="whitespace-nowrap">{{ t('save_and_preview') }}</span>
                   </a>
                 </li>
@@ -209,7 +209,7 @@
                     class="flex space-x-2"
                     @click="closeDropdown"
                   >
-                    <IconAdjustments class="w-6 h-6 flex-shrink-0" />
+                    <PhSliders weight="duotone" class="w-6 h-6 flex-shrink-0" />
                     <span class="whitespace-nowrap">{{ t('preferences') }}</span>
                   </a>
                 </li>
@@ -219,11 +219,11 @@
                     :disabled="isDownloading"
                     @click.stop.prevent="download"
                   >
-                    <IconInnerShadowTop
+                    <PhCircleNotch weight="duotone"
                       v-if="isDownloading"
                       class="animate-spin w-6 h-6 flex-shrink-0"
                     />
-                    <IconDownload
+                    <PhDownloadSimple weight="duotone"
                       v-else
                       class="w-6 h-6 flex-shrink-0"
                     />
@@ -303,11 +303,11 @@
             class="btn btn-outline w-full add-blank-page-button"
             @click.prevent="addBlankPage"
           >
-            <IconInnerShadowTop
+            <PhCircleNotch weight="duotone"
               v-if="isLoadingBlankPage"
               class="animate-spin w-5 h-5"
             />
-            <IconPlus
+            <PhPlus weight="duotone"
               v-else
               class="w-5 h-5"
             />
@@ -339,11 +339,11 @@
               class="btn btn-outline w-full mt-4 add-blank-page-button"
               @click.prevent="addBlankPage"
             >
-              <IconInnerShadowTop
+              <PhCircleNotch weight="duotone"
                 v-if="isLoadingBlankPage"
                 class="animate-spin w-5 h-5"
               />
-              <IconPlus
+              <PhPlus weight="duotone"
                 v-else
                 class="w-5 h-5"
               />
@@ -421,11 +421,11 @@
                 class="btn btn-outline w-full mt-4 add-blank-page-button"
                 @click.prevent="addBlankPage"
               >
-                <IconInnerShadowTop
+                <PhCircleNotch weight="duotone"
                   v-if="isLoadingBlankPage"
                   class="animate-spin w-5 h-5"
                 />
-                <IconPlus
+                <PhPlus weight="duotone"
                   v-else
                   class="w-5 h-5"
                 />
@@ -552,7 +552,7 @@
               <span>{{ (detectingFieldsAddedCount === 1 ? t('field_added') : t('fields_added')).replace('{count}', detectingFieldsAddedCount) }}</span>
             </template>
             <template v-else>
-              <IconInnerShadowTop
+              <PhCircleNotch weight="duotone"
                 v-if="!detectingAnalyzingProgress"
                 width="20"
                 class="animate-spin"
@@ -589,7 +589,7 @@ import DocumentPreview from './preview'
 import DocumentControls from './controls'
 import MobileFields from './mobile_fields'
 import FieldSubmitter from './field_submitter'
-import { IconPlus, IconUsersPlus, IconDeviceFloppy, IconChevronDown, IconEye, IconWritingSign, IconInnerShadowTop, IconInfoCircle, IconAdjustments, IconDownload } from '@tabler/icons-vue'
+import { PhPlus, PhUsersThree, PhFloppyDisk, PhCaretDown, PhEye, PhSignature, PhCircleNotch, PhInfo, PhSliders, PhDownloadSimple } from '@phosphor-icons/vue'
 import { v4 } from 'uuid'
 import { ref, computed, toRaw } from 'vue'
 import * as i18n from './i18n'
@@ -601,24 +601,24 @@ export default {
     DragPlaceholder,
     Document,
     Fields,
-    IconInfoCircle,
+    PhInfo,
     MobileDrawField,
-    IconPlus,
-    IconWritingSign,
+    PhPlus,
+    PhSignature,
     MobileFields,
     Logo,
     Dropzone,
     HoverDropzone,
     DocumentPreview,
     DocumentControls,
-    IconInnerShadowTop,
+    PhCircleNotch,
     Contenteditable,
-    IconUsersPlus,
-    IconChevronDown,
-    IconDownload,
-    IconAdjustments,
-    IconEye,
-    IconDeviceFloppy
+    PhUsersThree,
+    PhCaretDown,
+    PhDownloadSimple,
+    PhSliders,
+    PhEye,
+    PhFloppyDisk
   },
   provide () {
     return {

@@ -36,7 +36,7 @@
         disabled
         class="base-button w-full modal-save-button"
       >
-        <IconLoader
+        <PhCircleNotch weight="duotone"
           width="22"
           class="animate-spin"
         />
@@ -52,12 +52,12 @@
         :disabled="isCreatingCheckout"
         @click.prevent="postCheckout"
       >
-        <IconInnerShadowTop
+        <PhCircleNotch weight="duotone"
           v-if="isCreatingCheckout"
           width="22"
           class="animate-spin"
         />
-        <IconBrandStripe
+        <PhCreditCard weight="duotone"
           v-else
           width="22"
         />
@@ -70,16 +70,16 @@
 </template>
 
 <script>
-import { IconBrandStripe, IconInnerShadowTop, IconLoader } from '@tabler/icons-vue'
+import { PhCreditCard, PhCircleNotch } from '@phosphor-icons/vue'
 import MarkdownContent from './markdown_content'
 
 export default {
   name: 'PaymentStep',
   components: {
-    IconBrandStripe,
+    PhCreditCard,
     MarkdownContent,
-    IconInnerShadowTop,
-    IconLoader
+    PhCircleNotch,
+    PhCircleNotch
   },
   inject: ['baseUrl', 't'],
   props: {
