@@ -92,6 +92,15 @@ module Templates
       # by searching the PDF for the row's neighboring cell label text).
       correct_misplaced_table_tag_positions(positioned, pdf_text_map)
 
+      # Step 4b: For tall form fields (signature, image, stamp, initials, file)
+      # inside table cells, LibreOffice can collapse the empty paragraphs that
+      # would normally have pushed the tag row down, leaving the field
+      # rectangle overlapping a visible label like "Persetujuan Pemohon" that
+      # sits directly above it. Push any such field down just past the
+      # overlapping text so the label stays readable and the signature box
+      # visually occupies the intended blank area below it.
+      avoid_overlap_with_visible_text(positioned, pdf_text_map)
+
       # Step 5: Finalize fields with attachment uuid, uuid, font defaults.
       fields = []
       positioned.each do |entry|
@@ -524,12 +533,23 @@ module Templates
           end
         end
 
-        # Strategy 1: Find "{{FieldName" directly
+        # Strategy 1: Find "{{FieldName" directly. We must validate that the
+        # character immediately after the field name is a tag-terminator
+        # (`;`, `=`, `}` or space-before-those) so that, e.g., searching for
+        # `{{SP` doesn't land on `{{SPE;...}}`. Prefix matches would otherwise
+        # hand short-named fields the position of a longer-named sibling.
         target = full_tag_start.chars
-        match_start = find_sequence_in_expanded(expanded, target)
+        search_from = 0
+        loop do
+          match_start = find_sequence_in_expanded(expanded, target, from: search_from)
+          break unless match_start
 
-        if match_start
-          return build_area_from_match(tag_info, entries, expanded, match_start, target.length, page_idx)
+          after_idx = match_start + target.length
+          if looks_like_tag_context?(expanded, after_idx)
+            return build_area_from_match(tag_info, entries, expanded, match_start, target.length, page_idx)
+          end
+
+          search_from = match_start + 1
         end
 
         # Strategy 2: Find label text and position relative to it
@@ -1161,6 +1181,86 @@ module Templates
     rescue StandardError => e
       Rails.logger.debug("ExtractDocxFieldPositions: find_row_label_y failed: #{e.message}")
       nil
+    end
+
+    # Field types whose rendered footprint is taller than a single line of
+    # text, so an overlap with a visible text node above them is visually
+    # obvious and disruptive. Checkbox/radio/date/text fields all have a
+    # small height (≤1 line) and don't need this correction because small
+    # placement errors don't visually overlap neighboring content.
+    TALL_FIELD_TYPES = %w[signature initials image stamp file].to_set.freeze
+
+    # Minimum vertical gap (normalized) to leave between a tall table field
+    # and any visible text above it after pushing the field down. ~4pt at
+    # 11"×8.5", enough to clearly separate a signature box from a caption
+    # like "Persetujuan Pemohon" without introducing excessive whitespace.
+    OVERLAP_TOP_PADDING = 0.006
+
+    # Push tall table fields down so they don't cover a visible label
+    # rendered at the same y. The renderer sometimes collapses empty
+    # separator paragraphs in the row above the tag, which makes the
+    # field's top edge coincide with (or overlap) the bottom edge of a
+    # visible label like "Persetujuan Pemohon". We detect that overlap
+    # against the PDF text map and move the field just past the label.
+    def avoid_overlap_with_visible_text(positioned, pdf_text_map)
+      return if positioned.blank? || pdf_text_map.blank?
+
+      positioned.each do |entry|
+        tag_info = entry[:tag_info]
+        area = entry[:area]
+        next unless tag_info[:in_table]
+        next unless TALL_FIELD_TYPES.include?(entry[:field_def][:type])
+
+        page = area[:page]
+        field_top = area[:y]
+        field_bottom = area[:y] + area[:h]
+        field_left = area[:x]
+        field_right = area[:x] + area[:w]
+
+        overlapping_text = pdf_text_map.select do |node|
+          next false unless node[:page] == page
+
+          node_text = node[:text].to_s
+          # Skip any text that is part of a DocuSeal tag — those are the
+          # invisible placeholders for this or neighboring tags, not a
+          # user-visible label we need to avoid.
+          next false if node_text.include?('{') || node_text.include?('}') ||
+                        node_text.include?(';type=') || node_text.include?(';role=')
+
+          node_x = node[:x]
+          node_endx = node[:endx] || (node_x + (node[:w] || 0.01))
+          next false if node_endx <= field_left || node_x >= field_right
+
+          node_top = node[:y]
+          node_bottom = node_top + (node[:h] || 0.015)
+          # Overlap strictly: node sits within the field's vertical extent
+          # (or straddles its top edge). A node fully above or fully below
+          # is fine.
+          node_bottom > field_top + 0.001 && node_top < field_bottom - 0.001
+        end
+
+        next if overlapping_text.empty?
+
+        # Take the LOWEST bottom among overlapping texts — moving past
+        # that one guarantees we're past every one of them.
+        lowest_bottom = overlapping_text.map { |n| n[:y] + (n[:h] || 0.015) }.max
+        new_y = lowest_bottom + OVERLAP_TOP_PADDING
+
+        # Clamp so we don't push the field off the bottom of the page.
+        max_y = 1.0 - area[:h] - 0.01
+        new_y = [new_y, max_y].min
+
+        next unless new_y > area[:y] + 0.001
+
+        Rails.logger.info(
+          "ExtractDocxFieldPositions: Pushing #{tag_info[:name]} " \
+          "(#{entry[:field_def][:type]}) past overlapping label " \
+          "#{overlapping_text.first[:text].to_s.strip[0, 30].inspect} " \
+          "y=#{area[:y].round(3)} -> #{new_y.round(3)}"
+        )
+
+        area[:y] = new_y
+      end
     end
 
     # Simple linear regression: fit y = slope * x + intercept over points
