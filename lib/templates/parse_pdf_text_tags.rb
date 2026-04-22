@@ -39,7 +39,7 @@ module Templates
       tag_positions.each do |tag_info|
         field_def = parse_tag(tag_info[:tag_content])
         next if field_def.blank?
-        
+
         field_def[:uuid] = SecureRandom.uuid
         field_def[:areas] = [{
           page: tag_info[:page],
@@ -49,9 +49,11 @@ module Templates
           h: tag_info[:h],
           attachment_uuid: attachment.uuid
         }]
-        
+
+        field_def[:_measured_font_size_pt] = tag_info[:font_size_pt] if tag_info[:font_size_pt]
+
         fields << field_def
-        Rails.logger.info("ParsePdfTextTags: #{field_def[:name]} (#{field_def[:type]}) -> page=#{tag_info[:page]} pos=(#{tag_info[:x].round(3)}, #{tag_info[:y].round(3)})")
+        Rails.logger.info("ParsePdfTextTags: #{field_def[:name]} (#{field_def[:type]}) -> page=#{tag_info[:page]} pos=(#{tag_info[:x].round(3)}, #{tag_info[:y].round(3)}) font_size=#{tag_info[:font_size_pt].inspect}pt")
       end
       
       # Fallback: If no positioned tags found, try simple text extraction
@@ -97,7 +99,8 @@ module Templates
               w: node.w,
               h: node.h,
               endx: node.endx,
-              endy: node.endy
+              endy: node.endy,
+              font_size: node.font_size
             }
           end
           
@@ -277,18 +280,27 @@ module Templates
           tag_w = raw_w
         end
         
-        # For signature/image fields, use wider default if width seems too small
+        # Field dimensions by type. Checkbox, radio and stamp have intrinsic
+        # visual sizes (single-char square, fixed-size image) so we ignore the
+        # tag text extent entirely. Everything else takes its width from the
+        # tag text but always uses a fixed default height — the tag's rendered
+        # extent in the PDF marks WHERE the field is, not HOW TALL it is.
         case field_def[:type]
+        when 'checkbox', 'radio'
+          tag_w = 0.02
+          tag_h = 0.02
+        when 'stamp'
+          tag_w = 0.10
+          tag_h = 0.08
         when 'signature', 'initials'
-          if tag_wrapped
-            wrapped_h = (e_pos[:y] + (e_pos[:h] || tag_h)) - s_pos[:y]
-            tag_h = [wrapped_h, tag_h * 3, 0.035].max
-          else
-            tag_h = [tag_h * 3, 0.035].max
-          end
           tag_w = [tag_w, 0.20].max
-        when 'image', 'stamp'
-          tag_h = [tag_h * 3, 0.035].max
+          tag_h = 0.04
+        when 'image'
+          tag_w = [tag_w, 0.20].max
+          tag_h = 0.05
+        else
+          tag_w = [tag_w, 0.08].max
+          tag_h = 0.025
         end
         
         # For consistently-offset tags (centered/right-aligned paragraphs),
@@ -305,15 +317,33 @@ module Templates
           end
         end
 
-        # Clamp to page
+        # Clamp to page. Lower bound for width is 0.015 so single-char fields
+        # (checkbox/radio at 0.02) don't get inflated to 0.03.
         tag_x = [[tag_x, 0.0].max, 0.95].min
         tag_y = [[tag_y, 0.0].max, 0.95].min
-        tag_w = [[tag_w, 0.03].max, 0.48].min
-        tag_h = [[tag_h, 0.012].max, 0.06].min
+        tag_w = [[tag_w, 0.015].max, 0.48].min
+        tag_h = [[tag_h, 0.012].max, 0.09].min
         
-        tags << { tag_content: tag_content, page: page_index, x: tag_x, y: tag_y, w: tag_w, h: tag_h }
-        
-        Rails.logger.info("ParsePdfTextTags: '#{field_name}' (#{field_def[:type]}) at (#{tag_x.round(3)}, #{tag_y.round(3)}) size=(#{tag_w.round(3)}x#{tag_h.round(3)})")
+        # Use the median rendered font size across the tag's characters so the
+        # form field's rendered text matches the document's typography.
+        tag_font_sizes = chars_with_positions[start_ci..end_ci].map { |c| c[:font_size] }.compact.reject { |s| s <= 0 }
+        measured_font_size_pt =
+          if tag_font_sizes.any?
+            sorted = tag_font_sizes.sort
+            sorted[sorted.length / 2].round
+          end
+
+        tags << {
+          tag_content: tag_content,
+          page: page_index,
+          x: tag_x,
+          y: tag_y,
+          w: tag_w,
+          h: tag_h,
+          font_size_pt: measured_font_size_pt
+        }
+
+        Rails.logger.info("ParsePdfTextTags: '#{field_name}' (#{field_def[:type]}) at (#{tag_x.round(3)}, #{tag_y.round(3)}) size=(#{tag_w.round(3)}x#{tag_h.round(3)}) font_size=#{measured_font_size_pt.inspect}pt")
       end
       
       tags
@@ -546,10 +576,16 @@ module Templates
           
           role_fields.each_with_index do |field_def, idx|
             y_position = 0.75 + (idx * 0.06)
-            
+
             case field_def[:type]
+            when 'checkbox', 'radio'
+              w, h = 0.02, 0.02
+            when 'stamp'
+              w, h = 0.10, 0.08
             when 'signature', 'initials'
-              w, h = 0.35, 0.05
+              w, h = 0.35, 0.04
+            when 'image'
+              w, h = 0.25, 0.05
             when 'date', 'datenow'
               w, h = 0.15, 0.025
             else
@@ -701,25 +737,34 @@ module Templates
             
             Rails.logger.info("ParsePdfTextTags: Normalized position - x:#{norm_x.round(3)}, y:#{norm_y.round(3)}")
             
-            # Clamp and adjust
+            # Clamp and adjust. Lower width bound is 0.015 so fixed-size
+            # controls (checkbox/radio) aren't inflated by the clamp.
             norm_x = [[norm_x, 0.0].max, 0.9].min
             norm_y = [[norm_y, 0.0].max, 0.9].min
-            norm_w = [[norm_w, 0.08].max, 0.4].min
-            norm_h = [[norm_h, 0.02].max, 0.08].min
+            norm_w = [[norm_w, 0.015].max, 0.48].min
+            norm_h = [[norm_h, 0.018].max, 0.09].min
             
-            # Adjust size based on field type
+            # Adjust size based on field type. Fixed-size controls override
+            # both width and height; other fields use a fixed default height
+            # and a minimum width.
             field_def = parse_tag(tag_content)
             if field_def.present?
               case field_def[:type]
+              when 'checkbox', 'radio'
+                norm_w = 0.02
+                norm_h = 0.02
+              when 'stamp'
+                norm_w = 0.10
+                norm_h = 0.08
               when 'signature', 'initials'
                 norm_w = [norm_w, 0.18].max
-                norm_h = [norm_h, 0.05].max
-              when 'text'
-                norm_w = [norm_w, 0.15].max
-                norm_h = [norm_h, 0.028].max
-              when 'date', 'datenow'
+                norm_h = 0.04
+              when 'image'
+                norm_w = [norm_w, 0.20].max
+                norm_h = 0.05
+              else
                 norm_w = [norm_w, 0.12].max
-                norm_h = [norm_h, 0.028].max
+                norm_h = 0.025
               end
             end
             
@@ -779,11 +824,21 @@ module Templates
             
             # Stack fields vertically within each column
             y_position = 0.75 + (idx * 0.06)
-            
-            # Size based on field type
+
+            # Size based on field type. Checkbox/radio/stamp have intrinsic
+            # fixed sizes; text-like fields use a fixed single-row height.
             case field_def[:type]
+            when 'checkbox', 'radio'
+              w = 0.02
+              h = 0.02
+            when 'stamp'
+              w = 0.10
+              h = 0.08
             when 'signature', 'initials'
               w = 0.35
+              h = 0.04
+            when 'image'
+              w = 0.25
               h = 0.05
             when 'date', 'datenow'
               w = 0.15

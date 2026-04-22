@@ -258,6 +258,11 @@ module Api
           last_page = [get_pdf_page_count(tagged_pdf_data) - 1, 0].max
           use_pdf_fallback(all_fields, docx_extracted_fields, first_doc, last_page)
         end
+
+        # Ensure every detected field has a font name + size in its preferences.
+        # Uses the DOCX-declared value if present, then the Pdfium-measured
+        # value from the rendered PDF, and finally Word's effective default.
+        apply_font_defaults_to_all_fields(all_fields)
       end
       
       # Final fallback: Create default signature fields if no fields found
@@ -637,26 +642,61 @@ module Api
     # Merge DOCX-derived formatting into a field that lacks it (fallback path).
     def merge_docx_formatting_into_field(field, docx_formatting)
       info = docx_formatting[field[:name].to_s]
-      return unless info
 
       prefs = field[:preferences] || {}
 
-      if info[:font].present? && prefs[:font].blank? && prefs['font'].blank?
-        prefs[:font] = info[:font]
-      end
+      if info
+        if info[:font].present? && prefs[:font].blank? && prefs['font'].blank?
+          prefs[:font] = info[:font]
+        end
 
-      align_value = info[:alignment].to_s.downcase
-      if align_value.present? && align_value.in?(%w[center right])
-        if prefs[:align].blank? && prefs['align'].blank?
-          prefs[:align] = align_value
+        align_value = info[:alignment].to_s.downcase
+        if align_value.present? && align_value.in?(%w[center right])
+          if prefs[:align].blank? && prefs['align'].blank?
+            prefs[:align] = align_value
+          end
+        end
+
+        if info[:font_size].present? && prefs[:font_size].blank? && prefs['font_size'].blank?
+          prefs[:font_size] = info[:font_size]
         end
       end
 
-      if info[:font_size].present? && prefs[:font_size].blank? && prefs['font_size'].blank?
-        prefs[:font_size] = info[:font_size]
-      end
-
       field[:preferences] = prefs if prefs.any?
+    end
+
+    # Word's effective default when docDefaults/Normal omit <w:sz> and we have
+    # no rendered PDF size to fall back on. ECMA-376 says 10pt but every modern
+    # Word/LibreOffice release renders at 11pt.
+    DEFAULT_FONT_SIZE_PT = 11
+    DEFAULT_FONT_NAME = 'Helvetica'
+
+    # Ensure every field has a font name and size in its preferences so the
+    # rendered value always matches the template's typography (rather than
+    # falling back to HexaPDF's page-size-relative default).
+    #
+    # Precedence for each slot (highest → lowest):
+    #   1. value already present on field[:preferences] (from DOCX)
+    #   2. value measured from the PDF at the tag's position
+    #   3. the module-level defaults above
+    def apply_font_defaults_to_all_fields(fields)
+      Array.wrap(fields).each do |field|
+        measured = field.delete(:_measured_font_size_pt)
+        prefs = field[:preferences] || {}
+
+        font_value = prefs[:font].presence || prefs['font'].presence
+        size_value = prefs[:font_size].presence || prefs['font_size'].presence
+
+        if font_value.blank?
+          prefs[:font] = DEFAULT_FONT_NAME
+        end
+
+        if size_value.blank?
+          prefs[:font_size] = measured.to_i.positive? ? measured.to_i : DEFAULT_FONT_SIZE_PT
+        end
+
+        field[:preferences] = prefs if prefs.any?
+      end
     end
 
     # Pre-generate stamp attachments for all stamp fields.
@@ -763,25 +803,34 @@ module Api
       :left # Default to left column
     end
     
-    # Default field width based on type
+    # Default field width based on type. Fixed-size controls (checkbox, radio,
+    # stamp) always use their intrinsic width regardless of any surrounding
+    # tag text. Everything else falls back to a generic single-line width.
     def default_width_for_type(field_type)
       case field_type.to_s
+      when 'checkbox', 'radio'
+        0.02
+      when 'stamp'
+        0.10
       when 'signature', 'initials', 'image'
         0.25
-      when 'checkbox'
-        0.03
       else
         0.15
       end
     end
-    
-    # Default field height based on type
+
+    # Default field height based on type. All inputs use a fixed single-row
+    # default — DOCX tag wrapping indicates position, not field height.
     def default_height_for_type(field_type)
       case field_type.to_s
-      when 'signature', 'initials', 'image'
+      when 'checkbox', 'radio'
+        0.02
+      when 'stamp'
+        0.08
+      when 'signature', 'initials'
+        0.04
+      when 'image'
         0.05
-      when 'checkbox'
-        0.025
       else
         0.025
       end
@@ -805,10 +854,11 @@ module Api
       # Stack fields vertically
       field_y = signature_start_y + (role_field_count * 0.035)
       
-      # Size based on field type
-      is_signature = field_type.in?(%w[signature initials])
-      field_w = [is_signature ? 0.38 : 0.35, column_width - 0.1].min  # Don't exceed column width
-      field_h = is_signature ? 0.045 : 0.025
+      # Size based on field type. Use the same type-aware defaults as the
+      # non-fallback path so checkbox/radio/stamp stay at their intrinsic
+      # sizes and text-like fields use a fixed single-row height.
+      field_w = [default_width_for_type(field_type), column_width - 0.1].min
+      field_h = default_height_for_type(field_type)
       
       fallback_field = docx_field.merge(
         areas: [{

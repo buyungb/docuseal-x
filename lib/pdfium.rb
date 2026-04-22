@@ -39,7 +39,7 @@ class Pdfium
   FPDF_RENDER_FORCEHALFTONE = 0x400
   FPDF_PRINTING = 0x800
 
-  TextNode = Struct.new(:content, :x, :y, :w, :h) do
+  TextNode = Struct.new(:content, :x, :y, :w, :h, :font_size) do
     def endx
       @endx ||= x + w
     end
@@ -501,7 +501,7 @@ class Pdfium
         node_width = (abs_width + ((abs_x - origin_x).abs * 2)) / width
         node_height = abs_height / height
 
-        @text_nodes << TextNode.new(char, x, y, node_width, node_height)
+        @text_nodes << TextNode.new(char, x, y, node_width, node_height, font_size)
       ensure
         i += 1
       end
