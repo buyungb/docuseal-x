@@ -1189,14 +1189,47 @@ module Api
       ensure_white_color(rpr, doc, ns)
     end
 
-    # Ensure a w:rPr element has white font color
+    # ECMA-376 §17.3.2 CT_RPr child sequence: elements listed here must all
+    # appear AFTER <w:color>. Inserting <w:color> before the first one preserves
+    # schema order, which is required by LibreOffice (and other strict OOXML
+    # consumers) to actually honor the color when converting DOCX to PDF.
+    # Without this, Nokogiri's default add_child appends <w:color> at the end
+    # (after <w:lang>), LibreOffice silently drops the out-of-order element,
+    # and the {{...}} tag text renders in its original color instead of white.
+    ELEMENTS_AFTER_COLOR_IN_RPR = %w[
+      spacing w kern position sz szCs highlight u effect bdr shd fitText
+      vertAlign rtl cs em lang eastAsianLayout specVanish oMath
+    ].freeze
+
+    # Ensure a w:rPr element has white font color, placed in the correct
+    # schema position (before <w:lang>, <w:sz>, <w:highlight>, etc.).
     def ensure_white_color(rpr, doc, ns)
       color = rpr.at_xpath('w:color', ns)
       if color
         color['w:val'] = 'FFFFFF'
+        return
+      end
+
+      color = Nokogiri::XML::Node.new('w:color', doc)
+      color['w:val'] = 'FFFFFF'
+      insert_color_in_rpr(rpr, color, ns)
+    end
+
+    # Insert <w:color> at the schema-correct position inside <w:rPr>: right
+    # before the first child element that, per ECMA-376, must appear after
+    # <w:color>. If no such sibling exists, append.
+    def insert_color_in_rpr(rpr, color, ns)
+      anchor = rpr.element_children.find do |child|
+        # Nokogiri returns local_name (no prefix) for namespaced children when
+        # asked via `.name`, but a few Ruby/Nokogiri combinations return the
+        # "w:lang" form. Normalize by stripping any prefix before comparing.
+        local = child.name.sub(/\Aw:/, '')
+        ELEMENTS_AFTER_COLOR_IN_RPR.include?(local)
+      end
+
+      if anchor
+        anchor.add_previous_sibling(color)
       else
-        color = Nokogiri::XML::Node.new('w:color', doc)
-        color['w:val'] = 'FFFFFF'
         rpr.add_child(color)
       end
     end
