@@ -1,0 +1,121 @@
+<div class="max-w-2xl mx-auto px-2">
+  <h1 class="flex text-4xl font-bold items-center justify-center my-8 space-x-2">
+    <span><%= t('license', default: 'License') %></span>
+  </h1>
+
+  <% if flash[:alert].present? %>
+    <div class="alert alert-error mb-4">
+      <span><%= flash[:alert] %></span>
+    </div>
+  <% end %>
+
+  <% if @license_info.persisted? && @license_info.product.present? %>
+    <div class="card bg-base-200 mb-6">
+      <div class="card-body">
+        <h2 class="card-title text-lg"><%= t('current_license', default: 'Current license') %></h2>
+        <div class="grid grid-cols-2 gap-2 text-sm">
+          <div class="font-semibold"><%= t('status', default: 'Status') %></div>
+          <div><%= @license_info.status %></div>
+          <div class="font-semibold"><%= t('product', default: 'Product') %></div>
+          <div><%= @license_info.product %></div>
+          <% if @license_info.license_id.present? %>
+            <div class="font-semibold"><%= t('license_id', default: 'License ID') %></div>
+            <div class="font-mono break-all"><%= @license_info.license_id %></div>
+          <% end %>
+          <% if @license_info.machine_id.present? %>
+            <div class="font-semibold"><%= t('machine_id', default: 'Machine ID') %></div>
+            <div class="font-mono break-all"><%= @license_info.machine_id %></div>
+          <% end %>
+          <% if @license_info.expires_at.present? %>
+            <div class="font-semibold"><%= t('expires_at', default: 'Expires at') %></div>
+            <div><%= l(@license_info.expires_at, format: :long) %></div>
+          <% end %>
+          <% if @license_info.last_heartbeat_at.present? %>
+            <div class="font-semibold"><%= t('last_heartbeat', default: 'Last heartbeat') %></div>
+            <div><%= l(@license_info.last_heartbeat_at, format: :long) %></div>
+          <% end %>
+          <% if @license_info.last_heartbeat_error.present? %>
+            <div class="font-semibold text-error"><%= t('last_error', default: 'Last error') %></div>
+            <div class="text-error"><%= @license_info.last_heartbeat_error %></div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <% unit_price = Docuseal::APLINDO_DEFAULT_AMOUNT_IDR.to_f %>
+  <div class="card bg-base-100 border border-base-300 mb-6">
+    <div class="card-body space-y-4">
+      <div>
+        <h2 class="card-title text-xl"><%= t('buy_license', default: 'Buy license') %></h2>
+        <p class="text-sm opacity-70 mt-1">
+          <%= t('buy_license_hint', default: 'A checkout window will open. After payment, copy the license key and paste it below to activate.') %>
+        </p>
+      </div>
+      <checkout-popup data-unit-price="<%= unit_price.to_i %>">
+        <%= form_with url: checkout_license_path, method: :post, local: true, html: { class: 'space-y-4' } do |f| %>
+          <div class="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <div class="font-semibold"><%= t('product', default: 'Product') %></div>
+              <div><%= Docuseal::APLINDO_PRODUCT_SLUG %></div>
+            </div>
+            <div>
+              <div class="font-semibold"><%= t('price_per_seat', default: 'Price per seat') %></div>
+              <div>IDR <%= number_with_delimiter(unit_price, delimiter: '.') %></div>
+            </div>
+          </div>
+          <div class="form-control">
+            <%= label_tag 'license[customer_email]', t('email', default: 'Email'), class: 'label' %>
+            <%= email_field_tag 'license[customer_email]', current_user.email, required: true, class: 'base-input' %>
+          </div>
+          <div class="form-control">
+            <%= label_tag 'license[seats]', t('seats', default: 'Seats'), class: 'label' %>
+            <%= number_field_tag 'license[seats]', 1,
+                                  min: 1,
+                                  required: true,
+                                  class: 'base-input',
+                                  data: { target: 'checkout-popup.seats' } %>
+          </div>
+          <div class="flex items-center justify-between border-t border-base-300 pt-3">
+            <span class="font-semibold text-sm"><%= t('total', default: 'Total') %></span>
+            <span class="text-lg font-semibold">
+              IDR <span data-target="checkout-popup.total"><%= number_with_delimiter(unit_price, delimiter: '.') %></span>
+            </span>
+          </div>
+          <div class="form-control">
+            <%= f.button button_title(title: t('buy_license', default: 'Buy license')), class: 'base-button' %>
+          </div>
+        <% end %>
+        <p data-target="checkout-popup.status" class="text-sm mt-2 text-base-content/70" aria-live="polite"></p>
+      </checkout-popup>
+    </div>
+  </div>
+
+  <div class="card bg-base-100 border border-base-300 mb-6">
+    <div class="card-body space-y-4">
+      <div>
+        <h2 class="card-title text-xl"><%= t('activate_license', default: 'Activate license') %></h2>
+        <p class="text-sm opacity-70 mt-1">
+          <%= t('activate_license_hint', default: 'Paste the license key you received on the checkout success page.') %>
+        </p>
+      </div>
+      <%= form_with url: activate_license_path, method: :post, local: true, html: { class: 'space-y-4' } do |f| %>
+        <div class="form-control">
+          <%= label_tag 'license[key]', t('license_key', default: 'License key'), class: 'label' %>
+          <uppercase-input class="block">
+            <%= text_field_tag 'license[key]', nil,
+                               required: true,
+                               autocomplete: 'off',
+                               spellcheck: 'false',
+                               placeholder: 'XXXX-XXXX-XXXX-XXXX',
+                               class: 'base-input font-mono uppercase tracking-widest w-full',
+                               data: { target: 'uppercase-input.input' } %>
+          </uppercase-input>
+        </div>
+        <div class="form-control">
+          <%= f.button button_title(title: t('activate', default: 'Activate')), class: 'base-button' %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

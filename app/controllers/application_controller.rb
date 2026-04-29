@@ -12,6 +12,7 @@ class ApplicationController < ActionController::Base
   before_action :sign_in_for_demo, if: -> { Docuseal.demo? }
   before_action :maybe_redirect_to_setup, unless: :signed_in?
   before_action :authenticate_user!, unless: :devise_controller?
+  before_action :maybe_redirect_to_license, if: :signed_in?
 
   before_action :set_csp, if: -> { request.get? && !request.headers['HTTP_X_TURBO'] }
 
@@ -109,6 +110,16 @@ class ApplicationController < ActionController::Base
 
   def maybe_redirect_to_setup
     redirect_to setup_index_path unless User.exists?
+  end
+
+  def maybe_redirect_to_license
+    return if Docuseal.multitenant?
+    return if devise_controller?
+    return if is_a?(SetupController) || is_a?(LicensesController) || is_a?(NewslettersController)
+    return unless LicenseInfo.table_exists?
+    return if LicenseInfo.current.active?
+
+    redirect_to license_path
   end
 
   def button_title(title: I18n.t('submit'), disabled_with: I18n.t('submitting'), title_class: '', icon: nil,

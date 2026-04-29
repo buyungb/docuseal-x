@@ -53,6 +53,8 @@ import GoogleDriveFilePicker from './elements/google_drive_file_picker'
 import OpenModal from './elements/open_modal'
 import BarChart from './elements/bar_chart'
 import FieldCondition from './elements/field_condition'
+import UppercaseInput from './elements/uppercase_input'
+import CheckoutPopup from './elements/checkout_popup'
 
 import * as TurboInstantClick from './lib/turbo_instant_click'
 
@@ -144,6 +146,8 @@ safeRegisterElement('google-drive-file-picker', GoogleDriveFilePicker)
 safeRegisterElement('open-modal', OpenModal)
 safeRegisterElement('bar-chart', BarChart)
 safeRegisterElement('field-condition', FieldCondition)
+safeRegisterElement('uppercase-input', UppercaseInput)
+safeRegisterElement('checkout-popup', CheckoutPopup)
 
 safeRegisterElement('template-builder', class extends HTMLElement {
   connectedCallback () {

@@ -38,6 +38,11 @@ module Docuseal
 
   CERTS = JSON.parse(ENV.fetch('CERTS', '{}'))
   TIMESERVER_URL = ENV.fetch('TIMESERVER_URL', nil)
+
+  APLINDO_LICENSE_API_URL = ENV.fetch('APLINDO_LICENSE_API_URL', 'https://license.aplindo.com').freeze
+  APLINDO_PRODUCT_SLUG = ENV.fetch('APLINDO_LICENSE_PRODUCT_SLUG', 'SealRoute').freeze
+  APLINDO_DEFAULT_AMOUNT_IDR = ENV.fetch('APLINDO_LICENSE_DEFAULT_AMOUNT_IDR', '5000000.00').freeze
+  APLINDO_HEARTBEAT_INTERVAL = ENV.fetch('APLINDO_LICENSE_HEARTBEAT_SECONDS', '3600').to_i
   VERSION_FILE_PATH = Rails.root.join('.version')
   VERSION_FILE2_PATH = Rails.public_path.join('version')
 
